@@ -1,0 +1,163 @@
+Frontend/assets/css/modules/auth.css
+/* =========================================================
+   CRM SYSTEM - AUTHENTICATION
+   Owner: FE1
+   Used by FE1 + FE2
+   ========================================================= */
+
+.auth-page {
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: var(--space-6);
+
+    background:
+        linear-gradient(135deg,
+            #eff6ff 0%,
+            #f8fafc 50%,
+            #eef2ff 100%);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+
+    margin-bottom: var(--space-6);
+}
+
+.auth-brand-mark {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--color-white);
+    background: var(--color-primary);
+
+    border-radius: var(--radius-lg);
+
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+
+    box-shadow: var(--shadow-md);
+}
+
+.auth-brand-name {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+
+    color: var(--color-gray-900);
+}
+
+.auth-card {
+    padding: var(--space-8);
+
+    background: var(--color-white);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-header {
+    margin-bottom: var(--space-6);
+
+    text-align: center;
+}
+
+.auth-title {
+    margin-bottom: var(--space-2);
+
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+
+    color: var(--color-gray-900);
+}
+
+.auth-description {
+    margin-bottom: 0;
+
+    color: var(--color-text-secondary);
+}
+
+.auth-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+
+    margin-bottom: var(--space-5);
+}
+
+.auth-link {
+    color: var(--color-primary);
+
+    font-weight: var(--font-weight-medium);
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+.auth-message {
+    margin-bottom: var(--space-5);
+    padding: var(--space-3) var(--space-4);
+
+    border-radius: var(--radius-md);
+
+    font-size: var(--font-size-sm);
+}
+
+.auth-message-error {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+
+    border: 1px solid #fecaca;
+}
+
+.auth-message-success {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+
+    border: 1px solid #bbf7d0;
+}
+
+.auth-footer {
+    margin-top: var(--space-6);
+
+    color: var(--color-text-secondary);
+
+    text-align: center;
+    font-size: var(--font-size-xs);
+}
+
+
+@media (max-width: 480px) {
+
+    .auth-page {
+        padding: var(--space-4);
+    }
+
+    .auth-card {
+        padding: var(--space-6);
+    }
+
+    .auth-options {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
