@@ -1,4 +1,4 @@
-<main class="main-content">
+<main class="main-content" data-permission="account.view">
 
     <div class="content-container">
 
@@ -40,30 +40,17 @@
 
             <div class="page-actions">
 
-                <a
-                    class="btn btn-secondary"
-                    href="edit.html">
-
+                <a class="btn btn-primary" href="edit.html" data-permission="account.update">
                     Chỉnh sửa
-
                 </a>
 
                 <!-- FE5 sẽ cung cấp trang này -->
 
-                <a
-                    class="btn btn-secondary"
-                    href="assign-role.html">
-
+                <a href="assign-role.html" data-permission="role.assign">
                     Gán vai trò
-
                 </a>
-
-                <a
-                    class="btn btn-danger"
-                    href="lock.html">
-
+                <a href="lock.html" data-permission="account.lock">
                     Khóa tài khoản
-
                 </a>
 
             </div>
@@ -134,7 +121,7 @@
                         <div class="detail-label">
                             Nhóm
                         </div>
-<div class="detail-value">
+                        <div class="detail-value">
                             Sales Team A
                         </div>
 

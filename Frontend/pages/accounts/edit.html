@@ -1,4 +1,4 @@
-<main class="main-content">
+<main class="main-content" data-permission="account.update">
 
     <div class="content-container">
 
@@ -66,9 +66,7 @@
 
                         <div class="form-group">
 
-                            <label
-                                class="form-label"
-                                for="editFullName">
+                            <label class="form-label" for="editFullName">
 
                                 Họ và tên
 
@@ -76,22 +74,15 @@
 
                             </label>
 
-                            <input
-                                id="editFullName"
-                                name="fullName"
-                                class="form-control"
-                                type="text"
-                                value="Nguyễn Văn An"
-                                required>
+                            <input id="editFullName" name="fullName" class="form-control" type="text"
+                                value="Nguyễn Văn An" required>
 
                         </div>
 
 
                         <div class="form-group">
 
-                            <label
-                                class="form-label"
-                                for="editEmail">
+                            <label class="form-label" for="editEmail">
 
                                 Email
 
@@ -99,13 +90,8 @@
 
                             </label>
 
-                            <input
-                                id="editEmail"
-                                name="email"
-                                class="form-control"
-                                type="email"
-                                value="an.nguyen@example.com"
-                                required>
+                            <input id="editEmail" name="email" class="form-control" type="email"
+                                value="an.nguyen@example.com" required>
 
                         </div>
 
@@ -114,20 +100,13 @@
 
                     <div class="form-group">
 
-                        <label
-                            class="form-label"
-                            for="editUsername">
+                        <label class="form-label" for="editUsername">
 
                             Tên đăng nhập
 
                         </label>
 
-                        <input
-id="editUsername"
-                            class="form-control"
-                            type="text"
-                            value="nguyenvanan"
-                            disabled>
+                        <input id="editUsername" class="form-control" type="text" value="nguyenvanan" disabled>
 
                         <div class="form-help">
                             Tên đăng nhập không được thay đổi tại đây.
@@ -138,20 +117,15 @@ id="editUsername"
 
                     <div class="account-form-actions">
 
-                        <a
-                            class="btn btn-secondary"
-                            href="detail.html">
+                        <a class="btn btn-secondary" href="detail.html">
 
                             Hủy
 
                         </a>
 
-                        <button
-                            class="btn btn-primary"
-                            type="submit">
+                        <button class="btn btn-primary" type="submit" data-permission="account.update">
 
                             Lưu thay đổi
-
                         </button>
 
                     </div>
