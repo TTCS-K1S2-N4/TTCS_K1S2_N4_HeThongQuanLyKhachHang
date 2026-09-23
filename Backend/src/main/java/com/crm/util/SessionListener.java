@@ -1,4 +1,4 @@
-package com.crm.config;
+package com.crm.util;
 
 import jakarta.servlet.annotation.WebListener;
 import jakarta.servlet.http.HttpSession;
