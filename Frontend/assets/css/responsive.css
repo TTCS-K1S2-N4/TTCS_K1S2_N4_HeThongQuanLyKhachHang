@@ -1,4 +1,10 @@
 /* =========================================================
+   CRM SYSTEM - RESPONSIVE DESIGN
+   Owner: FE1
+   ========================================================= */
+
+
+/* =========================================================
    <= 1200px
    ========================================================= */
 
@@ -8,8 +14,14 @@
         --sidebar-width: 230px;
     }
 
+    /* Foundation demo */
     .demo-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Dashboard statistics: 4 -> 2 columns */
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
 }
@@ -30,6 +42,15 @@
         padding-right: var(--space-5);
     }
 
+    /*
+       Dashboard:
+       Recent Customers + Quick Actions
+       chuyển từ 2 cột -> 1 cột
+    */
+    .dashboard-content-grid {
+        grid-template-columns: 1fr;
+    }
+
 }
 
 
@@ -39,16 +60,26 @@
 
 @media (max-width: 768px) {
 
+    /* =========================
+       SIDEBAR
+       ========================= */
+
     .sidebar {
         transform: translateX(-100%);
     }
 
     /*
-       Sau này nếu có JS:
+       Sau này khi có JavaScript:
+
        body.sidebar-open .sidebar {
            transform: translateX(0);
        }
     */
+
+
+    /* =========================
+       MAIN CONTENT
+       ========================= */
 
     .main-content {
         margin-left: 0;
@@ -57,19 +88,56 @@
         padding-right: var(--space-4);
     }
 
+
+    /* =========================
+       PAGE HEADER
+       ========================= */
+
     .page-header {
         flex-direction: column;
     }
 
     .page-actions {
         width: 100%;
-
         flex-wrap: wrap;
     }
+
+
+    /* =========================
+       DASHBOARD
+       ========================= */
+
+    /*
+       Giữ 2 card thống kê / hàng
+       trên tablet/mobile lớn.
+    */
+
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /*
+       Nội dung Dashboard đã chuyển
+       thành 1 cột từ breakpoint 1024px.
+    */
+
+    .dashboard-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    /* =========================
+       FORM
+       ========================= */
 
     .form-row {
         grid-template-columns: 1fr;
     }
+
+
+    /* =========================
+       TOOLBAR
+       ========================= */
 
     .toolbar {
         align-items: stretch;
@@ -80,14 +148,36 @@
         flex-wrap: wrap;
     }
 
+
+    /* =========================
+       CARD
+       ========================= */
+
     .card-header {
         align-items: flex-start;
-        flex-direction: column;
+flex-direction: column;
     }
 
     .card-body {
         padding: var(--space-4);
     }
+
+
+    /* =========================
+       TABLE
+       ========================= */
+
+    /*
+       .table-container trong common.css
+       đã có overflow-x: auto;
+       nên bảng sẽ cuộn ngang thay vì
+       phá vỡ giao diện.
+    */
+
+
+    /* =========================
+       MODAL
+       ========================= */
 
     .modal-footer {
         flex-wrap: wrap;
@@ -102,14 +192,28 @@
 
 @media (max-width: 480px) {
 
+    /* =========================
+       HEADER
+       ========================= */
+
     .app-header {
         padding-left: var(--space-4);
         padding-right: var(--space-4);
     }
 
+    /*
+       Trên màn hình nhỏ:
+       giữ avatar nhưng ẩn tên + role.
+    */
+
     .header-user-info {
         display: none;
     }
+
+
+    /* =========================
+       PAGE HEADER
+       ========================= */
 
     .page-title {
         font-size: var(--font-size-lg);
@@ -123,6 +227,52 @@
         width: 100%;
     }
 
+
+    /* =========================
+       DASHBOARD STATISTICS
+       ========================= */
+
+    /*
+       Mobile nhỏ:
+       2 cột -> 1 cột.
+    */
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .statistic-value {
+        font-size: var(--font-size-xl);
+    }
+
+    .statistic-footer {
+        align-items: flex-start;
+    }
+
+
+    /* =========================
+       QUICK ACTION
+       ========================= */
+
+    .quick-action-item {
+        width: 100%;
+    }
+
+
+    /* =========================
+       FOUNDATION COMPONENTS
+       ========================= */
+
+    .foundation-components {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    /* =========================
+       TOOLBAR
+       ========================= */
+
     .toolbar-group {
         flex-direction: column;
     }
@@ -131,6 +281,11 @@
     .toolbar-group .btn {
         width: 100%;
     }
+
+
+    /* =========================
+       MODAL
+       ========================= */
 
     .modal {
         max-width: none;
@@ -144,8 +299,14 @@
         width: 100%;
     }
 
+
+    /* =========================
+       PAGINATION
+       ========================= */
+
     .pagination {
         justify-content: center;
+        flex-wrap: wrap;
     }
 
 }
