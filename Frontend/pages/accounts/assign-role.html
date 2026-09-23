@@ -1,0 +1,112 @@
+<main class="main-content" data-permission="role.assign">
+    <div class="content-container">
+
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="../../index.html">Trang chủ</a>
+            <span>/</span>
+            <a href="list.html">Tài khoản</a>
+            <span>/</span>
+            <a href="detail.html">Chi tiết</a>
+            <span>/</span>
+            <span class="breadcrumb-current">
+                Gán vai trò & nhóm
+            </span>
+        </nav>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    Gán vai trò & nhóm
+                </h1>
+
+                <p class="page-description">
+                    Cập nhật vai trò và nhóm làm việc của tài khoản.
+                </p>
+            </div>
+        </div>
+
+        <section class="card account-form">
+            <div class="card-header">
+                <h2 class="card-title">
+                    Phân quyền tài khoản
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <form action="#" method="post">
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Tài khoản
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="text"
+                            value="Nguyễn Văn An - nguyenvanan"
+                            disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="roleId">
+                            Vai trò
+                        </label>
+
+                        <select
+                            id="roleId"
+                            name="roleId"
+                            class="form-control"
+                            required>
+
+                            <option value="">-- Chọn vai trò --</option>
+                            <option value="SALES_REP">Nhân viên kinh doanh</option>
+                            <option value="TEAM_LEAD">Trưởng nhóm kinh doanh</option>
+                            <option value="DIRECTOR">Giám đốc</option>
+                            <option value="MARKETING">Marketing</option>
+                            <option value="CUSTOMER_SUCCESS">Chăm sóc khách hàng</option>
+                            <option value="ACCOUNTANT">Kế toán</option>
+                            <option value="ADMIN">Quản trị viên</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="teamId">
+                            Nhóm
+                        </label>
+
+                        <select
+                            id="teamId"
+                            name="teamId"
+                            class="form-control">
+
+                            <option value="">-- Chọn nhóm --</option>
+                            <option value="1">Sales Team A</option>
+                            <option value="2">Sales Team B</option>
+                        </select>
+                    </div>
+
+                    <div class="account-form-actions">
+
+                        <a
+                            class="btn btn-secondary"
+                            href="detail.html">
+                            Hủy
+                        </a>
+
+                        <button
+                            class="btn btn-primary"
+                            type="submit"
+                            data-permission="role.assign">
+                            Lưu thay đổi
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </section>
+
+    </div>
+</main>
