@@ -1,0 +1,82 @@
+Frontend/assets/css/reset.css
+/* =========================================================
+   CRM SYSTEM - CSS RESET
+   Owner: FE1
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    min-height: 100vh;
+
+    font-family: var(--font-family);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+
+    color: var(--color-text-primary);
+    background: var(--color-page-bg);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    margin-top: 0;
+}
+
+ul,
+ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button {
+    border: none;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+input,
+button,
+select,
+textarea {
+    margin: 0;
+}
