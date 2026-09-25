@@ -64,6 +64,7 @@ public class AccountDAO {
                 Account acc = new Account();
                 acc.setAccountId(rs.getInt("user_id"));
                 acc.setEmail(rs.getString("email"));
+                acc.setPasswordHash(rs.getString("password_hash"));
                 acc.setFullName(rs.getString("full_name"));
                 acc.setPhone(rs.getString("phone"));
                 acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
@@ -230,5 +231,42 @@ public class AccountDAO {
                 } catch (SQLException ex) { ex.printStackTrace(); }
             }
         }
+    }
+
+    public Account findByUsername(String username) {
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.email = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Account acc = new Account();
+                acc.setAccountId(rs.getInt("user_id"));
+                acc.setEmail(rs.getString("email"));
+                acc.setPasswordHash(rs.getString("password_hash"));
+                acc.setFullName(rs.getString("full_name"));
+                acc.setPhone(rs.getString("phone"));
+                acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
+                acc.setTeamName(rs.getString("team_name"));
+                acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
+                return acc;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updatePassword(int accountId, String newPasswordHash) {
+        String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newPasswordHash);
+            ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
