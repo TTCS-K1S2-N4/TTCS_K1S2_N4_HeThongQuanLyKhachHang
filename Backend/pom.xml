@@ -5,19 +5,27 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.crm</groupId>
+<<<<<<< HEAD
     <artifactId>crm-backend-be3</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>CRM Backend Module BE3 - Data Scope &amp; Role-based Menu</name>
     <description>Module BE3 chịu trách nhiệm xử lý Phân quyền dữ liệu (MY, TEAM, ALL) và Menu điều hướng theo quyền trong CRM</description>
+=======
+    <artifactId>crm-backend</artifactId>
+    <version>1.0-SNAPSHOT</version>
+>>>>>>> origin/develop
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+<<<<<<< HEAD
         <junit.jupiter.version>5.10.0</junit.jupiter.version>
         <mockito.version>5.5.0</mockito.version>
+=======
+>>>>>>> origin/develop
     </properties>
 
     <dependencies>
@@ -29,6 +37,7 @@
             <scope>provided</scope>
         </dependency>
 
+<<<<<<< HEAD
         <!-- MySQL JDBC Driver -->
         <dependency>
             <groupId>com.mysql</groupId>
@@ -94,4 +103,20 @@
             </plugin>
         </plugins>
     </build>
+=======
+        <!-- MySQL Connector -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.3.0</version>
+        </dependency>
+
+        <!-- BCrypt Hash Mat Khau -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+    </dependencies>
+>>>>>>> origin/develop
 </project>
