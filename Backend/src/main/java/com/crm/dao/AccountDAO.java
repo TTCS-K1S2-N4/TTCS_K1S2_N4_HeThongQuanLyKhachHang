@@ -25,6 +25,12 @@ public class AccountDAO {
         try {
             acc.setTeamName(rs.getString("team_name"));
         } catch (SQLException ignored) {}
+        try {
+            acc.setRoleId(rs.getObject("role_id") != null ? rs.getInt("role_id") : null);
+        } catch (SQLException ignored) {}
+        try {
+            acc.setRoleName(rs.getString("role_name"));
+        } catch (SQLException ignored) {}
         acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
         try {
             acc.setResetToken(rs.getString("reset_token"));
@@ -82,26 +88,16 @@ public class AccountDAO {
     }
 
     public Account getAccountById(int accountId) {
-        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.user_id = ?";
+        String sql = "SELECT u.*, t.team_name, ur.role_id, r.role_name FROM users u " +
+                     "LEFT JOIN teams t ON u.team_id = t.team_id " +
+                     "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+                     "LEFT JOIN roles r ON ur.role_id = r.role_id WHERE u.user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, accountId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-<<<<<<< HEAD
                 return mapResultSetToAccount(rs);
-=======
-                Account acc = new Account();
-                acc.setAccountId(rs.getInt("user_id"));
-                acc.setEmail(rs.getString("email"));
-                acc.setPasswordHash(rs.getString("password_hash"));
-                acc.setFullName(rs.getString("full_name"));
-                acc.setPhone(rs.getString("phone"));
-                acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
-                acc.setTeamName(rs.getString("team_name"));
-                acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
-                return acc;
->>>>>>> 7fce5e7ab1eaee1129210db9c6741f90e73167f9
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -109,11 +105,18 @@ public class AccountDAO {
         return null;
     }
 
+    public Account findById(int accountId) {
+        return getAccountById(accountId);
+    }
+
     public Account findByEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return null;
         }
-        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.email = ?";
+        String sql = "SELECT u.*, t.team_name, ur.role_id, r.role_name FROM users u " +
+                     "LEFT JOIN teams t ON u.team_id = t.team_id " +
+                     "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+                     "LEFT JOIN roles r ON ur.role_id = r.role_id WHERE u.email = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, email.trim());
@@ -135,7 +138,7 @@ public class AccountDAO {
         if (token == null || token.trim().isEmpty()) {
             return null;
         }
-        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.reset_token = ?";
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.reset_token = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, token.trim());
@@ -189,11 +192,57 @@ public class AccountDAO {
         return false;
     }
 
+    public boolean updateRoleAndTeam(int accountId, int roleId, int teamId) {
+        String updateTeamSql = "UPDATE users SET team_id = ? WHERE user_id = ?";
+        String deleteRoleSql = "DELETE FROM user_roles WHERE user_id = ?";
+        String insertRoleSql = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = conn.prepareStatement(updateTeamSql)) {
+                ps1.setInt(1, teamId);
+                ps1.setInt(2, accountId);
+                ps1.executeUpdate();
+            }
+
+            try (PreparedStatement ps2 = conn.prepareStatement(deleteRoleSql)) {
+                ps2.setInt(1, accountId);
+                ps2.executeUpdate();
+            }
+
+            try (PreparedStatement ps3 = conn.prepareStatement(insertRoleSql)) {
+                ps3.setInt(1, accountId);
+                ps3.setInt(2, roleId);
+                ps3.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
     public List<Account> getAccounts(String keyword, Integer teamId, String status, int page) {
         List<Account> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT u.*, t.team_name FROM users u " +
-            "LEFT JOIN teams t ON u.team_id = t.team_id WHERE 1=1 "
+            "SELECT u.*, t.team_name, ur.role_id, r.role_name FROM users u " +
+            "LEFT JOIN teams t ON u.team_id = t.team_id " +
+            "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+            "LEFT JOIN roles r ON ur.role_id = r.role_id WHERE 1=1 "
         );
 
         if (keyword != null && !keyword.trim().isEmpty()) {
@@ -335,42 +384,5 @@ public class AccountDAO {
                 } catch (SQLException ex) { ex.printStackTrace(); }
             }
         }
-    }
-
-    public Account findByUsername(String username) {
-        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.email = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                Account acc = new Account();
-                acc.setAccountId(rs.getInt("user_id"));
-                acc.setEmail(rs.getString("email"));
-                acc.setPasswordHash(rs.getString("password_hash"));
-                acc.setFullName(rs.getString("full_name"));
-                acc.setPhone(rs.getString("phone"));
-                acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
-                acc.setTeamName(rs.getString("team_name"));
-                acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
-                return acc;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public boolean updatePassword(int accountId, String newPasswordHash) {
-        String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newPasswordHash);
-            ps.setInt(2, accountId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }

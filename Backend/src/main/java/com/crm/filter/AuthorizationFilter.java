@@ -87,10 +87,17 @@ public class AuthorizationFilter implements Filter {
             }
         }
 
-        // Nếu thiếu thông tin người dùng trong session => Chưa đăng nhập
-        if (roleId == null || userId == null) {
+        // Nếu chưa đăng nhập (thiếu userId trong session) => Chưa đăng nhập
+        if (userId == null) {
             LOGGER.warning("Từ chối truy cập đường dẫn " + path + ": Chưa xác thực session");
             handleUnauthorized(httpRequest, httpResponse, "Bạn cần đăng nhập để thực hiện chức năng này.");
+            return;
+        }
+
+        // Nếu đã đăng nhập nhưng chưa có vai trò (roleId is null) => Từ chối truy cập (403)
+        if (roleId == null) {
+            LOGGER.warning("Từ chối truy cập đường dẫn " + path + ": Tài khoản chưa được phân vai trò");
+            handleForbidden(httpRequest, httpResponse, "Tài khoản của bạn chưa được phân vai trò trong hệ thống.");
             return;
         }
 
@@ -127,7 +134,7 @@ public class AuthorizationFilter implements Filter {
             out.print("{\"status\": 401, \"message\": \"" + message + "\"}");
             out.flush();
         } else {
-            response.sendRedirect(request.getContextPath() + "/login");
+            response.sendRedirect(request.getContextPath() + "/auth/login");
         }
     }
 

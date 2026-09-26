@@ -6,6 +6,10 @@
 
     <display-name>CRM Backend System</display-name>
 
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
     <!-- 
       ===================================================================
       CẤU HÌNH SERVLET FILTER CHO S1-02 (AuthenticationFilter)
@@ -39,7 +43,15 @@
         <url-pattern>/quotes/*</url-pattern>
     </filter-mapping>
 
-<<<<<<< HEAD
+    <!-- 
+      ===================================================================
+      THỜI GIAN HẾT HẠN PHIÊN ĐĂNG NHẬP (S1-02: 15 PHÚT)
+      ===================================================================
+    -->
+    <session-config>
+        <session-timeout>15</session-timeout>
+    </session-config>
+
     <!--
       ===================================================================
       CẤU HÌNH TRANG LỖI HTTP 403 VÀ 404 (S1-07)
@@ -54,15 +66,5 @@
         <error-code>404</error-code>
         <location>/error/404</location>
     </error-page>
-=======
-    <!-- 
-      ===================================================================
-      THỜI GIAN HẾT HẠN PHIÊN ĐĂNG NHẬP (S1-02: 15 PHÚT)
-      ===================================================================
-    -->
-    <session-config>
-        <session-timeout>15</session-timeout>
-    </session-config>
->>>>>>> 7fce5e7ab1eaee1129210db9c6741f90e73167f9
 
 </web-app>

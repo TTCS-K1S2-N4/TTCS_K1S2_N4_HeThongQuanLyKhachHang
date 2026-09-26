@@ -1,5 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="com.crm.exception.AuthorizationException" %>
+<%
+    String errorMessage = (String) request.getAttribute("errorMessage");
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -144,14 +147,7 @@
     <h1 class="error-title">Bạn không có quyền truy cập</h1>
 
     <p class="error-description">
-        <c:choose>
-            <c:when test="${not empty errorMessage}">
-                ${errorMessage}
-            </c:when>
-            <c:otherwise>
-                Tài khoản hiện tại của bạn không được phân quyền để truy cập trang hoặc thực hiện chức năng này.
-            </c:otherwise>
-        </c:choose>
+        <%= (errorMessage != null && !errorMessage.trim().isEmpty()) ? errorMessage : "Tài khoản hiện tại của bạn không được phân quyền để truy cập trang hoặc thực hiện chức năng này." %>
     </p>
 
     <div class="error-actions">

@@ -59,6 +59,7 @@ public class LoginServlet extends HttpServlet {
 
             session.setAttribute("currentUser", account);
             session.setAttribute("userId", account.getAccountId());
+            session.setAttribute("roleId", account.getRoleId());
             com.crm.util.SessionListener.registerUserSession(account.getAccountId(), session);
 
             response.sendRedirect(

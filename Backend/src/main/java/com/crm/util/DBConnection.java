@@ -1,9 +1,10 @@
 package com.crm.util;
 
-<<<<<<< HEAD
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,17 +15,32 @@ import java.util.logging.Logger;
 public class DBConnection {
     private static final Logger LOGGER = Logger.getLogger(DBConnection.class.getName());
 
-    // Thông tin cấu hình mặc định (có thể override qua System properties hoặc setCustomCredentials)
-    private static String dbUrl = System.getProperty("db.url", "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC");
-    private static String dbUser = System.getProperty("db.user", "root");
-    private static String dbPassword = System.getProperty("db.password", "root");
-    private static String dbDriver = System.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");
+    private static String dbUrl;
+    private static String dbUser;
+    private static String dbPassword;
+    private static String dbDriver;
 
     static {
-        try {
+        try (InputStream is = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
+            Properties prop = new Properties();
+            if (is != null) {
+                prop.load(is);
+                dbUrl = System.getProperty("db.url", prop.getProperty("db.url",
+                    "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"));
+                dbUser = System.getProperty("db.user", prop.getProperty("db.username", prop.getProperty("db.user", "root")));
+                dbPassword = System.getProperty("db.password", prop.getProperty("db.password", "root"));
+                dbDriver = System.getProperty("db.driver", prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
+            } else {
+                dbUrl = System.getProperty("db.url", "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8");
+                dbUser = System.getProperty("db.user", "root");
+                dbPassword = System.getProperty("db.password", "root");
+                dbDriver = System.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");
+            }
             Class.forName(dbDriver);
         } catch (ClassNotFoundException e) {
             LOGGER.log(Level.FINE, "Thông báo: Không tìm thấy JDBC Driver {0} (có thể dùng H2 cho Unit Test)", dbDriver);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Lỗi khởi tạo DBConnection", e);
         }
     }
 
@@ -51,44 +67,4 @@ public class DBConnection {
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
     }
-=======
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.util.Properties;
-
-public class DBConnection {
-    private static String url;
-    private static String username;
-    private static String password;
-
-    static {
-        try (InputStream is = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
-            Properties prop = new Properties();
-            if (is != null) {
-                prop.load(is);
-                url = prop.getProperty("db.url");
-                username = prop.getProperty("db.username");
-                password = prop.getProperty("db.password");
-                Class.forName(prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
-            } else {
-                url = "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8";
-                username = "root";
-                password = "";
-                Class.forName("com.mysql.cj.jdbc.Driver");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static Connection getConnection() {
-        try {
-            return DriverManager.getConnection(url, username, password);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
->>>>>>> origin/develop
 }
