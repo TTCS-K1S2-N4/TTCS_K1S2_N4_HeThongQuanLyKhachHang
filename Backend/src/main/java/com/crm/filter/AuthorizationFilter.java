@@ -143,7 +143,7 @@ public class AuthorizationFilter implements Filter {
             request.setAttribute("errorMessage", message);
             request.setAttribute("exception", new AuthorizationException(message));
             // Forward sang trang 403.jsp của BE2
-            request.getRequestDispatcher("/WEB-INF/views/403.jsp").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/errors/403.jsp").forward(request, response);
         }
     }
 

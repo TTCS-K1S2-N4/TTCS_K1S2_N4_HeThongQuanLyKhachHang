@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS roles (
     role_name VARCHAR(100) NOT NULL
 );
 
--- 3. Bảng Người dùng
+-- 3. Bảng Người dùng (Bổ sung reset_token và reset_token_expiry cho S1-03)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     failed_attempts INT DEFAULT 0,
+    reset_token VARCHAR(255) NULL,
+    reset_token_expiry TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL

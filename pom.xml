@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.crm</groupId>
-    <artifactId>crm-backend-be3</artifactId>
+    <artifactId>crm-backend</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>CRM Backend Module BE3 - Data Scope &amp; Role-based Menu</name>
-    <description>Module BE3 chịu trách nhiệm xử lý Phân quyền dữ liệu (MY, TEAM, ALL) và Menu điều hướng theo quyền trong CRM</description>
+    <name>CRM Backend System</name>
+    <description>He thong CRM Backend - Quan ly khach hang va Phan quyen</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -34,6 +34,13 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>8.1.0</version>
+        </dependency>
+
+        <!-- BCrypt Hash Mat Khau -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
         </dependency>
 
         <!-- JUnit 5 API & Engine -->
