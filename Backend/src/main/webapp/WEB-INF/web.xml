@@ -8,6 +8,21 @@
 
     <!-- 
       ===================================================================
+      CẤU HÌNH SERVLET FILTER CHO S1-02 (AuthenticationFilter)
+      ===================================================================
+    -->
+    <filter>
+        <filter-name>AuthenticationFilter</filter-name>
+        <filter-class>com.crm.filter.AuthenticationFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>AuthenticationFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- 
+      ===================================================================
       CẤU HÌNH SERVLET FILTER CHO MODULE BE3 (AuthorizationFilter)
       ===================================================================
     -->
@@ -24,6 +39,7 @@
         <url-pattern>/quotes/*</url-pattern>
     </filter-mapping>
 
+<<<<<<< HEAD
     <!--
       ===================================================================
       CẤU HÌNH TRANG LỖI HTTP 403 VÀ 404 (S1-07)
@@ -38,5 +54,15 @@
         <error-code>404</error-code>
         <location>/error/404</location>
     </error-page>
+=======
+    <!-- 
+      ===================================================================
+      THỜI GIAN HẾT HẠN PHIÊN ĐĂNG NHẬP (S1-02: 15 PHÚT)
+      ===================================================================
+    -->
+    <session-config>
+        <session-timeout>15</session-timeout>
+    </session-config>
+>>>>>>> 7fce5e7ab1eaee1129210db9c6741f90e73167f9
 
 </web-app>

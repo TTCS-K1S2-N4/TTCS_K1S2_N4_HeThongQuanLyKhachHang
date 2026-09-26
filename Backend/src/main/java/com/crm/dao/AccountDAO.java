@@ -88,7 +88,20 @@ public class AccountDAO {
             ps.setInt(1, accountId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
+<<<<<<< HEAD
                 return mapResultSetToAccount(rs);
+=======
+                Account acc = new Account();
+                acc.setAccountId(rs.getInt("user_id"));
+                acc.setEmail(rs.getString("email"));
+                acc.setPasswordHash(rs.getString("password_hash"));
+                acc.setFullName(rs.getString("full_name"));
+                acc.setPhone(rs.getString("phone"));
+                acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
+                acc.setTeamName(rs.getString("team_name"));
+                acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
+                return acc;
+>>>>>>> 7fce5e7ab1eaee1129210db9c6741f90e73167f9
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -322,5 +335,42 @@ public class AccountDAO {
                 } catch (SQLException ex) { ex.printStackTrace(); }
             }
         }
+    }
+
+    public Account findByUsername(String username) {
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.email = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Account acc = new Account();
+                acc.setAccountId(rs.getInt("user_id"));
+                acc.setEmail(rs.getString("email"));
+                acc.setPasswordHash(rs.getString("password_hash"));
+                acc.setFullName(rs.getString("full_name"));
+                acc.setPhone(rs.getString("phone"));
+                acc.setTeamId(rs.getObject("team_id") != null ? rs.getInt("team_id") : null);
+                acc.setTeamName(rs.getString("team_name"));
+                acc.setStatus(rs.getInt("is_active") == 1 ? "ACTIVE" : "LOCKED");
+                return acc;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updatePassword(int accountId, String newPasswordHash) {
+        String sql = "UPDATE users SET password_hash = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newPasswordHash);
+            ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

@@ -143,4 +143,42 @@ public class AuthService {
             throw new AuthenticationException("Không thể cập nhật mật khẩu mới. Vui lòng thử lại.");
         }
     }
+
+    public void changePassword(int userId, String oldPassword, String newPassword, String confirmPassword)
+            throws AuthenticationException {
+
+        if (oldPassword == null || oldPassword.trim().isEmpty() ||
+            newPassword == null || newPassword.trim().isEmpty() ||
+            confirmPassword == null || confirmPassword.trim().isEmpty()) {
+            throw new AuthenticationException("Vui lòng nhập đầy đủ các trường thông tin.");
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new AuthenticationException("Mật khẩu mới và xác nhận mật khẩu không trùng khớp.");
+        }
+
+        if (!PasswordUtil.validatePasswordRules(newPassword)) {
+            throw new AuthenticationException("Mật khẩu mới phải có tối thiểu 8 ký tự, bao gồm cả chữ cái và chữ số.");
+        }
+
+        if (oldPassword.equals(newPassword)) {
+            throw new AuthenticationException("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+        }
+
+        Account account = accountDAO.getAccountById(userId);
+        if (account == null) {
+            throw new AuthenticationException("Tài khoản không tồn tại.");
+        }
+
+        if (!PasswordUtil.verify(oldPassword, account.getPasswordHash())) {
+            throw new AuthenticationException("Mật khẩu hiện tại không chính xác.");
+        }
+
+        String newPasswordHash = PasswordUtil.hash(newPassword);
+        boolean updated = accountDAO.updatePassword(userId, newPasswordHash);
+
+        if (!updated) {
+            throw new AuthenticationException("Cập nhật mật khẩu thất bại. Vui lòng thử lại sau.");
+        }
+    }
 }

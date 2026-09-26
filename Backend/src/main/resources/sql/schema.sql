@@ -73,3 +73,32 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     FOREIGN KEY (performed_by) REFERENCES users(user_id),
     FOREIGN KEY (target_user_id) REFERENCES users(user_id)
 );
+
+-- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
+CREATE TABLE IF NOT EXISTS permissions (
+    permission_id INT AUTO_INCREMENT PRIMARY KEY,
+    permission_code VARCHAR(50) NOT NULL UNIQUE,
+    permission_name VARCHAR(100) NOT NULL,
+    module VARCHAR(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 9. Bảng gán quyền cho Vai trò kèm Phạm vi dữ liệu (DataScope: MY, TEAM, ALL - Module BE3)
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id INT NOT NULL,
+    permission_id INT NOT NULL,
+    data_scope ENUM('MY', 'TEAM', 'ALL') NOT NULL DEFAULT 'MY',
+    FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_role_permission (role_id, permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 10. Bảng lưu danh sách Mục Menu điều hướng (Module BE3)
+CREATE TABLE IF NOT EXISTS menu_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    icon VARCHAR(50) DEFAULT 'fa-folder',
+    permission_code VARCHAR(50) NOT NULL,
+    display_order INT DEFAULT 0,
+    parent_id INT DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
