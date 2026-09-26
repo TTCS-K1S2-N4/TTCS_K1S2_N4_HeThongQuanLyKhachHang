@@ -4,13 +4,9 @@
 <head>
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="description"
-        content="Hệ thống quản lý khách hàng CRM">
+    <meta name="description" content="Hệ thống quản lý khách hàng CRM">
 
     <title>Tổng quan | CRM System</title>
 
@@ -29,1022 +25,907 @@
 
 <body>
 
-<div class="app">
+    <div class="app">
 
-    <!-- =====================================================
+        <!-- =====================================================
          HEADER
          Owner: FE1
          ===================================================== -->
 
-    <header class="app-header">
+        <header class="app-header">
 
-        <!-- LEFT -->
+            <!-- LEFT -->
 
-        <div class="header-left">
+            <div class="header-left">
 
-            <a
-                class="header-brand"
-                href="index.html"
-                aria-label="CRM System">
+                <a class="header-brand" href="index.html" aria-label="CRM System">
 
-                <span class="brand-mark">
-                    CRM
-                </span>
+                    <span class="brand-mark">
+                        CRM
+                    </span>
 
-                <span>
-                    CRM System
-                </span>
+                    <span>
+                        CRM System
+                    </span>
 
-            </a>
+                </a>
 
-        </div>
+            </div>
 
 
-        <!-- RIGHT -->
+            <!-- RIGHT -->
 
-        <div class="header-right">
+            <div class="header-right">
 
-            <!-- NOTIFICATION -->
+                <!-- NOTIFICATION -->
 
-            <button
-                class="header-action"
-                type="button"
-                aria-label="Thông báo"
-                title="Thông báo">
+                <button class="header-action" type="button" aria-label="Thông báo" title="Thông báo">
 
-                <span aria-hidden="true">
-                    🔔
-                </span>
+                    <span aria-hidden="true">
+                        🔔
+                    </span>
 
-            </button>
+                </button>
 
 
-            <!-- USER -->
+                <!-- USER -->
 
-            <div class="header-user">
+                <div class="header-user">
 
-                <div
-                    class="user-avatar"
-                    aria-hidden="true">
+                    <div class="user-avatar" aria-hidden="true">
 
-                    AD
+                        AD
 
-                </div>
-
-
-                <div class="header-user-info">
-
-                    <div class="user-name">
-                        Nguyễn Văn A
                     </div>
 
-                    <div class="user-role">
-                        Administrator
+
+                    <div class="header-user-info">
+
+                        <div class="user-name">
+                            Nguyễn Văn A
+                        </div>
+
+                        <div class="user-role">
+                            Administrator
+                        </div>
+
                     </div>
 
                 </div>
 
             </div>
 
-        </div>
+        </header>
 
-    </header>
 
 
-    <!-- =====================================================
-         SIDEBAR
-         Visual structure: FE1
-         Role/Menu specification: FE3
-         ===================================================== -->
+        <!-- =====================================================
+     SIDEBAR
+     Visual: FE1
+     Authorization & Navigation: FE3
 
-    <aside class="sidebar">
+     data-permission:
+     Chuẩn bị metadata để Backend/JS integration
+     có thể quyết định menu nào được hiển thị.
 
-        <nav aria-label="Điều hướng chính">
+     LƯU Ý:
+     data-permission KHÔNG phải cơ chế bảo mật.
+     Backend vẫn phải kiểm tra quyền thực tế.
+     ===================================================== -->
 
-            <!-- =========================
-                 TỔNG QUAN
-                 ========================= -->
+        <aside class="sidebar">
 
-            <div class="sidebar-section">
+            <!-- CURRENT USER SCOPE -->
 
-                <div class="sidebar-title">
-                    Tổng quan
-                </div>
+            <div class="sidebar-user-scope">
 
-
-                <a
-class="nav-item active"
-                    href="index.html"
-                    aria-current="page">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ◫
-
-                    </span>
-
-                    <span>
-                        Dashboard
-                    </span>
-
-                </a>
-
-            </div>
-
-
-            <!-- =========================
-                 KINH DOANH
-                 ========================= -->
-
-            <div class="sidebar-section">
-
-                <div class="sidebar-title">
-                    Kinh doanh
-                </div>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ◎
-
-                    </span>
-
-                    <span>
-                        Khách hàng
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ◇
-
-                    </span>
-
-                    <span>
-                        Lead
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        △
-
-                    </span>
-
-                    <span>
-                        Cơ hội
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ○
-
-                    </span>
-
-                    <span>
-                        Hoạt động
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ▣
-
-                    </span>
-
-                    <span>
-                        Báo giá & Hợp đồng
-                    </span>
-
-                </a>
-
-            </div>
-
-
-            <!-- =========================
-                 PHÂN TÍCH
-                 ========================= -->
-
-            <div class="sidebar-section">
-
-                <div class="sidebar-title">
-                    Phân tích
-                </div>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-aria-hidden="true">
-
-                        ◈
-
-                    </span>
-
-                    <span>
-                        Chỉ tiêu & KPI
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ▤
-
-                    </span>
-
-                    <span>
-                        Báo cáo & Dashboard
-                    </span>
-
-                </a>
-
-            </div>
-
-
-            <!-- =========================
-                 HỆ THỐNG
-                 ========================= -->
-
-            <div class="sidebar-section">
-
-                <div class="sidebar-title">
-                    Hệ thống
-                </div>
-
-
-                <!--
-                    FE4 - ACCOUNT MANAGEMENT
-                    Link sẽ hoạt động sau khi FE4 merge.
-                -->
-
-                <a
-                    class="nav-item"
-                    href="pages/accounts/list.html">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        □
-
-                    </span>
-
-                    <span>
-                        Quản lý tài khoản
-                    </span>
-
-                </a>
-
-
-                <!--
-                    FE5/FE3 sẽ tích hợp nghiệp vụ
-                    Role & Permission sau.
-                -->
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ⚙
-
-                    </span>
-
-                    <span>
-                        Vai trò & phân quyền
-                    </span>
-
-                </a>
-
-
-                <a
-                    class="nav-item"
-                    href="#">
-
-                    <span
-                        class="nav-icon"
-                        aria-hidden="true">
-
-                        ≡
-
-                    </span>
-
-                    <span>
-                        Nhật ký hệ thống
-                    </span>
-
-                </a>
-
-            </div>
-
-        </nav>
-
-    </aside>
-
-
-    <!-- =====================================================
-         MAIN CONTENT
-         ===================================================== -->
-
-    <main class="main-content">
-
-        <div class="content-container">
-
-            <!-- =================================================
-                 BREADCRUMB
-                 ================================================= -->
-
-            <nav
-                class="breadcrumb"
-                aria-label="Breadcrumb">
-
-                <a href="index.html">
-                    Trang chủ
-                </a>
-
-                <span aria-hidden="true">
-/
+                <span class="sidebar-scope-label">
+                    Phạm vi dữ liệu
                 </span>
 
-                <span class="breadcrumb-current">
-                    Tổng quan
+                <span class="badge badge-info" data-user-scope="ALL">
+
+                    ALL
+
                 </span>
 
-            </nav>
+            </div>
 
 
-            <!-- =================================================
-                 PAGE HEADER
-                 ================================================= -->
+            <nav aria-label="Điều hướng chính">
 
-            <div class="page-header">
+                <!-- =============================================
+             TỔNG QUAN
+             ============================================= -->
 
-                <div>
+                <div class="sidebar-section">
 
-                    <h1 class="page-title">
+                    <div class="sidebar-title">
                         Tổng quan
-                    </h1>
+                    </div>
 
-                    <p class="page-description">
-                        Theo dõi nhanh tình hình hoạt động của hệ thống CRM.
-                    </p>
+                    <a class="nav-item active" href="index.html" data-permission="dashboard.view" aria-current="page">
 
-                </div>
+                        <span class="nav-icon" aria-hidden="true">
+                            ◫
+                        </span>
 
-
-                <div class="page-actions">
-
-                    <button
-                        class="btn btn-secondary"
-                        type="button">
-
-                        Xuất báo cáo
-
-                    </button>
-
-
-                    <a
-                        class="btn btn-primary"
-                        href="#">
-
-                        + Thêm khách hàng
+                        <span>
+                            Dashboard
+                        </span>
 
                     </a>
 
                 </div>
 
-            </div>
+
+                <!-- =============================================
+             KINH DOANH
+             ============================================= -->
+
+                <div class="sidebar-section" data-navigation-group="sales">
+
+                    <div class="sidebar-title">
+                        Kinh doanh
+                    </div>
 
 
-            <!-- =================================================
-                 OVERVIEW CARDS
+                    <!-- CUSTOMER -->
+
+                    <a class="nav-item" href="#" data-permission="customer.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ◎
+                        </span>
+
+                        <span>
+                            Khách hàng
+                        </span>
+
+                    </a>
+
+
+                    <!-- LEAD -->
+
+                    <a class="nav-item" href="#" data-permission="lead.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ◇
+                        </span>
+
+                        <span>
+                            Lead
+                        </span>
+
+                    </a>
+
+
+                    <!-- OPPORTUNITY -->
+
+                    <a class="nav-item" href="#" data-permission="opportunity.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            △
+                        </span>
+
+                        <span>
+                            Cơ hội
+                        </span>
+
+                    </a>
+
+
+                    <!-- ACTIVITY -->
+
+                    <a class="nav-item" href="#" data-permission="activity.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ○
+                        </span>
+
+                        <span>
+                            Hoạt động
+                        </span>
+
+                    </a>
+
+
+                    <!-- QUOTATION / CONTRACT -->
+
+                    <a class="nav-item" href="#" data-permission="contract.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ▣
+                        </span>
+
+                        <span>
+                            Báo giá & Hợp đồng
+                        </span>
+
+                    </a>
+
+                </div>
+
+
+                <!-- =============================================
+             PHÂN TÍCH
+             ============================================= -->
+
+                <div class="sidebar-section" data-navigation-group="analytics">
+
+                    <div class="sidebar-title">
+                        Phân tích
+                    </div>
+
+
+                    <a class="nav-item" href="#" data-permission="kpi.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ◈
+                        </span>
+
+                        <span>
+                            Chỉ tiêu & KPI
+                        </span>
+
+                    </a>
+
+
+                    <a class="nav-item" href="#" data-permission="report.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ▤
+                        </span>
+
+                        <span>
+                            Báo cáo & Dashboard
+                        </span>
+
+                    </a>
+
+                </div>
+
+
+                <!-- =============================================
+             QUẢN TRỊ HỆ THỐNG
+             ============================================= -->
+
+                <div class="sidebar-section" data-navigation-group="administration" data-permission="system.access">
+
+                    <div class="sidebar-title">
+                        Hệ thống
+                    </div>
+
+
+                    <!-- FE4 -->
+
+                    <a class="nav-item" href="pages/accounts/list.html" data-permission="account.view">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            □
+                        </span>
+
+                        <span>
+                            Quản lý tài khoản
+                        </span>
+
+                    </a>
+
+
+                    <!-- FE5 sẽ triển khai nghiệp vụ -->
+
+                    <a class="nav-item" href="#" data-permission="role.manage">
+
+                        <span class="nav-icon" aria-hidden="true">
+                            ⚙
+                        </span>
+
+                        <span>
+                            Vai trò & phân quyền
+                        </span>
+
+                    </a>
+
+
+                    <a class="nav-item" href="#" data-permission="audit.view">
+                        <span class="nav-icon" aria-hidden="true">
+                            ≡
+                        </span>
+
+                        <span>
+                            Nhật ký hệ thống
+                        </span>
+
+                    </a>
+
+                </div>
+
+            </nav>
+
+        </aside>
+
+
+        <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
+        <main class="main-content">
+
+            <div class="content-container">
+
+                <!-- =================================================
+                 BREADCRUMB
                  ================================================= -->
 
-            <section
-                class="dashboard-grid"
-                aria-label="Thống kê tổng quan">
+                <nav class="breadcrumb" aria-label="Breadcrumb">
 
+                    <a href="index.html">
+                        Trang chủ
+                    </a>
 
-                <!-- CUSTOMER -->
+                    <span aria-hidden="true">
+                        /
+                    </span>
 
-                <article class="card statistic-card">
+                    <span class="breadcrumb-current">
+                        Tổng quan
+                    </span>
 
-                    <div class="card-body">
+                </nav>
 
-                        <div class="statistic-header">
 
-                            <div>
-
-                                <div class="statistic-label">
-                                    Tổng khách hàng
-                                </div>
-
-                                <div class="statistic-value">
-                                    1.248
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="statistic-icon"
-                                aria-hidden="true">
-
-                                ◎
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="statistic-footer">
-
-                            <span class="badge badge-success">
-                                +12.5%
-                            </span>
-
-                            <span class="text-secondary">
-                                so với tháng trước
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- LEAD -->
-
-                <article class="card statistic-card">
-
-                    <div class="card-body">
-
-                        <div class="statistic-header">
-
-                            <div>
-
-                                <div class="statistic-label">
-Lead mới
-                                </div>
-
-                                <div class="statistic-value">
-                                    156
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="statistic-icon"
-                                aria-hidden="true">
-
-                                ◇
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="statistic-footer">
-
-                            <span class="badge badge-success">
-                                +8.2%
-                            </span>
-
-                            <span class="text-secondary">
-                                so với tháng trước
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- OPPORTUNITY -->
-
-                <article class="card statistic-card">
-
-                    <div class="card-body">
-
-                        <div class="statistic-header">
-
-                            <div>
-
-                                <div class="statistic-label">
-                                    Cơ hội đang mở
-                                </div>
-
-                                <div class="statistic-value">
-                                    86
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="statistic-icon"
-                                aria-hidden="true">
-
-                                △
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="statistic-footer">
-
-                            <span class="badge badge-info">
-                                Đang theo dõi
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- CONTRACT -->
-
-                <article class="card statistic-card">
-
-                    <div class="card-body">
-
-                        <div class="statistic-header">
-
-                            <div>
-
-                                <div class="statistic-label">
-                                    Hợp đồng
-                                </div>
-
-                                <div class="statistic-value">
-                                    42
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="statistic-icon"
-                                aria-hidden="true">
-
-                                ▣
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="statistic-footer">
-
-                            <span class="badge badge-warning">
-                                5 sắp hết hạn
-</span>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            </section>
-
-
-            <!-- =================================================
-                 MAIN DASHBOARD GRID
+                <!-- =================================================
+                 PAGE HEADER
                  ================================================= -->
 
-            <section class="dashboard-content-grid">
-
-
-                <!-- =========================
-                     RECENT CUSTOMERS
-                     ========================= -->
-
-                <article class="card">
-
-                    <div class="card-header">
-
-                        <div>
-
-                            <h2 class="card-title">
-                                Khách hàng gần đây
-                            </h2>
-
-                            <p class="card-description">
-                                Các khách hàng được cập nhật gần nhất.
-                            </p>
-
-                        </div>
-
-
-                        <a
-                            class="btn btn-secondary btn-sm"
-                            href="#">
-
-                            Xem tất cả
-
-                        </a>
-
-                    </div>
-
-
-                    <div class="card-body">
-
-                        <div class="table-container">
-
-                            <table class="table">
-
-                                <thead>
-
-                                <tr>
-
-                                    <th>
-                                        Khách hàng
-                                    </th>
-
-                                    <th>
-                                        Người phụ trách
-                                    </th>
-
-                                    <th>
-                                        Trạng thái
-                                    </th>
-
-                                </tr>
-
-                                </thead>
-
-
-                                <tbody>
-
-                                <tr>
-
-                                    <td>
-
-                                        <strong>
-                                            Công ty ABC
-                                        </strong>
-
-                                    </td>
-
-                                    <td>
-                                        Nguyễn Văn An
-                                    </td>
-
-                                    <td>
-
-                                        <span class="badge badge-success">
-                                            Đang hoạt động
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td>
-
-                                        <strong>
-                                            Công ty Minh Phát
-                                        </strong>
-
-                                    </td>
-<td>
-                                        Trần Thị Bình
-                                    </td>
-
-                                    <td>
-
-                                        <span class="badge badge-info">
-                                            Tiềm năng
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-
-                                <tr>
-
-                                    <td>
-
-                                        <strong>
-                                            Công ty Hoàng Gia
-                                        </strong>
-
-                                    </td>
-
-                                    <td>
-                                        Lê Văn Cường
-                                    </td>
-
-                                    <td>
-
-                                        <span class="badge badge-warning">
-                                            Cần chăm sóc
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-
-                <!-- =========================
-                     QUICK ACTION
-                     ========================= -->
-
-                <article class="card">
-
-                    <div class="card-header">
-
-                        <div>
-
-                            <h2 class="card-title">
-                                Thao tác nhanh
-                            </h2>
-
-                            <p class="card-description">
-                                Truy cập nhanh các nghiệp vụ thường dùng.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="card-body">
-
-                        <div class="quick-actions">
-
-                            <a
-                                class="quick-action-item"
-                                href="#">
-
-                                <span
-                                    class="quick-action-icon"
-                                    aria-hidden="true">
-
-                                    ◎
-
-                                </span>
-
-                                <span>
-
-                                    <strong>
-                                        Thêm khách hàng
-                                    </strong>
-
-                                    <small>
-                                        Tạo hồ sơ khách hàng mới
-                                    </small>
-
-                                </span>
-
-                            </a>
-
-
-                            <a
-                                class="quick-action-item"
-                                href="#">
-<span
-                                    class="quick-action-icon"
-                                    aria-hidden="true">
-
-                                    ◇
-
-                                </span>
-
-                                <span>
-
-                                    <strong>
-                                        Tạo Lead
-                                    </strong>
-
-                                    <small>
-                                        Ghi nhận khách hàng tiềm năng
-                                    </small>
-
-                                </span>
-
-                            </a>
-
-
-                            <a
-                                class="quick-action-item"
-                                href="#">
-
-                                <span
-                                    class="quick-action-icon"
-                                    aria-hidden="true">
-
-                                    △
-
-                                </span>
-
-                                <span>
-
-                                    <strong>
-                                        Tạo cơ hội
-                                    </strong>
-
-                                    <small>
-                                        Tạo cơ hội bán hàng mới
-                                    </small>
-
-                                </span>
-
-                            </a>
-
-
-                            <a
-                                class="quick-action-item"
-                                href="pages/accounts/list.html">
-
-                                <span
-                                    class="quick-action-icon"
-                                    aria-hidden="true">
-
-                                    □
-
-                                </span>
-
-                                <span>
-
-                                    <strong>
-                                        Quản lý tài khoản
-                                    </strong>
-
-                                    <small>
-                                        Quản lý người dùng hệ thống
-                                    </small>
-
-                                </span>
-
-                            </a>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            </section>
-
-
-            <!-- =================================================
-                 FOUNDATION COMPONENT PREVIEW
-                 ================================================= -->
-
-            <section class="card foundation-preview">
-
-                <div class="card-header">
+                <div class="page-header">
 
                     <div>
 
-                        <h2 class="card-title">
-                            FE1 Foundation
-                        </h2>
+                        <h1 class="page-title">
+                            Tổng quan
+                        </h1>
 
-                        <p class="card-description">
-                            Các component dùng chung đã được chuẩn hóa.
+                        <p class="page-description">
+                            Theo dõi nhanh tình hình hoạt động của hệ thống CRM.
                         </p>
 
                     </div>
-</div>
 
 
-                <div class="card-body">
+                    <div class="page-actions">
 
-                    <div class="foundation-components">
+                        <button class="btn btn-secondary" type="button" data-permission="report.export">
+                            Xuất báo cáo
+                        </button>
 
-                        <span class="badge badge-success">
-                            ✓ Button
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Input
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Form
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Table
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Badge
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Card
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Modal
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Header
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Sidebar
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Content
-                        </span>
-
-                        <span class="badge badge-success">
-                            ✓ Responsive
-                        </span>
+                        <a class="btn btn-primary" href="#" data-permission="customer.create">
+                            + Thêm khách hàng
+                        </a>
 
                     </div>
 
                 </div>
 
-            </section>
 
-        </div>
+                <!-- =================================================
+                 OVERVIEW CARDS
+                 ================================================= -->
 
-    </main>
+                <section class="dashboard-grid" aria-label="Thống kê tổng quan">
 
-</div>
+
+                    <!-- CUSTOMER -->
+
+                    <article class="card statistic-card">
+
+                        <div class="card-body">
+
+                            <div class="statistic-header">
+
+                                <div>
+
+                                    <div class="statistic-label">
+                                        Tổng khách hàng
+                                    </div>
+
+                                    <div class="statistic-value">
+                                        1.248
+                                    </div>
+
+                                </div>
+
+
+                                <div class="statistic-icon" aria-hidden="true">
+
+                                    ◎
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="statistic-footer">
+
+                                <span class="badge badge-success">
+                                    +12.5%
+                                </span>
+
+                                <span class="text-secondary">
+                                    so với tháng trước
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- LEAD -->
+
+                    <article class="card statistic-card">
+
+                        <div class="card-body">
+
+                            <div class="statistic-header">
+
+                                <div>
+
+                                    <div class="statistic-label">
+                                        Lead mới
+                                    </div>
+
+                                    <div class="statistic-value">
+                                        156
+                                    </div>
+
+                                </div>
+
+
+                                <div class="statistic-icon" aria-hidden="true">
+
+                                    ◇
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="statistic-footer">
+
+                                <span class="badge badge-success">
+                                    +8.2%
+                                </span>
+
+                                <span class="text-secondary">
+                                    so với tháng trước
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- OPPORTUNITY -->
+
+                    <article class="card statistic-card">
+
+                        <div class="card-body">
+
+                            <div class="statistic-header">
+
+                                <div>
+
+                                    <div class="statistic-label">
+                                        Cơ hội đang mở
+                                    </div>
+
+                                    <div class="statistic-value">
+                                        86
+                                    </div>
+
+                                </div>
+
+
+                                <div class="statistic-icon" aria-hidden="true">
+
+                                    △
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="statistic-footer">
+
+                                <span class="badge badge-info">
+                                    Đang theo dõi
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- CONTRACT -->
+
+                    <article class="card statistic-card">
+
+                        <div class="card-body">
+
+                            <div class="statistic-header">
+
+                                <div>
+
+                                    <div class="statistic-label">
+                                        Hợp đồng
+                                    </div>
+
+                                    <div class="statistic-value">
+                                        42
+                                    </div>
+
+                                </div>
+
+
+                                <div class="statistic-icon" aria-hidden="true">
+
+                                    ▣
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="statistic-footer">
+
+                                <span class="badge badge-warning">
+                                    5 sắp hết hạn
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </section>
+
+
+                <!-- =================================================
+                 MAIN DASHBOARD GRID
+                 ================================================= -->
+
+                <section class="dashboard-content-grid">
+
+
+                    <!-- =========================
+                     RECENT CUSTOMERS
+                     ========================= -->
+
+                    <article class="card">
+
+                        <div class="card-header">
+
+                            <div>
+
+                                <h2 class="card-title">
+                                    Khách hàng gần đây
+                                </h2>
+
+                                <p class="card-description">
+                                    Các khách hàng được cập nhật gần nhất.
+                                </p>
+
+                            </div>
+
+
+                            <a class="btn btn-secondary btn-sm" href="#" data-permission="customer.view">
+                                Xem tất cả
+                            </a>
+                        </div>
+
+
+                        <div class="card-body">
+
+                            <div class="table-container">
+
+                                <table class="table">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Khách hàng
+                                            </th>
+
+                                            <th>
+                                                Người phụ trách
+                                            </th>
+
+                                            <th>
+                                                Trạng thái
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody>
+
+                                        <tr>
+
+                                            <td>
+
+                                                <strong>
+                                                    Công ty ABC
+                                                </strong>
+
+                                            </td>
+
+                                            <td>
+                                                Nguyễn Văn An
+                                            </td>
+
+                                            <td>
+
+                                                <span class="badge badge-success">
+                                                    Đang hoạt động
+                                                </span>
+
+                                            </td>
+
+                                        </tr>
+
+
+                                        <tr>
+
+                                            <td>
+
+                                                <strong>
+                                                    Công ty Minh Phát
+                                                </strong>
+
+                                            </td>
+                                            <td>
+                                                Trần Thị Bình
+                                            </td>
+
+                                            <td>
+
+                                                <span class="badge badge-info">
+                                                    Tiềm năng
+                                                </span>
+
+                                            </td>
+
+                                        </tr>
+
+
+                                        <tr>
+
+                                            <td>
+
+                                                <strong>
+                                                    Công ty Hoàng Gia
+                                                </strong>
+
+                                            </td>
+
+                                            <td>
+                                                Lê Văn Cường
+                                            </td>
+
+                                            <td>
+
+                                                <span class="badge badge-warning">
+                                                    Cần chăm sóc
+                                                </span>
+
+                                            </td>
+
+                                        </tr>
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <!-- =========================
+                     QUICK ACTION
+                     ========================= -->
+
+                    <article class="card">
+
+                        <div class="card-header">
+
+                            <div>
+
+                                <h2 class="card-title">
+                                    Thao tác nhanh
+                                </h2>
+
+                                <p class="card-description">
+                                    Truy cập nhanh các nghiệp vụ thường dùng.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="card-body">
+
+                            <div class="quick-actions">
+
+                                <a class="quick-action-item" href="#" data-permission="customer.create">
+
+                                    <span class="quick-action-icon" aria-hidden="true">
+                                        ◎
+                                    </span>
+
+                                    <span>
+                                        <strong>Thêm khách hàng</strong>
+                                        <small>Tạo hồ sơ khách hàng mới</small>
+                                    </span>
+
+                                </a>
+
+
+                                <a class="quick-action-item" href="#" data-permission="lead.create">
+
+                                    <span class="quick-action-icon" aria-hidden="true">
+                                        ◇
+                                    </span>
+
+                                    <span>
+                                        <strong>Tạo Lead</strong>
+                                        <small>Ghi nhận khách hàng tiềm năng</small>
+                                    </span>
+
+                                </a>
+
+
+                                <a class="quick-action-item" href="#" data-permission="opportunity.create">
+
+                                    <span class="quick-action-icon" aria-hidden="true">
+                                        △
+                                    </span>
+
+                                    <span>
+                                        <strong>Tạo cơ hội</strong>
+                                        <small>Tạo cơ hội bán hàng mới</small>
+                                    </span>
+
+                                </a>
+
+
+                                <a class="quick-action-item" href="pages/accounts/list.html"
+                                    data-permission="account.view">
+
+                                    <span class="quick-action-icon" aria-hidden="true">
+
+                                        □
+
+                                    </span>
+
+                                    <span>
+
+                                        <strong>
+                                            Quản lý tài khoản
+                                        </strong>
+
+                                        <small>
+                                            Quản lý người dùng hệ thống
+                                        </small>
+
+                                    </span>
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </section>
+
+
+                <!-- =================================================
+                 FOUNDATION COMPONENT PREVIEW
+                 ================================================= -->
+
+                <section class="card foundation-preview">
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <h2 class="card-title">
+                                FE1 Foundation
+                            </h2>
+
+                            <p class="card-description">
+                                Các component dùng chung đã được chuẩn hóa.
+                            </p>
+
+                        </div>
+                    </div>
+
+
+                    <div class="card-body">
+
+                        <div class="foundation-components">
+
+                            <span class="badge badge-success">
+                                ✓ Button
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Input
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Form
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Table
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Badge
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Card
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Modal
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Header
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Sidebar
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Content
+                            </span>
+
+                            <span class="badge badge-success">
+                                ✓ Responsive
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+    </div>
 
 </body>
 
