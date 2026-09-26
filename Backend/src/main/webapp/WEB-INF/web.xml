@@ -4,7 +4,7 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
 
-    <display-name>CRM Backend BE3 Module</display-name>
+    <display-name>CRM Backend System</display-name>
 
     <!-- 
       ===================================================================
@@ -25,7 +25,6 @@
       ===================================================================
       CẤU HÌNH SERVLET FILTER CHO MODULE BE3 (AuthorizationFilter)
       ===================================================================
-      Lưu ý: AuthorizationFilter phải chạy sau AuthenticationFilter của SM/BE.
     -->
     <filter>
         <filter-name>AuthorizationFilter</filter-name>
@@ -40,6 +39,22 @@
         <url-pattern>/quotes/*</url-pattern>
     </filter-mapping>
 
+<<<<<<< HEAD
+    <!--
+      ===================================================================
+      CẤU HÌNH TRANG LỖI HTTP 403 VÀ 404 (S1-07)
+      ===================================================================
+    -->
+    <error-page>
+        <error-code>403</error-code>
+        <location>/error/403</location>
+    </error-page>
+
+    <error-page>
+        <error-code>404</error-code>
+        <location>/error/404</location>
+    </error-page>
+=======
     <!-- 
       ===================================================================
       THỜI GIAN HẾT HẠN PHIÊN ĐĂNG NHẬP (S1-02: 15 PHÚT)
@@ -48,5 +63,6 @@
     <session-config>
         <session-timeout>15</session-timeout>
     </session-config>
+>>>>>>> 7fce5e7ab1eaee1129210db9c6741f90e73167f9
 
 </web-app>
