@@ -60,6 +60,11 @@
 
 @media (max-width: 768px) {
 
+    /* Hide breadcrumb on mobile */
+    .breadcrumb, .header-divider {
+        display: none !important;
+    }
+
     /* =========================
        SIDEBAR
        ========================= */

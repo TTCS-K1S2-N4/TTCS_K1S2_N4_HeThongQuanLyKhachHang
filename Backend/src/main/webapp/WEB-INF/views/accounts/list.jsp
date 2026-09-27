@@ -45,6 +45,12 @@
                 <span class="brand-mark">CRM</span>
                 <span>CRM System</span>
             </a>
+                <div class="header-divider"></div>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="${pageContext.request.contextPath}/">Trang chủ</a>
+                <span>/</span>
+                <span class="breadcrumb-current">Quản lý tài khoản</span>
+            </nav>
         </div>
 
         <div class="header-right">
@@ -71,7 +77,6 @@
     <aside class="sidebar">
         <nav aria-label="Điều hướng chính">
             <div class="sidebar-section">
-                <div class="sidebar-title">Tổng quan</div>
                 <a class="nav-item" href="${pageContext.request.contextPath}/">
                     <span class="nav-icon" aria-hidden="true">◫</span>
                     <span>Dashboard</span>
@@ -79,7 +84,6 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">Kinh doanh</div>
                 <a class="nav-item" href="#">
                     <span class="nav-icon" aria-hidden="true">◎</span>
                     <span>Khách hàng</span>
@@ -103,7 +107,6 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">Phân tích</div>
                 <a class="nav-item" href="#">
                     <span class="nav-icon" aria-hidden="true">◈</span>
                     <span>Chỉ tiêu & KPI</span>
@@ -115,7 +118,6 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">Hệ thống</div>
                 <a class="nav-item active" href="${pageContext.request.contextPath}/accounts/list" aria-current="page">
                     <span class="nav-icon" aria-hidden="true">□</span>
                     <span>Quản lý tài khoản</span>
@@ -137,11 +139,6 @@
         <div class="content-container">
 
             <!-- BREADCRUMB -->
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <a href="${pageContext.request.contextPath}/">Trang chủ</a>
-                <span>/</span>
-                <span class="breadcrumb-current">Quản lý tài khoản</span>
-            </nav>
 
             <!-- PAGE HEADER -->
             <div class="page-header">

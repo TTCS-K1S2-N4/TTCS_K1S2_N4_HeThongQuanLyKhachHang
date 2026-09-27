@@ -1,4 +1,3 @@
-Frontend/assets/css/common.css
 /* =========================================================
    CRM SYSTEM - SHARED COMPONENTS
    Owner: FE1
@@ -217,6 +216,9 @@ textarea.form-control {
    ========================================================= */
 
 .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
 
     background: var(--color-surface);
@@ -661,6 +663,10 @@ textarea.form-control {
     gap: var(--space-6);
 
     margin-bottom: var(--space-6);
+}
+
+.dashboard-content-grid .table {
+    min-width: 100%;
 }
 
 
