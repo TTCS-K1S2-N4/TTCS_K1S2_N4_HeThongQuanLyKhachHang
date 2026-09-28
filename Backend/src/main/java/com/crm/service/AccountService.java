@@ -140,10 +140,11 @@ public class AccountService {
         return accountDAO.countOwnedRecords(accountId);
     }
 
-        public boolean lockAndTransferData(int accountId, Integer receiverId, int adminId) {
+    public boolean lockAndTransferData(int accountId, Integer receiverId, int adminId, String reason) {
         if (receiverId == null || receiverId <= 0) {
             return false;
         }
+        if (reason == null || reason.trim().isEmpty()) return false;
         if (accountId == adminId || accountId == receiverId) {
             return false; // Cannot lock self, cannot transfer to self
         }
@@ -154,7 +155,10 @@ public class AccountService {
             return false;
         }
 
-        return accountDAO.lockAccountAndTransfer(accountId, receiverId, adminId);
+        Account target = accountDAO.getAccountById(accountId);
+        if (target == null || !"ACTIVE".equals(target.getStatus())) return false;
+
+        return accountDAO.lockAccountAndTransfer(accountId, receiverId, adminId, reason.trim());
     }
 }
 

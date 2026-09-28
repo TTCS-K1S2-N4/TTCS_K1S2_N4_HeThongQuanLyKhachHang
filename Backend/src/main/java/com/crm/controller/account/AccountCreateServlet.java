@@ -37,16 +37,28 @@ public class AccountCreateServlet extends HttpServlet {
         String[] roleIdsParam = req.getParameterValues("roleIds");
         String teamIdStr = req.getParameter("teamId");
 
+        if (!com.crm.util.ValidationUtil.isValidEmail(email)
+                || !com.crm.util.ValidationUtil.isNotEmpty(fullName)
+                || !com.crm.util.ValidationUtil.isValidPhone(phone)) {
+            req.setAttribute("error", "Email, họ tên hoặc số điện thoại không hợp lệ.");
+            forwardWithData(req, resp);
+            return;
+        }
+
         List<Integer> roleIds = new ArrayList<>();
-        if (roleIdsParam != null) {
-            for (String rid : roleIdsParam) {
-                if (rid != null && !rid.trim().isEmpty()) {
-                    roleIds.add(Integer.parseInt(rid.trim()));
+        Integer teamId;
+        try {
+            if (roleIdsParam != null) {
+                for (String rid : roleIdsParam) {
+                    if (rid != null && !rid.trim().isEmpty()) roleIds.add(Integer.parseInt(rid.trim()));
                 }
             }
+            teamId = (teamIdStr != null && !teamIdStr.isEmpty()) ? Integer.parseInt(teamIdStr) : null;
+        } catch (NumberFormatException e) {
+            req.setAttribute("error", "Vai trò hoặc nhóm không hợp lệ.");
+            forwardWithData(req, resp);
+            return;
         }
-        
-        Integer teamId = (teamIdStr != null && !teamIdStr.isEmpty()) ? Integer.parseInt(teamIdStr) : null;
         
         if (roleIds.isEmpty()) {
             req.setAttribute("error", "Người dùng phải có ít nhất một vai trò.");
@@ -58,10 +70,20 @@ public class AccountCreateServlet extends HttpServlet {
             boolean isTeamLead = false;
             for (Integer rId : roleIds) {
                 Role r = roleDAO.findById(rId);
+                if (r == null) {
+                    req.setAttribute("error", "Vai trò được chọn không tồn tại.");
+                    forwardWithData(req, resp);
+                    return;
+                }
                 if (r != null && "TEAM_LEAD".equals(r.getCode())) {
                     isTeamLead = true;
                     break;
                 }
+            }
+            if (teamId != null && teamDAO.findById(teamId) == null) {
+                req.setAttribute("error", "Nhóm được chọn không tồn tại.");
+                forwardWithData(req, resp);
+                return;
             }
             if (isTeamLead && teamId == null) {
                 req.setAttribute("error", "Trưởng nhóm kinh doanh phải được gán vào một nhóm.");
@@ -69,7 +91,7 @@ public class AccountCreateServlet extends HttpServlet {
                 return;
             }
         } catch (java.sql.SQLException e) {
-            e.printStackTrace();
+            throw new ServletException("Không thể kiểm tra vai trò/nhóm.", e);
         }
 
         AccountCreateRequest createReq = new AccountCreateRequest(email, null, fullName, phone, roleIds, teamId);

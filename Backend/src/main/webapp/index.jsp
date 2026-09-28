@@ -68,66 +68,8 @@
         </div>
     </header>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <nav aria-label="Điều hướng chính">
-            <div class="sidebar-section">
-                <a class="nav-item active" href="${pageContext.request.contextPath}/" aria-current="page">
-                    <span class="nav-icon" aria-hidden="true">◫</span>
-                    <span>Dashboard</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◎</span>
-                    <span>Khách hàng</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◇</span>
-                    <span>Lead</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">△</span>
-                    <span>Cơ hội</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">○</span>
-                    <span>Hoạt động</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">▣</span>
-                    <span>Báo giá & Hợp đồng</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◈</span>
-                    <span>Chỉ tiêu & KPI</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">▤</span>
-                    <span>Báo cáo & Dashboard</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item" href="${pageContext.request.contextPath}/accounts/list">
-                    <span class="nav-icon" aria-hidden="true">□</span>
-                    <span>Quản lý tài khoản</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">⚙</span>
-                    <span>Vai trò & phân quyền</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">≡</span>
-                    <span>Nhật ký hệ thống</span>
-                </a>
-            </div>
-        </nav>
-    </aside>
+    <!-- SIDEBAR THEO QUYỀN -->
+    <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp" />
 
     <!-- MAIN CONTENT -->
     <main class="main-content">

@@ -134,8 +134,8 @@
                                 <td><%= account.getCreatedAt() != null ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(account.getCreatedAt()) : "" %></td>
                                 <td>
                                     <div class="table-actions">
-                                        <a href="${pageContext.request.contextPath}/accounts/detail?id=<%= account.getAccountId() %>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
-                                        <a href="${pageContext.request.contextPath}/accounts/edit?id=<%= account.getAccountId() %>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                        <a href="${pageContext.request.contextPath}/accounts/detail?accountId=<%= account.getAccountId() %>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                                        <a href="${pageContext.request.contextPath}/accounts/edit?accountId=<%= account.getAccountId() %>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
                                     </div>
                                 </td>
                             </tr>

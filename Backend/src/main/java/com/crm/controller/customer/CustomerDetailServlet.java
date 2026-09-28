@@ -28,16 +28,14 @@ public class CustomerDetailServlet extends HttpServlet {
             int id = Integer.parseInt(idStr);
             Customer obj = dao.findById(id);
             if (obj == null) {
-                // Handle not found securely
-                req.setAttribute("errorMessage", "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân truy cÃ¡ÂºÂ­p dÃ¡Â»Â¯ liÃ¡Â»â€¡u nÃƒÂ y hoÃ¡ÂºÂ·c dÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i.");
-                req.getRequestDispatcher("/WEB-INF/views/customers/detail.jsp").forward(req, resp);
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
             // Enforce Data Scope here using PermissionService
             PermissionService permissionService = new PermissionService();
             Integer userId = (Integer) req.getSession().getAttribute("userId");
-            java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getSession().getAttribute("roleIds"));
+            java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
             Integer roleId = (Integer) req.getSession().getAttribute("roleId");
 
             if (userId == null || roleId == null) {
@@ -46,18 +44,19 @@ public class CustomerDetailServlet extends HttpServlet {
             }
             
             try {
-                permissionService.validateDataAccessForRoles(userId, roleIds != null ? roleIds : java.util.Collections.singletonList(roleId), "ACCOUNT", obj.getOwnerId());
+                permissionService.validateDataAccessForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "ACCOUNT", obj.getOwnerId());
             } catch (AuthorizationException e) {
                 req.setAttribute("errorMessage", "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân truy cÃ¡ÂºÂ­p dÃ¡Â»Â¯ liÃ¡Â»â€¡u nÃƒÂ y.");
-                req.getRequestDispatcher("/WEB-INF/views/customer/detail.jsp").forward(req, resp);
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
 
             req.setAttribute("customer", obj);
             req.getRequestDispatcher("/WEB-INF/views/customers/detail.jsp").forward(req, resp);
+        } catch (NumberFormatException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         } catch (Exception e) {
-            req.setAttribute("errorMessage", "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân truy cÃ¡ÂºÂ­p dÃ¡Â»Â¯ liÃ¡Â»â€¡u nÃƒÂ y.");
-            req.getRequestDispatcher("/WEB-INF/views/customers/detail.jsp").forward(req, resp);
+            throw new ServletException("Không thể tải chi tiết khách hàng.", e);
         }
     }
 }

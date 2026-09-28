@@ -125,9 +125,9 @@ class PermissionServiceTest {
         assertEquals(3, teamAccessibleIds.size());
         assertTrue(teamAccessibleIds.containsAll(Arrays.asList(USER_A_ID, USER_B_ID, TEAM_LEAD_ID)));
 
-        // Scope ALL -> Trả về danh sách trống biểu thị không cần thêm điều kiện lọc owner_id
+        // Scope ALL -> null biểu thị không cần thêm điều kiện lọc owner_id
         List<Integer> allAccessibleIds = permissionService.getAccessibleAccountIds(1, ROLE_DIRECTOR, MODULE_ACCOUNT);
-        assertTrue(allAccessibleIds.isEmpty());
+        assertNull(allAccessibleIds);
     }
 
     @Test

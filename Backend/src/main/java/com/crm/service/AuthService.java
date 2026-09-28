@@ -8,7 +8,6 @@ import com.crm.security.PasswordUtil;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Service xu ly nghiep vu Xac thuc va Quen mat khau (Password Reset Token).

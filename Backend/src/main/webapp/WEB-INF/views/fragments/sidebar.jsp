@@ -4,14 +4,21 @@
 <%@ page import="java.util.List" %>
 <%
     PermissionService permissionService = new PermissionService();
-    java.util.List<Integer> sessionRoleIds = new com.crm.dao.AccountDAO().getAccountById((Integer) session.getAttribute("userId")).getRoleIds();
+    java.util.List<Integer> sessionRoleIds = com.crm.util.ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds"));
     Integer sessionRoleId = (Integer) session.getAttribute("roleId");
-    List<MenuItem> menuItems = permissionService.getMenuByRoles(sessionRoleIds != null ? sessionRoleIds : java.util.Collections.singletonList(sessionRoleId != null ? sessionRoleId : 0));
+    java.util.List<Integer> effectiveRoleIds = sessionRoleIds != null && !sessionRoleIds.isEmpty()
+            ? sessionRoleIds
+            : java.util.Collections.singletonList(sessionRoleId != null ? sessionRoleId : 0);
+    List<MenuItem> menuItems = permissionService.getMenuByRoles(effectiveRoleIds);
     String currentUri = request.getRequestURI();
 %>
 <aside class="sidebar" id="app-sidebar">
-    <nav aria-label="Äiá»u hÆ°á»›ng chÃ­nh">
+    <nav aria-label="Điều hướng chính">
         <div class="sidebar-section">
+            <a class="nav-item" href="${pageContext.request.contextPath}/">
+                <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
+                <span>Dashboard</span>
+            </a>
             <% for (MenuItem item : menuItems) { 
                 boolean isActive = currentUri.startsWith(request.getContextPath() + item.getUrl());
             %>
@@ -23,8 +30,7 @@
             
             <%-- Static fallback for Account management if it has no menu item in DB --%>
             <% 
-               boolean isAccountManager = permissionService.hasPermissionForRoles(sessionRoleIds != null ? sessionRoleIds : java.util.Collections.singletonList(sessionRoleId != null ? sessionRoleId : 0), "USER_VIEW") || 
-                                          permissionService.hasPermissionForRoles(sessionRoleIds != null ? sessionRoleIds : java.util.Collections.singletonList(sessionRoleId != null ? sessionRoleId : 0), "ACCOUNT_VIEW");
+               boolean isAccountManager = permissionService.hasPermissionForRoles(effectiveRoleIds, "USER_VIEW");
                if (isAccountManager && menuItems.stream().noneMatch(m -> m.getUrl().contains("/accounts"))) { 
                    boolean isAccActive = currentUri.startsWith(request.getContextPath() + "/accounts");
             %>

@@ -10,9 +10,13 @@ public class Quote {
 
     public int getQuoteid() { return quoteId; }
     public void setQuoteid(int quoteId) { this.quoteId = quoteId; }
+    public int getQuoteId() { return quoteId; }
+    public void setQuoteId(int quoteId) { this.quoteId = quoteId; }
 
     public String getQuotenumber() { return quoteNumber; }
     public void setQuotenumber(String quoteNumber) { this.quoteNumber = quoteNumber; }
+    public String getQuoteNumber() { return quoteNumber; }
+    public void setQuoteNumber(String quoteNumber) { this.quoteNumber = quoteNumber; }
 
     public int getOwnerId() { return ownerId; }
     public void setOwnerId(int ownerId) { this.ownerId = ownerId; }

@@ -24,9 +24,10 @@ public class AccountListServlet extends HttpServlet {
         String status = req.getParameter("status");
         String pageStr = req.getParameter("page");
 
-        Integer teamId = (teamIdStr != null && !teamIdStr.isEmpty()) ? Integer.parseInt(teamIdStr) : null;
-        Integer roleId = (roleIdStr != null && !roleIdStr.isEmpty()) ? Integer.parseInt(roleIdStr) : null;
-        int page = (pageStr != null && !pageStr.isEmpty()) ? Integer.parseInt(pageStr) : 1;
+        Integer teamId = parseOptionalInt(teamIdStr);
+        Integer roleId = parseOptionalInt(roleIdStr);
+        Integer requestedPage = parseOptionalInt(pageStr);
+        int page = requestedPage != null && requestedPage > 0 ? requestedPage : 1;
 
         List<Account> list = accountService.getAccountList(keyword, teamId, roleId, status, page);
         int totalAccounts = accountService.countTotalAccounts(keyword, teamId, roleId, status);
@@ -45,5 +46,10 @@ public class AccountListServlet extends HttpServlet {
         }
 
         req.getRequestDispatcher("/WEB-INF/views/accounts/list.jsp").forward(req, resp);
+    }
+
+    private Integer parseOptionalInt(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try { return Integer.valueOf(value.trim()); } catch (NumberFormatException e) { return null; }
     }
 }

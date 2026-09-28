@@ -45,7 +45,7 @@ public class PasswordUtil {
         } catch (Throwable ignored) {
         }
         String fallbackHash = fallbackSha256(plainPassword);
-        return fallbackHash.equals(hashedPassword) || plainPassword.equals(hashedPassword);
+        return fallbackHash.equals(hashedPassword);
     }
 
     /**
