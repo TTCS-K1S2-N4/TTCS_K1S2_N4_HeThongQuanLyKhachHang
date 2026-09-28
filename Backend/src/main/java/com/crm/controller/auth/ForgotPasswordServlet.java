@@ -84,17 +84,35 @@ public class ForgotPasswordServlet extends HttpServlet {
             // Bước 1: Gửi yêu cầu lấy token đặt lại mật khẩu theo email
             try {
                 String generatedToken = authService.generateResetToken(email);
-                String resetUrl = request.getContextPath() + "/auth/forgot-password?token=" + generatedToken;
+                if (generatedToken != null) {
+                    String scheme = request.getScheme();
+                    String serverName = request.getServerName();
+                    int serverPort = request.getServerPort();
+                    String contextPath = request.getContextPath();
+                    String resetUrl = scheme + "://" + serverName;
+                    if (("http".equals(scheme) && serverPort != 80) || ("https".equals(scheme) && serverPort != 443)) {
+                        resetUrl += ":" + serverPort;
+                    }
+                    resetUrl += contextPath + "/auth/forgot-password?token=" + generatedToken;
 
-                request.setAttribute("successMessage", "Yêu cầu khôi phục mật khẩu đã được gửi thành công!");
-                request.setAttribute("resetToken", generatedToken);
-                request.setAttribute("resetUrl", resetUrl);
+                    try {
+                        authService.sendResetEmail(email, resetUrl);
+                    } catch (Exception e) {
+                        System.err.println("Failed to send reset email to " + email + ": " + e.getMessage());
+                    }
+                }
+
+                request.setAttribute("successMessage", "Nếu email tồn tại trong hệ thống, liên kết đặt lại mật khẩu đã được gửi.");
                 request.setAttribute("email", email);
                 request.setAttribute("isResetStep", false);
 
                 request.getRequestDispatcher("/WEB-INF/views/auth/forgot-password.jsp").forward(request, response);
             } catch (AuthenticationException e) {
-                request.setAttribute("errorMessage", e.getMessage());
+                if (e.getMessage().contains("Vui lòng")) {
+                    request.setAttribute("errorMessage", e.getMessage());
+                } else {
+                    request.setAttribute("successMessage", "Nếu email tồn tại trong hệ thống, liên kết đặt lại mật khẩu đã được gửi.");
+                }
                 request.setAttribute("email", email);
                 request.setAttribute("isResetStep", false);
                 request.getRequestDispatcher("/WEB-INF/views/auth/forgot-password.jsp").forward(request, response);

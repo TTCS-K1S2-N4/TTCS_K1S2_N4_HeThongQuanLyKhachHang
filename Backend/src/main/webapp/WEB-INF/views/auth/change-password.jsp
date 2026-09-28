@@ -1,5 +1,4 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -18,17 +17,17 @@
                 <p class="auth-description">Vui lòng nhập mật khẩu hiện tại và mật khẩu mới của bạn.</p>
             </div>
 
-            <c:if test="${not empty errorMessage}">
+            <% if (request.getAttribute("errorMessage") != null) { %>
                 <div class="auth-message auth-message-error" role="alert">
-                    ${errorMessage}
+                    <%= request.getAttribute("errorMessage") %>
                 </div>
-            </c:if>
+            <% } %>
 
-            <c:if test="${not empty successMessage}">
+            <% if (request.getAttribute("successMessage") != null) { %>
                 <div class="auth-message auth-message-success" role="status">
-                    ${successMessage}
+                    <%= request.getAttribute("successMessage") %>
                 </div>
-            </c:if>
+            <% } %>
 
             <form action="${pageContext.request.contextPath}/auth/change-password" method="post">
                 <div class="form-group" style="margin-bottom: 1rem;">
@@ -49,7 +48,7 @@
                     <input id="confirmPassword" name="confirmPassword" class="form-control" type="password" required autocomplete="new-password">
                 </div>
 
-                <button class="btn btn-primary" type="submit" style="width: 100%;">
+                <button class="btn btn-primary btn-block" type="submit">
                     Lưu mật khẩu mới
                 </button>
             </form>

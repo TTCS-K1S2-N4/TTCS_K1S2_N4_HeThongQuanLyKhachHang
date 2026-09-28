@@ -57,14 +57,16 @@ public class AuthenticationFilter implements Filter {
                 out.print("{\"status\": 401, \"message\": \"Phiên đăng nhập đã hết hạn hoặc chưa đăng nhập.\"}");
                 out.flush();
             } else {
-                httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login");
+                httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login?expired=true");
             }
         }
     }
 
     private boolean isPublicUri(String path, String requestUri) {
         if (path.equals("/auth/login") || path.equals("/login") ||
-            path.equals("/auth/logout") || path.equals("/logout")) {
+            path.equals("/auth/logout") || path.equals("/logout") ||
+            path.equals("/auth/forgot-password") || path.equals("/forgot-password") ||
+            path.equals("/auth/activate") || path.equals("/activate")) {
             return true;
         }
 

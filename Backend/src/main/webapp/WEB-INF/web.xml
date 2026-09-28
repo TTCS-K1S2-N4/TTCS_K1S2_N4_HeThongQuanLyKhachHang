@@ -37,6 +37,7 @@
 
     <filter-mapping>
         <filter-name>AuthorizationFilter</filter-name>
+        <url-pattern>/customers/*</url-pattern>
         <url-pattern>/accounts/*</url-pattern>
         <url-pattern>/deals/*</url-pattern>
         <url-pattern>/activities/*</url-pattern>
@@ -49,7 +50,7 @@
       ===================================================================
     -->
     <session-config>
-        <session-timeout>15</session-timeout>
+        <session-timeout>5</session-timeout>
     </session-config>
 
     <!--

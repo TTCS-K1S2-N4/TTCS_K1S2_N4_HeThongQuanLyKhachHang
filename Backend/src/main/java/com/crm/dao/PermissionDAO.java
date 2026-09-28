@@ -102,8 +102,8 @@ public class PermissionDAO {
      */
     public List<Integer> findTeamMemberUserIdsByUserId(int userId) {
         List<Integer> memberIds = new ArrayList<>();
-        String sql = "SELECT account_id FROM accounts " +
-                     "WHERE team_id = (SELECT team_id FROM accounts WHERE account_id = ? AND team_id IS NOT NULL)";
+        String sql = "SELECT user_id AS account_id FROM users " +
+                     "WHERE team_id = (SELECT team_id FROM users WHERE user_id = ? AND team_id IS NOT NULL)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -131,7 +131,7 @@ public class PermissionDAO {
      * @return Team ID hoặc null nếu không thuộc nhóm nào
      */
     public Integer findTeamIdByUserId(int userId) {
-        String sql = "SELECT team_id FROM accounts WHERE account_id = ?";
+        String sql = "SELECT team_id FROM users WHERE user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -208,6 +208,119 @@ public class PermissionDAO {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi kiểm tra permissionCode = " + permissionCode + " cho roleId = " + roleId, e);
+        }
+        return false;
+    }
+    
+    public DataScope findDataScopeByRolesAndModule(java.util.List<Integer> roleIds, String module) {
+        if (roleIds == null || roleIds.isEmpty()) return DataScope.MY;
+        
+        StringBuilder sql = new StringBuilder(
+            "SELECT rp.data_scope " +
+            "FROM role_permissions rp " +
+            "JOIN permissions p ON rp.permission_id = p.permission_id " +
+            "WHERE UPPER(p.module) = UPPER(?) AND rp.role_id IN ("
+        );
+        for (int i = 0; i < roleIds.size(); i++) {
+            sql.append("?");
+            if (i < roleIds.size() - 1) sql.append(",");
+        }
+        sql.append(") ORDER BY CASE rp.data_scope " +
+                   "  WHEN 'ALL' THEN 1 " +
+                   "  WHEN 'TEAM' THEN 2 " +
+                   "  WHEN 'MY' THEN 3 " +
+                   "  ELSE 4 END LIMIT 1");
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            ps.setString(1, module);
+            int idx = 2;
+            for (Integer roleId : roleIds) {
+                ps.setInt(idx++, roleId);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return DataScope.fromString(rs.getString("data_scope"));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi khi truy vấn DataScope cho roleIds và module = " + module, e);
+        }
+        return DataScope.MY;
+    }
+
+    public List<MenuItem> findMenuItemsByRoleIds(List<Integer> roleIds) {
+        List<MenuItem> menuItems = new ArrayList<>();
+        if (roleIds == null || roleIds.isEmpty()) return menuItems;
+        
+        StringBuilder sql = new StringBuilder(
+            "SELECT DISTINCT m.id, m.title, m.url, m.icon, m.permission_code, m.display_order, m.parent_id " +
+            "FROM menu_items m " +
+            "JOIN permissions p ON m.permission_code = p.permission_code " +
+            "JOIN role_permissions rp ON p.permission_id = rp.permission_id " +
+            "WHERE rp.role_id IN ("
+        );
+        for (int i = 0; i < roleIds.size(); i++) {
+            sql.append("?");
+            if (i < roleIds.size() - 1) sql.append(",");
+        }
+        sql.append(") ORDER BY m.display_order ASC");
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            int idx = 1;
+            for (Integer roleId : roleIds) {
+                ps.setInt(idx++, roleId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    MenuItem item = new MenuItem();
+                    item.setId(rs.getInt("id"));
+                    item.setTitle(rs.getString("title"));
+                    item.setUrl(rs.getString("url"));
+                    item.setIcon(rs.getString("icon"));
+                    item.setPermissionCode(rs.getString("permission_code"));
+                    item.setDisplayOrder(rs.getInt("display_order"));
+                    item.setParentId(rs.getInt("parent_id"));
+                    menuItems.add(item);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi truy vấn menuItems cho roleIds", e);
+        }
+        return menuItems;
+    }
+
+    public boolean hasPermissionForRoles(List<Integer> roleIds, String permissionCode) {
+        if (roleIds == null || roleIds.isEmpty()) return false;
+        
+        StringBuilder sql = new StringBuilder(
+            "SELECT 1 FROM role_permissions rp " +
+            "JOIN permissions p ON rp.permission_id = p.permission_id " +
+            "WHERE UPPER(p.permission_code) = UPPER(?) AND rp.role_id IN ("
+        );
+        for (int i = 0; i < roleIds.size(); i++) {
+            sql.append("?");
+            if (i < roleIds.size() - 1) sql.append(",");
+        }
+        sql.append(")");
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+            ps.setString(1, permissionCode);
+            int idx = 2;
+            for (Integer roleId : roleIds) {
+                ps.setInt(idx++, roleId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi kiểm tra permissionCode = " + permissionCode + " cho roleIds", e);
         }
         return false;
     }

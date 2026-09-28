@@ -64,6 +64,7 @@ public class AuthService {
      * S1-03: Phien tao Token reset mat khau cho user dua vao Email.
      * Token co thoi han 30 phut.
      */
+    
     public String generateResetToken(String email) throws AuthenticationException {
         if (email == null || email.trim().isEmpty()) {
             throw new AuthenticationException("Vui lòng nhập địa chỉ email.");
@@ -78,26 +79,29 @@ public class AuthService {
             throw new AuthenticationException("Tài khoản đã bị khóa, không thể yêu cầu đặt lại mật khẩu.");
         }
 
-        String token = UUID.randomUUID().toString();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        String rawToken = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        
+        String tokenHash = PasswordUtil.hashToken(rawToken);
         Timestamp expiryTime = Timestamp.valueOf(LocalDateTime.now().plusMinutes(30));
 
-        boolean saved = accountDAO.saveResetToken(account.getAccountId(), token, expiryTime);
+        boolean saved = accountDAO.saveResetToken(account.getAccountId(), tokenHash, expiryTime);
         if (!saved) {
             throw new AuthenticationException("Lỗi hệ thống khi tạo token reset mật khẩu. Vui lòng thử lại.");
         }
 
-        return token;
+        return rawToken;
     }
 
-    /**
-     * S1-03: Kiem tra token reset mat khau co hop le va con thoi han hay khong.
-     */
     public boolean validateResetToken(String token) {
         if (token == null || token.trim().isEmpty()) {
             return false;
         }
 
-        Account account = accountDAO.findByResetToken(token.trim());
+        String tokenHash = PasswordUtil.hashToken(token.trim());
+        Account account = accountDAO.findByResetToken(tokenHash);
         if (account == null || account.getResetTokenExpiry() == null) {
             return false;
         }
@@ -105,9 +109,6 @@ public class AuthService {
         return account.getResetTokenExpiry().after(new Timestamp(System.currentTimeMillis()));
     }
 
-    /**
-     * S1-03: Thuc hien dat lai mat khau moi bang Token.
-     */
     public void resetPasswordWithToken(String token, String newPassword, String confirmPassword)
             throws AuthenticationException {
 
@@ -119,29 +120,67 @@ public class AuthService {
             throw new AuthenticationException("Vui lòng nhập mật khẩu mới.");
         }
 
-        if (newPassword.length() < 6) {
-            throw new AuthenticationException("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        if (!PasswordUtil.validatePasswordRules(newPassword)) {
+            throw new AuthenticationException("Mật khẩu mới phải có tối thiểu 8 ký tự, bao gồm cả chữ cái và chữ số.");
         }
 
         if (confirmPassword == null || !newPassword.equals(confirmPassword)) {
             throw new AuthenticationException("Xác nhận mật khẩu mới không khớp.");
         }
 
-        if (!validateResetToken(token)) {
+        String tokenHash = PasswordUtil.hashToken(token.trim());
+        Account account = accountDAO.findByResetToken(tokenHash);
+        if (account == null || account.getResetTokenExpiry() == null || !account.getResetTokenExpiry().after(new Timestamp(System.currentTimeMillis()))) {
             throw new AuthenticationException("Token khôi phục mật khẩu không hợp lệ hoặc đã hết hạn.");
         }
 
-        Account account = accountDAO.findByResetToken(token.trim());
-        if (account == null) {
-            throw new AuthenticationException("Tài khoản không tồn tại.");
-        }
-
         String newPasswordHash = PasswordUtil.hash(newPassword);
-        boolean updated = accountDAO.updatePasswordAndClearResetToken(account.getAccountId(), newPasswordHash);
+        boolean updated = accountDAO.updatePasswordAndClearResetToken(tokenHash, newPasswordHash);
 
         if (!updated) {
             throw new AuthenticationException("Không thể cập nhật mật khẩu mới. Vui lòng thử lại.");
         }
+    }
+
+    public void sendResetEmail(String toEmail, String resetUrl) throws Exception {
+        String host = System.getenv("SMTP_HOST");
+        if (host == null) host = "smtp.gmail.com";
+        String port = System.getenv("SMTP_PORT");
+        if (port == null) port = "587";
+        String username = System.getenv("SMTP_USERNAME");
+        String password = System.getenv("SMTP_PASSWORD");
+        String from = System.getenv("SMTP_FROM");
+        if (from == null) from = "no-reply@crm.com";
+
+        if (username == null || password == null) {
+            throw new Exception("SMTP credentials not configured.");
+        }
+
+        java.util.Properties props = new java.util.Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host", host);
+        props.put("mail.smtp.port", port);
+
+        jakarta.mail.Session session = jakarta.mail.Session.getInstance(props, new jakarta.mail.Authenticator() {
+            @Override
+            protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+                return new jakarta.mail.PasswordAuthentication(username, password);
+            }
+        });
+
+        jakarta.mail.Message message = new jakarta.mail.internet.MimeMessage(session);
+        message.setFrom(new jakarta.mail.internet.InternetAddress(from));
+        message.setRecipients(jakarta.mail.Message.RecipientType.TO, jakarta.mail.internet.InternetAddress.parse(toEmail));
+        message.setSubject("Yêu cầu đặt lại mật khẩu CRM");
+        
+        String htmlContent = "<p>Xin chào,</p>"
+            + "<p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu của bạn (có hiệu lực trong 30 phút):</p>"
+            + "<p><a href=\"" + resetUrl + "\">Đặt lại mật khẩu</a></p>"
+            + "<p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>";
+            
+        message.setContent(htmlContent, "text/html; charset=utf-8");
+        jakarta.mail.Transport.send(message);
     }
 
     public void changePassword(int userId, String oldPassword, String newPassword, String confirmPassword)

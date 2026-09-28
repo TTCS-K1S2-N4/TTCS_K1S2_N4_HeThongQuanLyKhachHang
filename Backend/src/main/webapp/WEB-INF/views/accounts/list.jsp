@@ -1,288 +1,176 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.crm.model.Account" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
-<%
-    Account currentUser = (Account) session.getAttribute("currentUser");
-    String userName = (currentUser != null && currentUser.getFullName() != null) ? currentUser.getFullName() : "Người dùng";
-    String userRole = (currentUser != null && currentUser.getRoleName() != null) ? currentUser.getRoleName() : "Administrator";
-    String userInitial = (userName.length() > 0) ? userName.substring(0, 1).toUpperCase() : "U";
+<%@ page import="com.crm.model.Account" %>
+<%@ page import="com.crm.model.Role" %>
+<%@ page import="com.crm.model.Team" %>
 
-    List<Account> accountList = (List<Account>) request.getAttribute("accountList");
-    Integer currentPage = (Integer) request.getAttribute("currentPage");
-    if (currentPage == null) currentPage = 1;
-    Integer totalPages = (Integer) request.getAttribute("totalPages");
-    if (totalPages == null) totalPages = 1;
-
-    String keywordParam = request.getParameter("keyword") != null ? request.getParameter("keyword") : "";
-    String statusParam = request.getParameter("status") != null ? request.getParameter("status") : "";
-%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý tài khoản | CRM System</title>
-
-    <!-- FOUNDATION -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/variables.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
-
-    <!-- ACCOUNT MODULE -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/accounts.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
 <div class="app">
+    <jsp:include page="/WEB-INF/views/fragments/header.jsp" />
+    <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp" />
 
-    <!-- ================= HEADER ================= -->
-    <header class="app-header">
-        <div class="header-left">
-            <a class="header-brand" href="${pageContext.request.contextPath}/">
-                <span class="brand-mark">CRM</span>
-                <span>CRM System</span>
-            </a>
-                <div class="header-divider"></div>
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <a href="${pageContext.request.contextPath}/">Trang chủ</a>
-                <span>/</span>
-                <span class="breadcrumb-current">Quản lý tài khoản</span>
-            </nav>
-        </div>
-
-        <div class="header-right">
-            <div class="header-user">
-                <div class="user-avatar">
-                    <%= userInitial %>
-                </div>
-                <div class="header-user-info">
-                    <div class="user-name">
-                        <%= userName %>
-                    </div>
-                    <div class="user-role">
-                        <%= userRole %>
-                    </div>
-                </div>
-                <a href="${pageContext.request.contextPath}/auth/logout" class="btn btn-secondary btn-sm" style="margin-left: 1rem;" title="Đăng xuất">
-                    <i class="fa-solid fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </div>
-        </div>
-    </header>
-
-    <!-- ================= SIDEBAR ================= -->
-    <aside class="sidebar">
-        <nav aria-label="Điều hướng chính">
-            <div class="sidebar-section">
-                <a class="nav-item" href="${pageContext.request.contextPath}/">
-                    <span class="nav-icon" aria-hidden="true">◫</span>
-                    <span>Dashboard</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◎</span>
-                    <span>Khách hàng</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◇</span>
-                    <span>Lead</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">△</span>
-                    <span>Cơ hội</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">○</span>
-                    <span>Hoạt động</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">▣</span>
-                    <span>Báo giá & Hợp đồng</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">◈</span>
-                    <span>Chỉ tiêu & KPI</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">▤</span>
-                    <span>Báo cáo & Dashboard</span>
-                </a>
-            </div>
-
-            <div class="sidebar-section">
-                <a class="nav-item active" href="${pageContext.request.contextPath}/accounts/list" aria-current="page">
-                    <span class="nav-icon" aria-hidden="true">□</span>
-                    <span>Quản lý tài khoản</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">⚙</span>
-                    <span>Vai trò & phân quyền</span>
-                </a>
-                <a class="nav-item" href="#">
-                    <span class="nav-icon" aria-hidden="true">≡</span>
-                    <span>Nhật ký hệ thống</span>
-                </a>
-            </div>
-        </nav>
-    </aside>
-
-    <!-- ================= CONTENT ================= -->
     <main class="main-content">
+        <%
+            String keyword = request.getParameter("keyword") != null ? request.getParameter("keyword") : "";
+            String teamIdStr = request.getParameter("teamId") != null ? request.getParameter("teamId") : "";
+            String roleIdStr = request.getParameter("roleId") != null ? request.getParameter("roleId") : "";
+            String status = request.getParameter("status") != null ? request.getParameter("status") : "";
+            Integer currentPage = (Integer) request.getAttribute("currentPage");
+            Integer totalPages = (Integer) request.getAttribute("totalPages");
+            Integer totalAccounts = (Integer) request.getAttribute("totalAccounts");
+            
+            List<Role> roles = (List<Role>) request.getAttribute("roles");
+            List<Team> teams = (List<Team>) request.getAttribute("teams");
+            List<Account> accountList = (List<Account>) request.getAttribute("accountList");
+
+            String qParams = "&keyword=" + keyword + "&teamId=" + teamIdStr + "&roleId=" + roleIdStr + "&status=" + status;
+            
+            String msg = request.getParameter("msg");
+        %>
+
         <div class="content-container">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="${pageContext.request.contextPath}/dashboard">Trang chủ</a>
+                <span>/</span>
+                <span class="breadcrumb-current">Tài khoản</span>
+            </nav>
 
-            <!-- BREADCRUMB -->
-
-            <!-- PAGE HEADER -->
             <div class="page-header">
                 <div>
                     <h1 class="page-title">Quản lý tài khoản</h1>
-                    <p class="page-description">Quản lý tài khoản người dùng và phân quyền trong hệ thống CRM.</p>
+                    <p class="page-description">Danh sách và thông tin tài khoản nhân viên.</p>
                 </div>
-
                 <div class="page-actions">
-                    <a class="btn btn-primary" href="${pageContext.request.contextPath}/accounts/create">
-                        + Tạo tài khoản
+                    <a href="${pageContext.request.contextPath}/accounts/create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Tạo tài khoản
                     </a>
                 </div>
             </div>
 
-            <!-- CARD -->
-            <section class="card">
+            <% if ("created".equals(msg)) { %>
+                <div class="alert alert-success">Tạo tài khoản thành công và đã gửi email.</div>
+            <% } %>
+
+            <section class="card accounts-list-card">
                 <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Danh sách tài khoản</h2>
-                        <p class="card-description">Danh sách người dùng được cấp quyền truy cập hệ thống.</p>
-                    </div>
-                </div>
+                    <form class="accounts-filters" action="${pageContext.request.contextPath}/accounts/list" method="get">
+                        <div class="search-group">
+                            <i class="fas fa-search search-icon"></i>
+                            <input class="form-control" name="keyword" type="search" placeholder="Tìm kiếm theo tên hoặc email..." value="<%= keyword %>">
+                        </div>
 
-                <div class="card-body">
-                    <!-- FILTER FORM -->
-                    <form action="${pageContext.request.contextPath}/accounts/list" method="get" class="account-toolbar">
-                        <div class="account-filters">
-                            <input class="form-control account-search"
-                                   type="search"
-                                   name="keyword"
-                                   value="<%= keywordParam %>"
-                                   placeholder="Tìm tên, email...">
-
-                            <select class="form-control account-filter" name="status" aria-label="Lọc theo trạng thái">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="ACTIVE" <%= "ACTIVE".equalsIgnoreCase(statusParam) ? "selected" : "" %>>Hoạt động</option>
-                                <option value="LOCKED" <%= "LOCKED".equalsIgnoreCase(statusParam) ? "selected" : "" %>>Đã khóa</option>
+                        <div class="filter-group">
+                            <select class="form-control" name="teamId">
+                                <option value="">Tất cả nhóm</option>
+                                <% if (teams != null) { for (Team t : teams) { %>
+                                    <option value="<%= t.getId() %>" <%= teamIdStr.equals(String.valueOf(t.getId())) ? "selected" : "" %>><%= t.getName() %></option>
+                                <% } } %>
                             </select>
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fa-solid fa-search"></i> Tìm kiếm
-                            </button>
+                            <select class="form-control" name="roleId">
+                                <option value="">Tất cả vai trò</option>
+                                <% if (roles != null) { for (Role r : roles) { %>
+                                    <option value="<%= r.getId() %>" <%= roleIdStr.equals(String.valueOf(r.getId())) ? "selected" : "" %>><%= r.getName() %></option>
+                                <% } } %>
+                            </select>
 
-                            <a href="${pageContext.request.contextPath}/accounts/list" class="btn btn-secondary">
-                                Làm mới
-                            </a>
+                            <select class="form-control" name="status">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="ACTIVE" <%= "ACTIVE".equals(status) ? "selected" : "" %>>Hoạt động</option>
+                                <option value="LOCKED" <%= "LOCKED".equals(status) ? "selected" : "" %>>Bị khóa</option>
+                            </select>
+
+                            <button class="btn btn-secondary" type="submit">Lọc</button>
                         </div>
                     </form>
+                </div>
 
-                    <!-- TABLE -->
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
                             <tr>
                                 <th>Người dùng</th>
-                                <th>Email (Tài khoản)</th>
                                 <th>Vai trò</th>
                                 <th>Nhóm</th>
                                 <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
                                 <th>Thao tác</th>
                             </tr>
-                            </thead>
-                            <tbody>
-                            <% if (accountList != null && !accountList.isEmpty()) { 
-                                for (Account acc : accountList) {
-                                    String avatarChar = (acc.getFullName() != null && !acc.getFullName().trim().isEmpty()) ? acc.getFullName().trim().substring(0, 1).toUpperCase() : "U";
-                                    String rName = (acc.getRoleName() != null && !acc.getRoleName().trim().isEmpty()) ? acc.getRoleName() : "Chưa phân vai trò";
-                                    String tName = (acc.getTeamName() != null && !acc.getTeamName().trim().isEmpty()) ? acc.getTeamName() : "—";
-                                    boolean isActive = "ACTIVE".equalsIgnoreCase(acc.getStatus());
+                        </thead>
+                        <tbody>
+                            <%
+                                if (accountList != null && !accountList.isEmpty()) {
+                                    for (Account account : accountList) {
+                                        String badgeClass = "ACTIVE".equals(account.getStatus()) ? "badge-success" : "badge-error";
+                                        String displayStatus = "ACTIVE".equals(account.getStatus()) ? "Hoạt động" : "Bị khóa";
                             %>
-                                <tr>
-                                    <td>
-                                        <div class="account-user">
-                                            <div class="account-avatar">
-                                                <%= avatarChar %>
-                                            </div>
-                                            <div>
-                                                <div class="account-name"><%= acc.getFullName() %></div>
-                                                <div class="account-email"><%= acc.getEmail() %></div>
-                                            </div>
+                            <tr>
+                                <td>
+                                    <div class="user-info-cell">
+                                        <div class="user-avatar"><%= account.getFullName().substring(0, 1).toUpperCase() %></div>
+                                        <div class="user-details">
+                                            <div class="user-name"><%= account.getFullName() %></div>
+                                            <div class="user-email"><%= account.getEmail() %></div>
                                         </div>
-                                    </td>
-                                    <td><%= acc.getEmail() %></td>
-                                    <td><%= rName %></td>
-                                    <td><%= tName %></td>
-                                    <td>
-                                        <% if (isActive) { %>
-                                            <span class="badge badge-success">Hoạt động</span>
-                                        <% } else { %>
-                                            <span class="badge badge-danger">Đã khóa</span>
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <div class="table-actions">
-                                            <a class="btn btn-secondary btn-sm"
-                                               href="${pageContext.request.contextPath}/accounts/detail?id=<%= acc.getAccountId() %>">
-                                                Chi tiết
-                                            </a>
-                                            <a class="btn btn-secondary btn-sm"
-                                               href="${pageContext.request.contextPath}/accounts/edit?id=<%= acc.getAccountId() %>">
-                                                Sửa
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <% } 
-                            } else { %>
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
-                                        Không tìm thấy tài khoản phù hợp.
-                                    </td>
-                                </tr>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-primary"><%= account.getRoleName() != null ? account.getRoleName() : "Chưa có" %></span></td>
+                                <td><%= account.getTeamName() != null ? account.getTeamName() : "Chưa thuộc nhóm" %></td>
+                                <td><span class="badge <%= badgeClass %>"><%= displayStatus %></span></td>
+                                <td><%= account.getCreatedAt() != null ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(account.getCreatedAt()) : "" %></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a href="${pageContext.request.contextPath}/accounts/detail?id=<%= account.getAccountId() %>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
+                                        <a href="${pageContext.request.contextPath}/accounts/edit?id=<%= account.getAccountId() %>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <%
+                                    }
+                                } else {
+                            %>
+                            <tr>
+                                <td colspan="6" class="text-center">Không tìm thấy tài khoản nào.</td>
+                            </tr>
                             <% } %>
-                            </tbody>
-                        </table>
-                    </div>
+                        </tbody>
+                    </table>
+                </div>
 
-                    <!-- PAGINATION -->
-                    <% if (totalPages > 1) { %>
-                        <nav class="pagination" aria-label="Phân trang">
-                            <% if (currentPage > 1) { %>
-                                <a class="pagination-item"
-                                   href="${pageContext.request.contextPath}/accounts/list?page=<%= currentPage - 1 %>&keyword=<%= keywordParam %>&status=<%= statusParam %>">
-                                    ‹
-                                </a>
-                            <% } %>
+                <div class="card-footer">
+                    <div class="pagination-info">Hiển thị <strong><%= accountList != null ? accountList.size() : 0 %></strong> trên tổng số <strong><%= totalAccounts != null ? totalAccounts : 0 %></strong> tài khoản</div>
+                    
+                    <% if (totalPages != null && totalPages > 1) { %>
+                    <ul class="pagination">
+                        <li class="page-item <%= currentPage == 1 ? "disabled" : "" %>">
+                            <a class="page-link" href="?page=<%= currentPage - 1 %><%= qParams %>"><i class="fas fa-chevron-left"></i></a>
+                        </li>
+                        
+                        <% for (int i = 1; i <= totalPages; i++) { %>
+                        <li class="page-item <%= currentPage == i ? "active" : "" %>">
+                            <a class="page-link" href="?page=<%= i %><%= qParams %>"><%= i %></a>
+                        </li>
+                        <% } %>
 
-                            <% for (int p = 1; p <= totalPages; p++) { %>
-                                <a class="pagination-item <%= p == currentPage ? "active" : "" %>"
-                                   href="${pageContext.request.contextPath}/accounts/list?page=<%= p %>&keyword=<%= keywordParam %>&status=<%= statusParam %>">
-                                    <%= p %>
-                                </a>
-                            <% } %>
-
-                            <% if (currentPage < totalPages) { %>
-                                <a class="pagination-item"
-                                   href="${pageContext.request.contextPath}/accounts/list?page=<%= currentPage + 1 %>&keyword=<%= keywordParam %>&status=<%= statusParam %>">
-                                    ›
-                                </a>
-                            <% } %>
-                        </nav>
+                        <li class="page-item <%= currentPage == totalPages ? "disabled" : "" %>">
+                            <a class="page-link" href="?page=<%= currentPage + 1 %><%= qParams %>"><i class="fas fa-chevron-right"></i></a>
+                        </li>
+                    </ul>
                     <% } %>
-
                 </div>
             </section>
         </div>

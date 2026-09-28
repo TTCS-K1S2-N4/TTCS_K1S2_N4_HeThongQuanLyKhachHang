@@ -8,14 +8,23 @@ public class Account {
     private String passwordHash;
     private String fullName;
     private String phone;
-    private Integer roleId;
-    private String roleName;
+    private Integer roleId; // LEGACY COMPATIBILITY ONLY
+    private String roleName; // LEGACY COMPATIBILITY ONLY
+    
+    private java.util.List<Integer> roleIds = new java.util.ArrayList<>();
+    private java.util.List<String> roleNames = new java.util.ArrayList<>();
+    private java.util.List<String> roleCodes = new java.util.ArrayList<>();
+    
     private Integer teamId;
     private String teamName;
     private String status;
     private String resetToken;
     private Timestamp resetTokenExpiry;
+    private String activationToken;
+    private Timestamp activationTokenExpiry;
     private Timestamp createdAt;
+    private int failedAttempts;
+    private Timestamp updatedAt;
 
     public Account() {
     }
@@ -71,7 +80,9 @@ public class Account {
         this.phone = phone;
     }
 
+    // LEGACY COMPATIBILITY ONLY
     public Integer getRoleId() {
+        if (roleIds != null && !roleIds.isEmpty()) return roleIds.get(0);
         return roleId;
     }
 
@@ -79,12 +90,38 @@ public class Account {
         this.roleId = roleId;
     }
 
+    // LEGACY COMPATIBILITY ONLY
     public String getRoleName() {
+        if (roleNames != null && !roleNames.isEmpty()) return String.join(", ", roleNames);
         return roleName;
     }
 
     public void setRoleName(String roleName) {
         this.roleName = roleName;
+    }
+
+    public java.util.List<Integer> getRoleIds() {
+        return roleIds;
+    }
+
+    public void setRoleIds(java.util.List<Integer> roleIds) {
+        this.roleIds = roleIds != null ? roleIds : new java.util.ArrayList<>();
+    }
+
+    public java.util.List<String> getRoleNames() {
+        return roleNames;
+    }
+
+    public void setRoleNames(java.util.List<String> roleNames) {
+        this.roleNames = roleNames != null ? roleNames : new java.util.ArrayList<>();
+    }
+
+    public java.util.List<String> getRoleCodes() {
+        return roleCodes;
+    }
+
+    public void setRoleCodes(java.util.List<String> roleCodes) {
+        this.roleCodes = roleCodes != null ? roleCodes : new java.util.ArrayList<>();
     }
 
     public Integer getTeamId() {
@@ -127,11 +164,43 @@ public class Account {
         this.resetTokenExpiry = resetTokenExpiry;
     }
 
+    public String getActivationToken() {
+        return activationToken;
+    }
+
+    public void setActivationToken(String activationToken) {
+        this.activationToken = activationToken;
+    }
+
+    public Timestamp getActivationTokenExpiry() {
+        return activationTokenExpiry;
+    }
+
+    public void setActivationTokenExpiry(Timestamp activationTokenExpiry) {
+        this.activationTokenExpiry = activationTokenExpiry;
+    }
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

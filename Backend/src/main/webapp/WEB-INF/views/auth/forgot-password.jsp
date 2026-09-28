@@ -1,11 +1,26 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%
+    Boolean isResetStepObj = (Boolean) request.getAttribute("isResetStep");
+    boolean isResetStep = isResetStepObj != null && isResetStepObj;
+    String title = isResetStep ? "Đặt lại mật khẩu" : "Quên mật khẩu?";
+    String subtitle = isResetStep
+            ? "Vui lòng nhập mật khẩu mới và mã token xác nhận của bạn."
+            : "Nhập địa chỉ email đăng ký để nhận mã token đặt lại mật khẩu.";
+    String errorMessage = (String) request.getAttribute("errorMessage");
+    String successMessage = (String) request.getAttribute("successMessage");
+    String resetToken = (String) request.getAttribute("resetToken");
+    String resetUrl = (String) request.getAttribute("resetUrl");
+    String token = (String) request.getAttribute("token");
+    String email = (String) request.getAttribute("email");
+    if (token == null) token = "";
+    if (email == null) email = "";
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${isResetStep ? 'Đặt lại mật khẩu' : 'Quên mật khẩu'} | CRM System</title>
+    <title><%= title %> | CRM System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -194,47 +209,34 @@
 <div class="auth-container">
     <div class="auth-header">
         <div class="auth-icon">
-            <i class="fa-solid ${isResetStep ? 'fa-key' : 'fa-lock'}"></i>
+            <i class="fa-solid <%= isResetStep ? "fa-key" : "fa-lock" %>"></i>
         </div>
-        <h1 class="auth-title">${isResetStep ? 'Đặt lại mật khẩu' : 'Quên mật khẩu?'}</h1>
+        <h1 class="auth-title"><%= title %></h1>
         <p class="auth-subtitle">
-            ${isResetStep 
-                ? 'Vui lòng nhập mật khẩu mới và mã token xác nhận của bạn.' 
-                : 'Nhập địa chỉ email đăng ký để nhận mã token đặt lại mật khẩu.'}
+            <%= subtitle %>
         </p>
     </div>
 
     <!-- Alert Thông báo Lỗi -->
-    <c:if test="${not empty errorMessage}">
+    <% if (errorMessage != null && !errorMessage.isEmpty()) { %>
         <div class="alert alert-danger">
             <i class="fa-solid fa-triangle-exclamation" style="margin-top: 2px;"></i>
-            <div>${errorMessage}</div>
+            <div><%= errorMessage %></div>
         </div>
-    </c:if>
+    <% } %>
 
     <!-- Alert Thông báo Thành công -->
-    <c:if test="${not empty successMessage}">
+    <% if (successMessage != null && !successMessage.isEmpty()) { %>
         <div class="alert alert-success">
             <i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i>
             <div>
-                ${successMessage}
-                <c:if test="${not empty resetToken}">
-                    <div class="token-box">
-                        <strong>Token:</strong> ${resetToken}
-                    </div>
-                    <div style="margin-top: 0.5rem;">
-                        <a href="${resetUrl}" class="auth-link">
-                            <i class="fa-solid fa-arrow-right"></i> Chuyển tới trang đổi mật khẩu với Token
-                        </a>
-                    </div>
-                </c:if>
+                <%= successMessage %>
             </div>
         </div>
-    </c:if>
+    <% } %>
 
-    <c:choose>
+    <% if (isResetStep) { %>
         <%-- FORM BƯỚC 2: ĐẶT LẠI MẬT KHẨU MỚI BẰNG TOKEN --%>
-        <c:when test="${isResetStep}">
             <form action="${pageContext.request.contextPath}/auth/forgot-password" method="post">
                 <input type="hidden" name="action" value="reset">
 
@@ -243,7 +245,7 @@
                     <div class="input-group">
                         <i class="fa-solid fa-ticket input-icon"></i>
                         <input type="text" id="token" name="token" class="form-control" 
-                               value="${token}" placeholder="Nhập mã token..." required>
+                               value="<%= token %>" placeholder="Nhập mã token..." required>
                     </div>
                 </div>
 
@@ -252,7 +254,7 @@
                     <div class="input-group">
                         <i class="fa-solid fa-lock input-icon"></i>
                         <input type="password" id="newPassword" name="newPassword" class="form-control" 
-                               placeholder="Tối thiểu 6 ký tự..." required>
+                               placeholder="Tối thiểu 8 ký tự, gồm chữ và số..." required>
                     </div>
                 </div>
 
@@ -274,10 +276,8 @@
                 Chưa nhận được mã Token? 
                 <a href="${pageContext.request.contextPath}/auth/forgot-password" class="auth-link">Gửi lại yêu cầu</a>
             </div>
-        </c:when>
-
+    <% } else { %>
         <%-- FORM BƯỚC 1: GỬI YÊU CẦU LẤY TOKEN KHÔI PHỤC THEO EMAIL --%>
-        <c:otherwise>
             <form action="${pageContext.request.contextPath}/auth/forgot-password" method="post">
                 <input type="hidden" name="action" value="request">
 
@@ -286,7 +286,7 @@
                     <div class="input-group">
                         <i class="fa-regular fa-envelope input-icon"></i>
                         <input type="email" id="email" name="email" class="form-control" 
-                               value="${email}" placeholder="example@company.com" required>
+                               value="<%= email %>" placeholder="example@company.com" required>
                     </div>
                 </div>
 
@@ -299,8 +299,7 @@
                 Đã có mã Token? 
                 <a href="${pageContext.request.contextPath}/auth/forgot-password?token=" class="auth-link">Nhập Token đổi mật khẩu</a>
             </div>
-        </c:otherwise>
-    </c:choose>
+    <% } %>
 
     <div class="auth-footer" style="margin-top: 1rem;">
         <a href="${pageContext.request.contextPath}/auth/login" class="auth-link">

@@ -5,6 +5,7 @@ public class AccountUpdateRequest {
     private String fullName;
     private String phone;
     private Integer teamId;
+    private java.util.List<Integer> roleIds;
 
     public AccountUpdateRequest() {}
 
@@ -13,6 +14,14 @@ public class AccountUpdateRequest {
         this.fullName = fullName;
         this.phone = phone;
         this.teamId = teamId;
+    }
+
+    public AccountUpdateRequest(int accountId, String fullName, String phone, Integer teamId, java.util.List<Integer> roleIds) {
+        this.accountId = accountId;
+        this.fullName = fullName;
+        this.phone = phone;
+        this.teamId = teamId;
+        this.roleIds = roleIds;
     }
 
     public int getAccountId() { return accountId; }
@@ -26,4 +35,7 @@ public class AccountUpdateRequest {
 
     public Integer getTeamId() { return teamId; }
     public void setTeamId(Integer teamId) { this.teamId = teamId; }
+
+    public java.util.List<Integer> getRoleIds() { return roleIds; }
+    public void setRoleIds(java.util.List<Integer> roleIds) { this.roleIds = roleIds; }
 }

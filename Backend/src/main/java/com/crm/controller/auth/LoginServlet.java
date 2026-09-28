@@ -55,11 +55,12 @@ public class LoginServlet extends HttpServlet {
                     authService.authenticate(loginRequest);
 
             HttpSession session = request.getSession(true);
-            session.setMaxInactiveInterval(15 * 60);
+            session.setMaxInactiveInterval(5 * 60);
 
             session.setAttribute("currentUser", account);
             session.setAttribute("userId", account.getAccountId());
             session.setAttribute("roleId", account.getRoleId());
+            session.setAttribute("roleIds", account.getRoleIds());
             com.crm.util.SessionListener.registerUserSession(account.getAccountId(), session);
 
             response.sendRedirect(
