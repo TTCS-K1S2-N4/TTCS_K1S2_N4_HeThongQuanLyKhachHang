@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -30,24 +30,38 @@ public class AuthorizationFilter implements Filter {
     private PermissionService permissionService;
 
     // Map ánh xạ các URI path với Permission Code tương ứng
-    private final Map<String, String> protectedUrlMap = new HashMap<>();
+    private final Map<String, String> protectedUrlMap = new LinkedHashMap<>();
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         this.permissionService = new PermissionService();
 
         // Khai báo các URL pattern bảo vệ trong module BE3
-        protectedUrlMap.put("/accounts", "ACCOUNT_VIEW");
-        protectedUrlMap.put("/accounts/create", "ACCOUNT_CREATE");
-        protectedUrlMap.put("/accounts/edit", "ACCOUNT_EDIT");
-        protectedUrlMap.put("/accounts/delete", "ACCOUNT_DELETE");
-        protectedUrlMap.put("/accounts/export", "ACCOUNT_EXPORT");
+        protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/delete", "ACCOUNT_DELETE");
+        protectedUrlMap.put("/customers/export", "ACCOUNT_EXPORT");
+        protectedUrlMap.put("/customers/detail", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers", "ACCOUNT_VIEW");
 
-        protectedUrlMap.put("/deals", "DEAL_VIEW");
+        protectedUrlMap.put("/accounts/create", "USER_CREATE");
+        protectedUrlMap.put("/accounts/edit", "USER_EDIT");
+        protectedUrlMap.put("/accounts/assign-role", "USER_EDIT");
+        protectedUrlMap.put("/accounts/lock", "USER_DELETE");
+        protectedUrlMap.put("/accounts/transfer-data", "USER_DELETE");
+        protectedUrlMap.put("/accounts/delete", "USER_DELETE");
+        protectedUrlMap.put("/accounts/detail", "USER_VIEW");
+        protectedUrlMap.put("/accounts/list", "USER_VIEW");
+        protectedUrlMap.put("/accounts", "USER_VIEW");
+
         protectedUrlMap.put("/deals/create", "DEAL_CREATE");
         protectedUrlMap.put("/deals/edit", "DEAL_EDIT");
+        protectedUrlMap.put("/deals/detail", "DEAL_VIEW");
+        protectedUrlMap.put("/deals", "DEAL_VIEW");
 
+        protectedUrlMap.put("/activities/detail", "ACTIVITY_VIEW");
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");
+        protectedUrlMap.put("/quotes/detail", "QUOTE_VIEW");
         protectedUrlMap.put("/quotes", "QUOTE_VIEW");
 
         LOGGER.info("AuthorizationFilter (BE3) khởi tạo hoàn tất.");
@@ -91,6 +105,11 @@ public class AuthorizationFilter implements Filter {
                     com.crm.model.Account account = new com.crm.dao.AccountDAO().getAccountById(userId);
                     if (account != null) {
                         roleIds = account.getRoleIds();
+                        session.setAttribute("currentUser", account);
+                        session.setAttribute("roleIds", new java.util.ArrayList<>(roleIds));
+                        session.setAttribute("roleId", roleIds.isEmpty() ? null : roleIds.get(0));
+                        session.setAttribute("teamId", account.getTeamId());
+                        session.setAttribute("teamName", account.getTeamName());
                     }
                 } catch (Exception e) {
                     roleIds = null; // FAIL CLOSED
@@ -122,6 +141,8 @@ public class AuthorizationFilter implements Filter {
             return;
         }
 
+        httpRequest.setAttribute("effectiveRoleIds", roleIds);
+
         // Cho phép đi tiếp tới Servlet/JSP tiếp theo
         chain.doFilter(request, response);
     }
@@ -129,9 +150,7 @@ public class AuthorizationFilter implements Filter {
     private String matchRequiredPermission(String path) {
         if (path == null) return null;
         for (Map.Entry<String, String> entry : protectedUrlMap.entrySet()) {
-            if (path.equalsIgnoreCase(entry.getKey()) || path.startsWith(entry.getKey() + "/")) {
-                return entry.getValue();
-            }
+            if (path.equalsIgnoreCase(entry.getKey())) return entry.getValue();
         }
         return null;
     }
@@ -158,6 +177,7 @@ public class AuthorizationFilter implements Filter {
             out.print("{\"status\": 403, \"message\": \"" + message + "\"}");
             out.flush();
         } else {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             request.setAttribute("errorMessage", message);
             request.setAttribute("exception", new AuthorizationException(message));
             // Forward sang trang 403.jsp của BE2

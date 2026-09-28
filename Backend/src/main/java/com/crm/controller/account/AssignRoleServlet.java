@@ -9,6 +9,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet("/accounts/assign-role")
 public class AssignRoleServlet extends HttpServlet {
@@ -85,16 +87,17 @@ public class AssignRoleServlet extends HttpServlet {
                     request.getParameter("accountId")
             );
 
-            int roleId = Integer.parseInt(
-                    request.getParameter("roleId")
-            );
+            String[] roleIdValues = request.getParameterValues("roleIds");
+            List<Integer> roleIds = new ArrayList<>();
+            if (roleIdValues != null) {
+                for (String value : roleIdValues) roleIds.add(Integer.parseInt(value));
+            }
+            String teamIdValue = request.getParameter("teamId");
+            Integer teamId = teamIdValue == null || teamIdValue.isBlank() ? null : Integer.valueOf(teamIdValue);
 
-            int teamId = Integer.parseInt(
-                    request.getParameter("teamId")
-            );
-
-            if (!roleService.isValidRole(roleId)
-                    || !roleService.isValidTeam(teamId)) {
+            boolean validRoles = !roleIds.isEmpty();
+            for (Integer roleId : roleIds) validRoles &= roleService.isValidRole(roleId);
+            if (!validRoles || (teamId != null && !roleService.isValidTeam(teamId))) {
 
                 response.sendError(
                         HttpServletResponse.SC_BAD_REQUEST
@@ -102,11 +105,16 @@ public class AssignRoleServlet extends HttpServlet {
                 return;
             }
 
-            accountDAO.updateRoleAndTeam(
+            boolean updated = accountDAO.updateRoleAndTeam(
                     accountId,
-                    roleId,
+                    roleIds,
                     teamId
             );
+
+            if (!updated) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
 
             response.sendRedirect(
                     request.getContextPath()

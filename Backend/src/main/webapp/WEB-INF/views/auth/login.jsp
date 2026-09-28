@@ -58,6 +58,10 @@
             %>
                 showToast("<%= error %>", "<%= type %>");
             <% } %>
+
+            <% if (request.getAttribute("successMessage") != null) { %>
+                showToast("<%= request.getAttribute("successMessage") %>", "success");
+            <% } %>
             
             <% if ("true".equals(request.getParameter("logout"))) { %>
                 showToast("Đăng xuất thành công.", "success");

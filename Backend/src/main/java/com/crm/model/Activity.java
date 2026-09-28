@@ -11,6 +11,8 @@ public class Activity {
 
     public int getActivityid() { return activityId; }
     public void setActivityid(int activityId) { this.activityId = activityId; }
+    public int getActivityId() { return activityId; }
+    public void setActivityId(int activityId) { this.activityId = activityId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

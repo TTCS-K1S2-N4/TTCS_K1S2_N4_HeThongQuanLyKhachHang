@@ -25,7 +25,7 @@ public class QuoteListServlet extends HttpServlet {
 
         PermissionService permissionService = new PermissionService();
         Integer userId = (Integer) req.getSession().getAttribute("userId");
-        java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getSession().getAttribute("roleIds"));
+        java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
             Integer roleId = (Integer) req.getSession().getAttribute("roleId");
         
         if (userId == null || roleId == null) {
@@ -33,7 +33,7 @@ public class QuoteListServlet extends HttpServlet {
             return;
         }
         
-        List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roleIds != null ? roleIds : java.util.Collections.singletonList(roleId), "QUOTE");
+        List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "QUOTE");
 
         List<Quote> list = dao.getList(keyword, ownerIds, page, pageSize);
         int total = dao.count(keyword, ownerIds);

@@ -11,6 +11,8 @@ public class Opportunity {
 
     public int getOpportunityid() { return opportunityId; }
     public void setOpportunityid(int opportunityId) { this.opportunityId = opportunityId; }
+    public int getOpportunityId() { return opportunityId; }
+    public void setOpportunityId(int opportunityId) { this.opportunityId = opportunityId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

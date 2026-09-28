@@ -21,7 +21,13 @@ public class AccountDetailServlet extends HttpServlet {
             return;
         }
 
-        int accountId = Integer.parseInt(idStr);
+        int accountId;
+        try {
+            accountId = Integer.parseInt(idStr);
+        } catch (NumberFormatException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
         Account account = accountService.getAccountDetail(accountId);
         if (account == null) {
             resp.sendRedirect(req.getContextPath() + "/accounts/list?error=notfound");

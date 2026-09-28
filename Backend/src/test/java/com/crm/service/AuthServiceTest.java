@@ -54,7 +54,7 @@ public class AuthServiceTest {
         mockAcc.setResetToken("valid-token-123");
         mockAcc.setResetTokenExpiry(new Timestamp(System.currentTimeMillis() + 600000)); // Future
 
-        when(accountDAO.findByResetToken("valid-token-123")).thenReturn(mockAcc);
+        when(accountDAO.findByResetToken(anyString())).thenReturn(mockAcc);
 
         boolean result = authService.validateResetToken("valid-token-123");
         assertTrue(result);
@@ -66,7 +66,7 @@ public class AuthServiceTest {
         mockAcc.setResetToken("expired-token-123");
         mockAcc.setResetTokenExpiry(new Timestamp(System.currentTimeMillis() - 600000)); // Past
 
-        when(accountDAO.findByResetToken("expired-token-123")).thenReturn(mockAcc);
+        when(accountDAO.findByResetToken(anyString())).thenReturn(mockAcc);
 
         boolean result = authService.validateResetToken("expired-token-123");
         assertFalse(result);
@@ -79,11 +79,11 @@ public class AuthServiceTest {
         mockAcc.setResetToken("token-xyz");
         mockAcc.setResetTokenExpiry(new Timestamp(System.currentTimeMillis() + 600000));
 
-        when(accountDAO.findByResetToken("token-xyz")).thenReturn(mockAcc);
-        when(accountDAO.updatePasswordAndClearResetToken(eq(1), anyString())).thenReturn(true);
+        when(accountDAO.findByResetToken(anyString())).thenReturn(mockAcc);
+        when(accountDAO.updatePasswordAndClearResetToken(anyString(), anyString())).thenReturn(true);
 
         authService.resetPasswordWithToken("token-xyz", "newPassword123", "newPassword123");
-        verify(accountDAO).updatePasswordAndClearResetToken(eq(1), anyString());
+        verify(accountDAO).updatePasswordAndClearResetToken(anyString(), anyString());
     }
 
     @Test

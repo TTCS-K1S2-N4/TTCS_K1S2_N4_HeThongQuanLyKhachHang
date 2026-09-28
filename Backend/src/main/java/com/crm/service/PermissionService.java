@@ -49,12 +49,14 @@ public class PermissionService {
     }
 
     public List<Integer> getAccessibleAccountIds(int userId, int roleId, String module) {
-        return getAccessibleAccountIdsForRoles(userId, Collections.singletonList(roleId), module);
+        return accessibleIdsForScope(userId, getDataScope(roleId, module));
     }
     
     public List<Integer> getAccessibleAccountIdsForRoles(int userId, List<Integer> roleIds, String module) {
-        DataScope scope = getDataScopeForRoles(roleIds, module);
+        return accessibleIdsForScope(userId, getDataScopeForRoles(roleIds, module));
+    }
 
+    private List<Integer> accessibleIdsForScope(int userId, DataScope scope) {
         switch (scope) {
             case MY:
                 return Collections.singletonList(userId);
@@ -68,12 +70,14 @@ public class PermissionService {
     }
 
     public boolean canAccessData(int userId, int roleId, String module, int ownerId) {
-        return canAccessDataForRoles(userId, Collections.singletonList(roleId), module, ownerId);
+        return canAccessScope(userId, getDataScope(roleId, module), ownerId);
     }
     
     public boolean canAccessDataForRoles(int userId, List<Integer> roleIds, String module, int ownerId) {
-        DataScope scope = getDataScopeForRoles(roleIds, module);
+        return canAccessScope(userId, getDataScopeForRoles(roleIds, module), ownerId);
+    }
 
+    private boolean canAccessScope(int userId, DataScope scope, int ownerId) {
         if (scope == DataScope.ALL) return true;
         if (scope == DataScope.MY) return userId == ownerId;
         if (scope == DataScope.TEAM) {
@@ -85,7 +89,11 @@ public class PermissionService {
     }
 
     public void validateDataAccess(int userId, int roleId, String module, int ownerId) throws AuthorizationException {
-        validateDataAccessForRoles(userId, Collections.singletonList(roleId), module, ownerId);
+        if (!canAccessData(userId, roleId, module, ownerId)) {
+            LOGGER.warning(String.format("Từ chối truy cập: userId=%d cố xem bản ghi của ownerId=%d ở module=%s (scope=%s)",
+                    userId, ownerId, module, getDataScope(roleId, module)));
+            throw new AuthorizationException("Bạn không có quyền xem hoặc thao tác trên dữ liệu này.");
+        }
     }
     
     public void validateDataAccessForRoles(int userId, List<Integer> roleIds, String module, int ownerId) throws AuthorizationException {
