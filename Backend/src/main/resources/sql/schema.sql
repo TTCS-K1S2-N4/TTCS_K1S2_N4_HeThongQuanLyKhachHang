@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     failed_attempts INT DEFAULT 0,
     reset_token VARCHAR(255) NULL,
     reset_token_expiry TIMESTAMP NULL,
+    activation_token VARCHAR(255) NULL,
+    activation_token_expiry TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
@@ -57,6 +59,25 @@ CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) DEFAULT 0,
+    owner_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(user_id)
+);
+
+-- 6.1. Bảng Hoạt động (Activities)
+CREATE TABLE IF NOT EXISTS activities (
+    activity_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    owner_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (owner_id) REFERENCES users(user_id)
+);
+
+-- 6.2. Bảng Báo giá (Quotes)
+CREATE TABLE IF NOT EXISTS quotes (
+    quote_id INT AUTO_INCREMENT PRIMARY KEY,
+    quote_number VARCHAR(100) NOT NULL,
     owner_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
@@ -120,7 +141,11 @@ INSERT INTO permissions (permission_id, permission_code, permission_name, module
 (8, 'DEAL_EDIT', 'Chỉnh sửa Cơ hội', 'DEAL'),
 
 (9, 'ACTIVITY_VIEW', 'Xem Hoạt động', 'ACTIVITY'),
-(10, 'QUOTE_VIEW', 'Xem Báo giá', 'QUOTE');
+(10, 'QUOTE_VIEW', 'Xem Báo giá', 'QUOTE'),
+(11, 'USER_VIEW', 'Xem Tài khoản', 'USER'),
+(12, 'USER_CREATE', 'Tạo mới Tài khoản', 'USER'),
+(13, 'USER_EDIT', 'Chỉnh sửa Tài khoản', 'USER'),
+(14, 'USER_DELETE', 'Xóa Tài khoản', 'USER');
 
 -- Giả định Role IDs:
 -- Role 1: Nhân viên Kinh doanh (Data Scope: MY)
@@ -154,11 +179,16 @@ INSERT INTO role_permissions (role_id, permission_id, data_scope) VALUES
 (3, 5, 'ALL'),
 (3, 6, 'ALL'),
 (3, 9, 'ALL'),
-(3, 10, 'ALL');
+(3, 10, 'ALL'),
+(3, 11, 'ALL'),
+(3, 12, 'ALL'),
+(3, 13, 'ALL'),
+(3, 14, 'ALL');
 
 -- Chèn dữ liệu Menu
 INSERT INTO menu_items (id, title, url, icon, permission_code, display_order, parent_id) VALUES
-(1, 'Khách hàng', '/accounts', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
+(1, 'Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
 (2, 'Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
 (3, 'Hoạt động & Lịch hẹn', '/activities', 'fa-calendar-alt', 'ACTIVITY_VIEW', 3, 0),
-(4, 'Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0);
+(4, 'Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0),
+(5, 'Quản lý tài khoản', '/accounts', 'fa-user-cog', 'USER_VIEW', 5, 0);

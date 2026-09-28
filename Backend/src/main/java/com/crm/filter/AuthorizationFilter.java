@@ -75,6 +75,7 @@ public class AuthorizationFilter implements Filter {
         HttpSession session = httpRequest.getSession(false);
         Integer roleId = null;
         Integer userId = null;
+        java.util.List<Integer> roleIds = null;
 
         if (session != null) {
             Object roleIdObj = session.getAttribute("roleId");
@@ -85,6 +86,16 @@ public class AuthorizationFilter implements Filter {
             if (userIdObj instanceof Integer) {
                 userId = (Integer) userIdObj;
             }
+            if (userId != null) {
+                try {
+                    com.crm.model.Account account = new com.crm.dao.AccountDAO().getAccountById(userId);
+                    if (account != null) {
+                        roleIds = account.getRoleIds();
+                    }
+                } catch (Exception e) {
+                    roleIds = null; // FAIL CLOSED
+                }
+            }
         }
 
         // Nếu chưa đăng nhập (thiếu userId trong session) => Chưa đăng nhập
@@ -94,19 +105,19 @@ public class AuthorizationFilter implements Filter {
             return;
         }
 
-        // Nếu đã đăng nhập nhưng chưa có vai trò (roleId is null) => Từ chối truy cập (403)
-        if (roleId == null) {
+        // Nếu đã đăng nhập nhưng chưa có vai trò (roleIds is null or empty) => Từ chối truy cập (403)
+        if (roleIds == null || roleIds.isEmpty()) {
             LOGGER.warning("Từ chối truy cập đường dẫn " + path + ": Tài khoản chưa được phân vai trò");
             handleForbidden(httpRequest, httpResponse, "Tài khoản của bạn chưa được phân vai trò trong hệ thống.");
             return;
         }
 
-        // Kiểm tra permission của roleId
-        boolean isAuthorized = permissionService.hasPermission(roleId, requiredPermission);
+        // Kiểm tra permission của roleIds (Fresh từ DB)
+        boolean isAuthorized = permissionService.hasPermissionForRoles(roleIds, requiredPermission);
 
         if (!isAuthorized) {
-            LOGGER.warning(String.format("Từ chối truy cập: userId=%d, roleId=%d không có quyền %s cho path %s",
-                    userId, roleId, requiredPermission, path));
+            LOGGER.warning(String.format("Từ chối truy cập: userId=%d không có quyền %s cho path %s",
+                    userId, requiredPermission, path));
             handleForbidden(httpRequest, httpResponse, "Bạn không có quyền truy cập chức năng này.");
             return;
         }

@@ -18,4 +18,18 @@ public class ValidationUtil {
     public static boolean isNotEmpty(String str) {
         return str != null && !str.trim().isEmpty();
     }
+
+    public static java.util.List<Integer> getSafeIntegerList(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.util.List<?>) {
+            java.util.List<Integer> result = new java.util.ArrayList<>();
+            for (Object item : (java.util.List<?>) obj) {
+                if (item instanceof Integer) {
+                    result.add((Integer) item);
+                }
+            }
+            return result;
+        }
+        return null;
+    }
 }

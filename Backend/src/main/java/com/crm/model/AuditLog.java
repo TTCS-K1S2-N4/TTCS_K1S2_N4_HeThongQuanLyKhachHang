@@ -5,14 +5,16 @@ import java.sql.Timestamp;
 public class AuditLog {
     private int logId;
     private int userId;
+    private int targetUserId;
     private String action;
     private String details;
     private Timestamp createdAt;
 
     public AuditLog() {}
 
-    public AuditLog(int userId, String action, String details) {
+    public AuditLog(int userId, int targetUserId, String action, String details) {
         this.userId = userId;
+        this.targetUserId = targetUserId;
         this.action = action;
         this.details = details;
     }
@@ -28,6 +30,9 @@ public class AuditLog {
 
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
+
+    public int getTargetUserId() { return targetUserId; }
+    public void setTargetUserId(int targetUserId) { this.targetUserId = targetUserId; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

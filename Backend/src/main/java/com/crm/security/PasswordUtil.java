@@ -72,6 +72,11 @@ public class PasswordUtil {
         return hasLetter && hasDigit;
     }
 
+    public static String hashToken(String token) {
+        if (token == null) return null;
+        return fallbackSha256(token);
+    }
+
     private static String fallbackSha256(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

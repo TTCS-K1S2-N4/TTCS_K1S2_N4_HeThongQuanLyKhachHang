@@ -32,11 +32,46 @@
                 <p class="auth-description">Nhập thông tin tài khoản để truy cập vào hệ thống</p>
             </div>
 
-            <% if (request.getAttribute("loginError") != null) { %>
-                <div class="auth-message auth-message-error" role="alert">
-                    <%= request.getAttribute("loginError") %>
-                </div>
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+    <script>
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.innerText = message;
+            container.appendChild(toast);
+            
+            void toast.offsetWidth;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        window.onload = function() {
+            <% if (request.getAttribute("loginError") != null) { 
+                String error = (String) request.getAttribute("loginError");
+                String type = error.contains("còn") ? "warning" : "error";
+            %>
+                showToast("<%= error %>", "<%= type %>");
             <% } %>
+            
+            <% if ("true".equals(request.getParameter("logout"))) { %>
+                showToast("Đăng xuất thành công.", "success");
+            <% } %>
+
+            <% if ("true".equals(request.getParameter("passwordChanged"))) { %>
+                showToast("Đổi mật khẩu thành công. Vui lòng đăng nhập lại.", "success");
+            <% } %>
+
+            <% if ("true".equals(request.getParameter("expired"))) { %>
+                showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "warning");
+            <% } %>
+        };
+    </script>
 
             <form action="${pageContext.request.contextPath}/auth/login" method="post">
                 <div class="form-group">
@@ -58,6 +93,9 @@
                            type="password"
                            placeholder="••••••••"
                            required>
+                    <div style="text-align: right; margin-top: 0.5rem;">
+                        <a href="${pageContext.request.contextPath}/auth/forgot-password" class="auth-link" style="font-size: 0.85rem;">Quên mật khẩu?</a>
+                    </div>
                 </div>
 
                 <button class="btn btn-primary btn-block" type="submit">

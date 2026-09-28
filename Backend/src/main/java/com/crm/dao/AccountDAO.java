@@ -11,6 +11,44 @@ import java.util.List;
  * Data Access Object quan ly thao tac Voi bang users va cac thong tin lien quan.
  */
 public class AccountDAO {
+    public Account findByActivationToken(String tokenHash) {
+        if (tokenHash == null) return null;
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.activation_token = ? AND u.activation_token_expiry > CURRENT_TIMESTAMP AND u.is_active = 0";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tokenHash);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSetToAccount(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public boolean activateAccount(String tokenHash) {
+        String sql = "UPDATE users SET is_active = 1, activation_token = NULL, activation_token_expiry = NULL WHERE activation_token = ? AND activation_token_expiry > CURRENT_TIMESTAMP AND is_active = 0";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tokenHash);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    public java.util.List<Account> getAllActiveAccounts() {
+        java.util.List<Account> list = new java.util.ArrayList<>();
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id WHERE u.is_active = 1 ORDER BY u.full_name ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToAccount(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 
     public static final int PAGE_SIZE = 20;
 
@@ -56,23 +94,43 @@ public class AccountDAO {
         return false;
     }
 
-    public boolean createAccount(String email, String passwordHash, String fullName, String phone, Integer teamId) {
-        String sql = "INSERT INTO users (email, password_hash, full_name, phone, team_id, is_active) VALUES (?, ?, ?, ?, ?, 1)";
+    public boolean createAccount(String email, String passwordHash, String fullName, String phone, java.util.List<Integer> roleIds, Integer teamId, String tokenHash, java.sql.Timestamp expiry) {
+        String sql = "INSERT INTO users (email, password_hash, full_name, phone, team_id, activation_token, activation_token_expiry, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, email);
             ps.setString(2, passwordHash);
             ps.setString(3, fullName);
             ps.setString(4, phone);
             if (teamId != null) ps.setInt(5, teamId); else ps.setNull(5, Types.INTEGER);
-            return ps.executeUpdate() > 0;
+            ps.setString(6, tokenHash);
+            ps.setTimestamp(7, expiry);
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows == 0) return false;
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    int userId = generatedKeys.getInt(1);
+                    if (roleIds != null && !roleIds.isEmpty()) {
+                        String roleSql = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
+                        try (PreparedStatement rps = conn.prepareStatement(roleSql)) {
+                            for (Integer rId : roleIds) {
+                                rps.setInt(1, userId);
+                                rps.setInt(2, rId);
+                                rps.addBatch();
+                            }
+                            rps.executeBatch();
+                        }
+                    }
+                    return true;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    public boolean updateAccount(int accountId, String fullName, String phone, Integer teamId) {
+    public boolean updateAccount(int accountId, String fullName, String phone, Integer teamId, java.util.List<Integer> roleIds) {
         String sql = "UPDATE users SET full_name = ?, phone = ?, team_id = ? WHERE user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -80,7 +138,24 @@ public class AccountDAO {
             ps.setString(2, phone);
             if (teamId != null) ps.setInt(3, teamId); else ps.setNull(3, Types.INTEGER);
             ps.setInt(4, accountId);
-            return ps.executeUpdate() > 0;
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows > 0) {
+                try (PreparedStatement dps = conn.prepareStatement("DELETE FROM user_roles WHERE user_id = ?")) {
+                    dps.setInt(1, accountId);
+                    dps.executeUpdate();
+                }
+                if (roleIds != null && !roleIds.isEmpty()) {
+                    try (PreparedStatement ips = conn.prepareStatement("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)")) {
+                        for (Integer rId : roleIds) {
+                            ips.setInt(1, accountId);
+                            ips.setInt(2, rId);
+                            ips.addBatch();
+                        }
+                        ips.executeBatch();
+                    }
+                }
+                return true;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -166,12 +241,12 @@ public class AccountDAO {
         return false;
     }
 
-    public boolean updatePasswordAndClearResetToken(int userId, String newPasswordHash) {
-        String sql = "UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE user_id = ?";
+    public boolean updatePasswordAndClearResetToken(String tokenHash, String newPasswordHash) {
+        String sql = "UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expiry = NULL WHERE reset_token = ? AND reset_token_expiry > CURRENT_TIMESTAMP";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, newPasswordHash);
-            ps.setInt(2, userId);
+            ps.setString(2, tokenHash);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -236,43 +311,46 @@ public class AccountDAO {
         }
     }
 
-    public List<Account> getAccounts(String keyword, Integer teamId, String status, int page) {
+    public List<Account> getAccounts(String keyword, Integer teamId, Integer roleId, String status, int offset, int limit) {
         List<Account> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-            "SELECT u.*, t.team_name, ur.role_id, r.role_name FROM users u " +
-            "LEFT JOIN teams t ON u.team_id = t.team_id " +
-            "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
-            "LEFT JOIN roles r ON ur.role_id = r.role_id WHERE 1=1 "
-        );
-
+        String sql = "SELECT u.*, t.team_name FROM users u LEFT JOIN teams t ON u.team_id = t.team_id ";
+        if (roleId != null) {
+            sql += "INNER JOIN user_roles ur ON u.user_id = ur.user_id ";
+        }
+        sql += "WHERE 1=1 ";
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (u.full_name LIKE ? OR u.email LIKE ?) ");
+            sql += " AND (u.full_name LIKE ? OR u.email LIKE ?) ";
         }
-        if (teamId != null) sql.append(" AND u.team_id = ? ");
+        if (teamId != null) sql += " AND u.team_id = ? ";
+        if (roleId != null) sql += " AND ur.role_id = ? ";
         if ("ACTIVE".equalsIgnoreCase(status)) {
-            sql.append(" AND u.is_active = 1 ");
-        } else if ("LOCKED".equalsIgnoreCase(status)) {
-            sql.append(" AND u.is_active = 0 ");
+            sql += " AND u.is_active = 1 ";
+        } else if ("INACTIVE".equalsIgnoreCase(status)) {
+            sql += " AND u.is_active = 0 ";
         }
-
-        sql.append(" ORDER BY u.user_id DESC LIMIT ? OFFSET ?");
+        sql += " ORDER BY u.created_at DESC LIMIT ? OFFSET ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
                 ps.setString(idx++, kw);
                 ps.setString(idx++, kw);
             }
-            if (teamId != null) ps.setInt(idx++, teamId);
+            if (teamId != null) {
+                ps.setInt(idx++, teamId);
+            }
+            if (roleId != null) {
+                ps.setInt(idx++, roleId);
+            }
+            ps.setInt(idx++, limit);
+            ps.setInt(idx, offset);
 
-            ps.setInt(idx++, PAGE_SIZE);
-            ps.setInt(idx, (page - 1) * PAGE_SIZE);
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSetToAccount(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToAccount(rs));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -280,30 +358,40 @@ public class AccountDAO {
         return list;
     }
 
-    public int countAccounts(String keyword, Integer teamId, String status) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users WHERE 1=1 ");
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
+    public int countAccounts(String keyword, Integer teamId, Integer roleId, String status) {
+        String sql = "SELECT COUNT(*) FROM users u ";
+        if (roleId != null) {
+            sql += "INNER JOIN user_roles ur ON u.user_id = ur.user_id ";
         }
-        if (teamId != null) sql.append(" AND team_id = ? ");
+        sql += "WHERE 1=1 ";
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql += " AND (u.full_name LIKE ? OR u.email LIKE ?) ";
+        }
+        if (teamId != null) sql += " AND u.team_id = ? ";
+        if (roleId != null) sql += " AND ur.role_id = ? ";
         if ("ACTIVE".equalsIgnoreCase(status)) {
-            sql.append(" AND is_active = 1 ");
-        } else if ("LOCKED".equalsIgnoreCase(status)) {
-            sql.append(" AND is_active = 0 ");
+            sql += " AND u.is_active = 1 ";
+        } else if ("INACTIVE".equalsIgnoreCase(status)) {
+            sql += " AND u.is_active = 0 ";
         }
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             int idx = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
                 ps.setString(idx++, kw);
                 ps.setString(idx++, kw);
             }
-            if (teamId != null) ps.setInt(idx++, teamId);
-
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (teamId != null) {
+                ps.setInt(idx++, teamId);
+            }
+            if (roleId != null) {
+                ps.setInt(idx++, roleId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -386,3 +474,5 @@ public class AccountDAO {
         }
     }
 }
+
+
