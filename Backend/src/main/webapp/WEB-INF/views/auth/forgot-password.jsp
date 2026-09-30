@@ -1,15 +1,13 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%
     Boolean isResetStepObj = (Boolean) request.getAttribute("isResetStep");
     boolean isResetStep = isResetStepObj != null && isResetStepObj;
     String title = isResetStep ? "Đặt lại mật khẩu" : "Quên mật khẩu?";
     String subtitle = isResetStep
-            ? "Vui lòng nhập mật khẩu mới và mã token xác nhận của bạn."
-            : "Nhập địa chỉ email đăng ký để nhận mã token đặt lại mật khẩu.";
+            ? "Nhập mật khẩu tạm thời nhận được từ email và mật khẩu mới của bạn."
+            : "Nhập địa chỉ email đã đăng ký để nhận mật khẩu tạm thời.";
     String errorMessage = (String) request.getAttribute("errorMessage");
     String successMessage = (String) request.getAttribute("successMessage");
-    String resetToken = (String) request.getAttribute("resetToken");
-    String resetUrl = (String) request.getAttribute("resetUrl");
     String token = (String) request.getAttribute("token");
     String email = (String) request.getAttribute("email");
     if (token == null) token = "";
@@ -53,7 +51,7 @@
 
         .auth-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             background: var(--card-bg);
             border-radius: 20px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
@@ -63,7 +61,7 @@
 
         .auth-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.75rem;
         }
 
         .auth-icon {
@@ -115,18 +113,6 @@
             border: 1px solid #a7f3d0;
         }
 
-        .token-box {
-            background: #f1f5f9;
-            border: 1px dashed #cbd5e1;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            word-break: break-all;
-            margin-top: 0.5rem;
-            color: #0f172a;
-        }
-
         .form-group {
             margin-bottom: 1.25rem;
         }
@@ -152,9 +138,27 @@
             font-size: 1rem;
         }
 
+        .toggle-password-btn {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1rem;
+            padding: 4px;
+            z-index: 5;
+        }
+
+        .toggle-password-btn:hover {
+            color: var(--primary);
+        }
+
         .form-control {
             width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            padding: 0.75rem 2.5rem 0.75rem 2.75rem;
             border: 1.5px solid var(--border);
             border-radius: 10px;
             font-size: 0.95rem;
@@ -188,7 +192,7 @@
 
         .auth-footer {
             text-align: center;
-            margin-top: 1.75rem;
+            margin-top: 1.5rem;
             font-size: 0.875rem;
             color: var(--text-muted);
         }
@@ -201,6 +205,12 @@
 
         .auth-link:hover {
             text-decoration: underline;
+        }
+
+        .password-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
         }
     </style>
 </head>
@@ -235,17 +245,39 @@
         </div>
     <% } %>
 
+    <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.className = 'fa-solid fa-eye-slash';
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.className = 'fa-solid fa-eye';
+                }
+            }
+        }
+    </script>
+
     <% if (isResetStep) { %>
-        <%-- FORM BƯỚC 2: ĐẶT LẠI MẬT KHẨU MỚI BẰNG TOKEN --%>
+        <%-- BƯỚC 2: MÀN HÌNH ĐẶT LẠI MẬT KHẨU --%>
             <form action="${pageContext.request.contextPath}/auth/forgot-password" method="post">
                 <input type="hidden" name="action" value="reset">
 
                 <div class="form-group">
-                    <label class="form-label" for="token">Mã Token khôi phục</label>
+                    <label class="form-label" for="token">Mật khẩu tạm thời</label>
                     <div class="input-group">
-                        <i class="fa-solid fa-ticket input-icon"></i>
-                        <input type="text" id="token" name="token" class="form-control" 
-                               value="<%= token %>" placeholder="Nhập mã token..." required>
+                        <i class="fa-solid fa-key input-icon"></i>
+                        <input type="password" id="token" name="token" class="form-control" 
+                               value="<%= token %>" placeholder="Nhập mật khẩu tạm thời từ email..." required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword('token', this)" title="Hiện/Ẩn mật khẩu">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -254,8 +286,12 @@
                     <div class="input-group">
                         <i class="fa-solid fa-lock input-icon"></i>
                         <input type="password" id="newPassword" name="newPassword" class="form-control" 
-                               placeholder="Tối thiểu 8 ký tự, gồm chữ và số..." required>
+                               placeholder="Tối thiểu 8 ký tự..." required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword('newPassword', this)" title="Hiện/Ẩn mật khẩu">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
+                    <p class="password-hint">Yêu cầu: Tối thiểu 8 ký tự, có ít nhất 1 chữ cái, 1 chữ số và 1 ký tự đặc biệt.</p>
                 </div>
 
                 <div class="form-group">
@@ -264,20 +300,23 @@
                         <i class="fa-solid fa-shield-halved input-icon"></i>
                         <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" 
                                placeholder="Nhập lại mật khẩu mới..." required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword('confirmPassword', this)" title="Hiện/Ẩn mật khẩu">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
                 <button type="submit" class="btn-submit">
-                    <i class="fa-solid fa-rotate"></i> Cập nhật mật khẩu
+                    <i class="fa-solid fa-check-circle"></i> Xác nhận đổi mật khẩu
                 </button>
             </form>
 
             <div class="auth-footer">
-                Chưa nhận được mã Token? 
-                <a href="${pageContext.request.contextPath}/auth/forgot-password" class="auth-link">Gửi lại yêu cầu</a>
+                Chưa nhận được email hoặc mật khẩu hết hạn? 
+                <a href="${pageContext.request.contextPath}/auth/forgot-password" class="auth-link">Gửi lại email</a>
             </div>
     <% } else { %>
-        <%-- FORM BƯỚC 1: GỬI YÊU CẦU LẤY TOKEN KHÔI PHỤC THEO EMAIL --%>
+        <%-- BƯỚC 1: NHẬP EMAIL ĐỂ NHẬN MẬT KHẨU TẠM THỜI --%>
             <form action="${pageContext.request.contextPath}/auth/forgot-password" method="post">
                 <input type="hidden" name="action" value="request">
 
@@ -286,22 +325,22 @@
                     <div class="input-group">
                         <i class="fa-regular fa-envelope input-icon"></i>
                         <input type="email" id="email" name="email" class="form-control" 
-                               value="<%= email %>" placeholder="example@company.com" required>
+                               value="<%= email %>" placeholder="example@company.com" required style="padding-right: 1rem;">
                     </div>
                 </div>
 
                 <button type="submit" class="btn-submit">
-                    <i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu khôi phục
+                    <i class="fa-solid fa-paper-plane"></i> Gửi mật khẩu tạm thời
                 </button>
             </form>
 
             <div class="auth-footer">
-                Đã có mã Token? 
-                <a href="${pageContext.request.contextPath}/auth/forgot-password?token=" class="auth-link">Nhập Token đổi mật khẩu</a>
+                Đã có mật khẩu tạm thời? 
+                <a href="${pageContext.request.contextPath}/auth/forgot-password?token=" class="auth-link">Đặt lại mật khẩu ngay</a>
             </div>
     <% } %>
 
-    <div class="auth-footer" style="margin-top: 1rem;">
+    <div class="auth-footer" style="margin-top: 1.25rem;">
         <a href="${pageContext.request.contextPath}/auth/login" class="auth-link">
             <i class="fa-solid fa-arrow-left"></i> Quay lại Đăng nhập
         </a>

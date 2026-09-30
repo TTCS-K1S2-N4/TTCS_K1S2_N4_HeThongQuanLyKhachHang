@@ -48,6 +48,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/accounts/edit", "USER_EDIT");
         protectedUrlMap.put("/accounts/assign-role", "USER_EDIT");
         protectedUrlMap.put("/accounts/lock", "USER_DELETE");
+        protectedUrlMap.put("/accounts/unlock", "USER_DELETE");
         protectedUrlMap.put("/accounts/transfer-data", "USER_DELETE");
         protectedUrlMap.put("/accounts/delete", "USER_DELETE");
         protectedUrlMap.put("/accounts/detail", "USER_VIEW");

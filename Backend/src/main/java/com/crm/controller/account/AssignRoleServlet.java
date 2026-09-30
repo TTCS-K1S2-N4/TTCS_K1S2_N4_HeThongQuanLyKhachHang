@@ -1,7 +1,9 @@
 package com.crm.controller.account;
 
 import com.crm.dao.AccountDAO;
+import com.crm.dao.RoleDAO;
 import com.crm.model.Account;
+import com.crm.model.Role;
 import com.crm.service.RoleService;
 
 import jakarta.servlet.ServletException;
@@ -17,11 +19,13 @@ public class AssignRoleServlet extends HttpServlet {
 
     private RoleService roleService;
     private AccountDAO accountDAO;
+    private RoleDAO roleDAO;
 
     @Override
     public void init() {
         roleService = new RoleService();
         accountDAO = new AccountDAO();
+        roleDAO = new RoleDAO();
     }
 
     @Override
@@ -96,12 +100,45 @@ public class AssignRoleServlet extends HttpServlet {
             Integer teamId = teamIdValue == null || teamIdValue.isBlank() ? null : Integer.valueOf(teamIdValue);
 
             boolean validRoles = !roleIds.isEmpty();
-            for (Integer roleId : roleIds) validRoles &= roleService.isValidRole(roleId);
-            if (!validRoles || (teamId != null && !roleService.isValidTeam(teamId))) {
+            boolean isTeamLead = false;
+            boolean hasAdminRole = false;
 
+            for (Integer roleId : roleIds) {
+                validRoles &= roleService.isValidRole(roleId);
+                Role role = roleDAO.findById(roleId);
+                if (role != null) {
+                    if ("ADMIN".equals(role.getCode())) {
+                        hasAdminRole = true;
+                    }
+                    if ("TEAM_LEAD".equals(role.getCode())) {
+                        isTeamLead = true;
+                    }
+                }
+            }
+
+            if (!validRoles || (teamId != null && !roleService.isValidTeam(teamId))) {
                 response.sendError(
                         HttpServletResponse.SC_BAD_REQUEST
                 );
+                return;
+            }
+
+            Integer loggedUserId = (Integer) request.getSession().getAttribute("userId");
+            if (loggedUserId != null && loggedUserId.equals(accountId) && !hasAdminRole) {
+                request.setAttribute("error", "Bạn không thể tự thu hồi vai trò Quản trị (Admin) của chính mình.");
+                request.setAttribute("account", accountDAO.findById(accountId));
+                request.setAttribute("roles", roleService.getAllRoles());
+                request.setAttribute("teams", roleService.getAllTeams());
+                request.getRequestDispatcher("/WEB-INF/views/accounts/assign-role.jsp").forward(request, response);
+                return;
+            }
+
+            if (isTeamLead && teamId == null) {
+                request.setAttribute("error", "Trưởng nhóm kinh doanh phải được gán vào một nhóm cụ thể.");
+                request.setAttribute("account", accountDAO.findById(accountId));
+                request.setAttribute("roles", roleService.getAllRoles());
+                request.setAttribute("teams", roleService.getAllTeams());
+                request.getRequestDispatcher("/WEB-INF/views/accounts/assign-role.jsp").forward(request, response);
                 return;
             }
 

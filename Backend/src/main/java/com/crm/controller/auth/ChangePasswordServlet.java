@@ -69,14 +69,13 @@ public class ChangePasswordServlet extends HttpServlet {
         try {
             authService.changePassword(userId, oldPassword, newPassword, confirmPassword);
 
-            // Đổi mật khẩu thành công -> Hủy session hiện tại và bắt buộc người dùng đăng nhập lại bằng mật khẩu mới
+            // Thu hồi tất cả các phiên đang đăng nhập khác của cùng tài khoản trên thiết bị/trình duyệt khác
             if (session != null) {
-                try {
-                    session.invalidate();
-                } catch (IllegalStateException ignored) {}
+                com.crm.util.SessionListener.invalidateOtherUserSessions(userId, session.getId());
             }
 
-            response.sendRedirect(request.getContextPath() + "/auth/login?passwordChanged=true");
+            request.setAttribute("successMessage", "Đổi mật khẩu thành công!");
+            request.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(request, response);
 
         } catch (AuthenticationException e) {
             request.setAttribute("errorMessage", e.getMessage());

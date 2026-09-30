@@ -2,6 +2,7 @@ package com.crm.security;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import org.mindrot.jbcrypt.BCrypt;
 
 /**
@@ -11,7 +12,7 @@ import org.mindrot.jbcrypt.BCrypt;
 public class PasswordUtil {
 
     /**
-     * Bam mat khau tho thanh chuoi bam BCrypt (hoac SHA-256 fallback).
+     * Bam mat khau tho thanh chuoi bam BCrypt.
      *
      * @param plainPassword Mat khau tho
      * @return Chuoi bam BCrypt hoac fallback SHA-256
@@ -50,7 +51,10 @@ public class PasswordUtil {
 
     /**
      * Kiem tra quy tac mat khau moi:
-     * Toi thieu 8 ky tu, phai bao gom ca chu cai (a-z, A-Z) va chu so (0-9).
+     * Toi thieu 8 ky tu, phai bao gom:
+     * - It nhat 1 chu cai (a-z, A-Z)
+     * - It nhat 1 chu so (0-9)
+     * - It nhat 1 ky tu dac biet (!@#$%^&*...)
      *
      * @param password Mat khau can kiem tra
      * @return true neu hop le, false neu vi pham
@@ -61,15 +65,51 @@ public class PasswordUtil {
         }
         boolean hasLetter = false;
         boolean hasDigit = false;
+        boolean hasSpecial = false;
 
         for (char c : password.toCharArray()) {
             if (Character.isLetter(c)) {
                 hasLetter = true;
             } else if (Character.isDigit(c)) {
                 hasDigit = true;
+            } else {
+                hasSpecial = true;
             }
         }
-        return hasLetter && hasDigit;
+        return hasLetter && hasDigit && hasSpecial;
+    }
+
+    /**
+     * Sinh mat khau tam thoi ngau nhien dap ung day du quy tac bao mat:
+     * Toi thieu 10 ky tu, gom chu hoa, chu thuong, chu so va ky tu dac biet.
+     *
+     * @return Chuoi mat khau tam thoi ngau nhien
+     */
+    public static String generateTemporaryPassword() {
+        String upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        String lower = "abcdefghijkmnpqrstuvwxyz";
+        String digits = "23456789";
+        String specials = "!@#$%^&*";
+        String all = upper + lower + digits + specials;
+        
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder(10);
+        sb.append(upper.charAt(rnd.nextInt(upper.length())));
+        sb.append(lower.charAt(rnd.nextInt(lower.length())));
+        sb.append(digits.charAt(rnd.nextInt(digits.length())));
+        sb.append(specials.charAt(rnd.nextInt(specials.length())));
+        for (int i = 0; i < 6; i++) {
+            sb.append(all.charAt(rnd.nextInt(all.length())));
+        }
+        
+        char[] chars = sb.toString().toCharArray();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = rnd.nextInt(i + 1);
+            char temp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = temp;
+        }
+        return new String(chars);
     }
 
     public static String hashToken(String token) {

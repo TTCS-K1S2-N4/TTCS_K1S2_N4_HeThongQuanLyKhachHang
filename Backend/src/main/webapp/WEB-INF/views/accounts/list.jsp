@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.crm.model.Account" %>
 <%@ page import="com.crm.model.Role" %>
@@ -7,16 +7,9 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý tài khoản | CRM System</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/variables.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
+    <jsp:include page="/WEB-INF/views/fragments/head.jsp"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/accounts.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="app">
@@ -61,8 +54,21 @@
                 </div>
             </div>
 
-            <% if ("created".equals(msg)) { %>
-                <div class="alert alert-success">Tạo tài khoản thành công và đã gửi email.</div>
+            <% String errorParam = request.getParameter("error"); %>
+            <% if ("created".equals(msg) || "created_email_sent".equals(msg)) { %>
+                <div class="alert alert-success">Tạo tài khoản và gửi email thông tin mật khẩu tạm thời thành công!</div>
+            <% } else if ("created_no_email".equals(msg) || "created_email_failed".equals(msg)) { %>
+                <div class="alert alert-warning">Tạo tài khoản thành công, nhưng gửi Email mật khẩu tạm thời thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP). Bạn có thể bấm biểu tượng Gửi lại Email ở bảng dưới.</div>
+            <% } else if ("email_resent_success".equals(msg)) { %>
+                <div class="alert alert-success">Gửi lại email thông tin mật khẩu tạm thời thành công!</div>
+            <% } else if ("email_resent_failed".equals(msg)) { %>
+                <div class="alert alert-danger">Gửi lại email thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP).</div>
+            <% } else if ("unlocked".equals(msg)) { %>
+                <div class="alert alert-success">Mở khóa tài khoản thành công! Trạng thái đã được chuyển sang Hoạt động.</div>
+            <% } else if ("transferred_and_locked".equals(msg)) { %>
+                <div class="alert alert-success">Khóa và bàn giao dữ liệu tài khoản thành công.</div>
+            <% } else if ("unlock_failed".equals(errorParam)) { %>
+                <div class="alert alert-danger">Mở khóa tài khoản thất bại hoặc tài khoản không tồn tại.</div>
             <% } %>
 
             <section class="card accounts-list-card">
@@ -136,6 +142,15 @@
                                     <div class="table-actions">
                                         <a href="${pageContext.request.contextPath}/accounts/detail?accountId=<%= account.getAccountId() %>" class="btn-icon" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
                                         <a href="${pageContext.request.contextPath}/accounts/edit?accountId=<%= account.getAccountId() %>" class="btn-icon" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                        <form action="${pageContext.request.contextPath}/accounts/resend-email" method="post" style="display:inline;" onsubmit="return confirm('Tạo mật khẩu tạm thời mới và gửi qua Email cho tài khoản này?');">
+                                            <input type="hidden" name="accountId" value="<%= account.getAccountId() %>">
+                                            <button type="submit" class="btn-icon text-primary" title="Gửi lại Email mật khẩu tạm thời" style="background:none; border:none; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                                        </form>
+                                        <% if ("ACTIVE".equals(account.getStatus())) { %>
+                                            <a href="${pageContext.request.contextPath}/accounts/lock?accountId=<%= account.getAccountId() %>" class="btn-icon text-danger" title="Khóa & Bàn giao"><i class="fas fa-lock"></i></a>
+                                        <% } else { %>
+                                            <a href="${pageContext.request.contextPath}/accounts/unlock?accountId=<%= account.getAccountId() %>" class="btn-icon text-success" title="Mở khóa tài khoản" onclick="return confirm('Bạn có chắc chắn muốn mở khóa tài khoản này?');"><i class="fas fa-unlock"></i></a>
+                                        <% } %>
                                     </div>
                                 </td>
                             </tr>

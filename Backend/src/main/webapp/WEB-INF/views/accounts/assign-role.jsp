@@ -1,7 +1,7 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Gán vai trò | CRM</title>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css"><link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css"></head>
+<!DOCTYPE html><html lang="vi"><head><title>Gán vai trò | CRM</title>
+<jsp:include page="/WEB-INF/views/fragments/head.jsp"/></head>
 <body><div class="app"><jsp:include page="/WEB-INF/views/fragments/header.jsp"/><jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/>
 <main class="main-content"><div class="content-container"><h1>Gán vai trò và nhóm</h1><p><c:out value="${account.fullName}"/> — <c:out value="${account.email}"/></p>
 <form action="${pageContext.request.contextPath}/accounts/assign-role" method="post">
