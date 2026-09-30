@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hồ sơ cá nhân | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/profile.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container">
+            <div class="page-header">
+                <h1 class="page-title">Thông tin Hồ sơ cá nhân</h1>
+            </div>
+            
+            <div class="profile-container">
+                <!-- User Info Form -->
+                <div class="card profile-form-section">
+                    <div class="card-body">
+                        <h2 style="font-size: 18px; margin-bottom: 20px;">Thông tin cơ bản</h2>
+                        <form id="profileForm" action="/profile/update" method="POST">
+                            <div class="form-group">
+                                <label>Họ và tên (*)</label>
+                                <input type="text" name="fullName" id="fullName" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Số điện thoại (*)</label>
+                                <input type="text" name="phone" id="phone" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Chữ ký Email</label>
+                                <textarea name="emailSignature" id="emailSignature" class="form-control" rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Phòng ban/Team</label>
+                                <input type="text" name="department" id="department" class="form-control" readonly style="background: #f5f5f5;">
+                            </div>
+                            <div class="form-group">
+                                <label>Vai trò</label>
+                                <input type="text" name="role" id="role" class="form-control" readonly style="background: #f5f5f5;">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+                            </div>
+                            <div id="profileMessage" class="toast-message"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Avatar Upload -->
+                <div class="profile-avatar-section">
+                    <h2 style="font-size: 18px; margin-bottom: 20px;">Ảnh đại diện</h2>
+                    <img id="avatarPreview" src="../../assets/images/default-avatar.png" alt="Avatar" class="avatar-img">
+                    <form id="avatarForm" action="/profile/avatar" method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <input type="file" id="avatarInput" name="avatar" accept="image/jpeg, image/png" required style="width: 100%;">
+                        </div>
+                        <button type="submit" class="btn btn-secondary">Tải ảnh lên</button>
+                    </form>
+                    <div id="avatarMessage" class="toast-message"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load initial profile data
+        fetch('/profile')
+            .then(res => res.json())
+            .then(data => {
+                if(data.profile) {
+                    document.getElementById('fullName').value = data.profile.fullName || '';
+                    document.getElementById('phone').value = data.profile.phone || '';
+                    document.getElementById('emailSignature').value = data.profile.emailSignature || '';
+                    document.getElementById('department').value = data.profile.department || '';
+                    document.getElementById('role').value = data.profile.role || '';
+                    if(data.profile.avatarUrl) {
+                        document.getElementById('avatarPreview').src = data.profile.avatarUrl;
+                    }
+                }
+            }).catch(console.error);
+
+        // Update profile form
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const messageDiv = document.getElementById('profileMessage');
+            messageDiv.style.display = 'block';
+            
+            const formData = new FormData(this);
+            const urlEncodedData = new URLSearchParams(formData).toString();
+            
+            fetch(this.action, {
+                method: this.method,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: urlEncodedData
+            })
+            .then(res => {
+                if(!res.ok) throw new Error('API Error');
+                return res.json();
+            })
+            .then(data => {
+                messageDiv.textContent = 'Cập nhật hồ sơ thành công!';
+                messageDiv.className = 'toast-message success';
+            })
+            .catch(err => {
+                messageDiv.textContent = 'Lỗi cập nhật hồ sơ.';
+                messageDiv.className = 'toast-message error';
+            });
+        });
+
+        // Update avatar
+        document.getElementById('avatarForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('avatarInput');
+            const file = fileInput.files[0];
+            const messageDiv = document.getElementById('avatarMessage');
+            messageDiv.style.display = 'block';
+            
+            if (!file) {
+                messageDiv.textContent = 'Vui lòng chọn ảnh.';
+                messageDiv.className = 'toast-message error';
+                return;
+            }
+            if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                messageDiv.textContent = 'Chỉ chấp nhận định dạng JPG/PNG.';
+                messageDiv.className = 'toast-message error';
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                messageDiv.textContent = 'Dung lượng ảnh phải <= 2MB.';
+                messageDiv.className = 'toast-message error';
+                return;
+            }
+            
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: this.method,
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.avatarUrl) {
+                    document.getElementById('avatarPreview').src = data.avatarUrl;
+                    messageDiv.textContent = 'Cập nhật ảnh thành công!';
+                    messageDiv.className = 'toast-message success';
+                } else {
+                    messageDiv.textContent = 'Có lỗi xảy ra, vui lòng thử lại.';
+                    messageDiv.className = 'toast-message error';
+                }
+            })
+            .catch(err => {
+                messageDiv.textContent = 'Lỗi kết nối máy chủ.';
+                messageDiv.className = 'toast-message error';
+            });
+        });
+    </script>
+</body>
+</html>
