@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Chi tiết nhật ký | CRM System</title>
+
+    <!-- FOUNDATION -->
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+
+    <!-- AUDIT LOG MODULE -->
+    <link rel="stylesheet" href="../../assets/css/modules/audit-log.css">
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="app-header">
+
+        <div class="header-left">
+
+            <a class="header-brand" href="../../index.html">
+
+                <span class="brand-mark">
+                    CRM
+                </span>
+
+                <span>
+                    CRM System
+                </span>
+
+            </a>
+
+            <div class="header-divider"></div>
+
+            <nav
+                class="breadcrumb"
+                aria-label="Breadcrumb">
+
+                <a href="../../index.html">
+                    Trang chủ
+                </a>
+
+                <span>/</span>
+
+                <a href="../../audit-log">
+                    Nhật ký hệ thống
+                </a>
+
+                <span>/</span>
+
+                <span class="breadcrumb-current">
+                    Chi tiết
+                </span>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <nav aria-label="Điều hướng chính">
+
+            <!-- TỔNG QUAN -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="../dashboard/index.html">
+                    <span class="nav-icon" aria-hidden="true">◫</span>
+                    <span>Dashboard</span>
+                </a>
+
+            </div>
+
+
+            <!-- KINH DOANH -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◎</span>
+                    <span>Khách hàng</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◇</span>
+                    <span>Lead</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">△</span>
+                    <span>Cơ hội</span>
+                </a>
+
+                <a class="nav-item" href="../activities/list.html">
+                    <span class="nav-icon" aria-hidden="true">○</span>
+                    <span>Hoạt động</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">▣</span>
+                    <span>Báo giá & Hợp đồng</span>
+                </a>
+
+            </div>
+
+
+            <!-- PHÂN TÍCH -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◈</span>
+                    <span>Chỉ tiêu & KPI</span>
+                </a>
+
+                <a class="nav-item" href="../reports/overview.html">
+                    <span class="nav-icon" aria-hidden="true">▤</span>
+                    <span>Báo cáo & Dashboard</span>
+                </a>
+
+            </div>
+
+
+            <!-- HỆ THỐNG -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="../accounts/list.html">
+                    <span class="nav-icon" aria-hidden="true">□</span>
+                    <span>Quản lý tài khoản</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>Vai trò & phân quyền</span>
+                </a>
+
+                <a
+                    class="nav-item active"
+                    href="list.html"
+                    aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">≡</span>
+                    <span>Nhật ký hệ thống</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= CONTENT ================= -->
+
+    <main class="main-content audit-log-page">
+
+        <div class="content-container">
+
+            <!-- PAGE HEADER -->
+
+            <div class="page-header">
+
+                <div>
+
+                    <h1 class="page-title">
+                        Chi tiết nhật ký thay đổi
+                    </h1>
+
+                    <p
+                        id="audit-log-subtitle"
+                        class="page-description">
+                        Thông tin người thực hiện, thời điểm và giá trị trước/sau thay đổi.
+                    </p>
+
+                </div>
+
+
+                <div class="page-actions">
+
+                    <a
+                        id="audit-log-back"
+                        class="btn btn-secondary"
+                        href="../../audit-log">
+
+                        ‹ Quay lại danh sách
+
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- INPUT KHÔNG HỢP LỆ: thiếu hoặc sai auditLogId -->
+
+            <div
+                id="audit-log-invalid"
+                class="audit-log-alert audit-log-alert-danger"
+                role="alert"
+                hidden>
+                Mã bản ghi nhật ký không hợp lệ. Vui lòng mở chi tiết từ danh sách nhật ký.
+            </div>
+
+
+            <!-- DỮ LIỆU KHÔNG TỒN TẠI -->
+
+            <section
+                id="audit-log-not-found"
+                class="card"
+                hidden>
+
+                <div class="card-body">
+
+                    <div class="empty-state">
+
+                        <h2 class="empty-state-title">
+                            Không tìm thấy bản ghi nhật ký
+                        </h2>
+
+                        <p class="empty-state-description">
+                            Bản ghi không tồn tại hoặc bạn không có quyền xem bản ghi này.
+                        </p>
+
+                        <a class="btn btn-primary" href="../../audit-log">
+                            Về danh sách nhật ký
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!--
+                S2-04 - API 2: GET /audit-log/detail?auditLogId={auditLogId}
+                Response: auditLog { user, entityType, entityId, action,
+                changedAt, oldValue, newValue }.
+                data-loaded = "true" khi có auditLog; mọi giá trị phải được
+                escape khi render (c:out / textContent), không diễn giải lại.
+            -->
+
+            <section
+                id="audit-log-detail"
+                class="card"
+                data-loaded="">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h2 class="card-title">
+                            Thông tin thay đổi
+                        </h2>
+
+                        <p class="card-description">
+                            Thời điểm hiển thị theo giờ Việt Nam (Asia/Ho_Chi_Minh).
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <dl class="audit-log-meta">
+
+                        <div class="audit-log-meta-item">
+                            <dt class="audit-log-meta-label">Người thực hiện</dt>
+                            <dd class="audit-log-meta-value" data-field="user"></dd>
+                        </div>
+
+                        <div class="audit-log-meta-item">
+                            <dt class="audit-log-meta-label">Thời điểm</dt>
+                            <dd class="audit-log-meta-value audit-log-time" data-field="changedAt"></dd>
+                        </div>
+
+                        <div class="audit-log-meta-item">
+                            <dt class="audit-log-meta-label">Loại đối tượng</dt>
+                            <dd class="audit-log-meta-value" data-field="entityType"></dd>
+                        </div>
+
+                        <div class="audit-log-meta-item">
+                            <dt class="audit-log-meta-label">Mã đối tượng</dt>
+                            <dd class="audit-log-meta-value" data-field="entityId"></dd>
+                        </div>
+
+                        <div class="audit-log-meta-item">
+                            <dt class="audit-log-meta-label">Hành động</dt>
+                            <dd class="audit-log-meta-value audit-log-action" data-field="action"></dd>
+                        </div>
+
+                    </dl>
+
+
+                    <!-- GIÁ TRỊ TRƯỚC / SAU (hiển thị nguyên văn) -->
+
+                    <div class="audit-log-compare">
+
+                        <section
+                            class="audit-log-change audit-log-change-old"
+                            aria-labelledby="audit-log-old-title">
+
+                            <h3
+                                id="audit-log-old-title"
+                                class="audit-log-change-header">
+                                Giá trị trước thay đổi
+                            </h3>
+
+                            <pre class="audit-log-value" data-field="oldValue"></pre>
+
+                        </section>
+
+
+                        <section
+                            class="audit-log-change audit-log-change-new"
+                            aria-labelledby="audit-log-new-title">
+
+                            <h3
+                                id="audit-log-new-title"
+                                class="audit-log-change-header">
+                                Giá trị sau thay đổi
+                            </h3>
+
+                            <pre class="audit-log-value" data-field="newValue"></pre>
+
+                        </section>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+    (function () {
+        var rawId = new URLSearchParams(window.location.search).get("auditLogId");
+        var detail = document.getElementById("audit-log-detail");
+        var invalid = document.getElementById("audit-log-invalid");
+        var notFound = document.getElementById("audit-log-not-found");
+        var back = document.getElementById("audit-log-back");
+
+        /* ---------- Quay lại danh sách, giữ nguyên bộ lọc/trang đã xem ---------- */
+
+        try {
+            var referrer = document.referrer ? new URL(document.referrer) : null;
+            if (referrer
+                    && referrer.origin === window.location.origin
+                    && /\/audit-log\/?$/.test(referrer.pathname)) {
+                back.href = referrer.href;
+            }
+        } catch (e) {
+            /* referrer không hợp lệ: dùng liên kết mặc định */
+        }
+
+        /* ---------- Trạng thái hiển thị ---------- */
+
+        var isValidId = rawId !== null && /^\d+$/.test(rawId.trim()) && parseInt(rawId, 10) > 0;
+
+        if (!isValidId) {
+            detail.hidden = true;
+            invalid.hidden = false;
+            return;
+        }
+
+        if (detail.getAttribute("data-loaded") !== "true") {
+            detail.hidden = true;
+            notFound.hidden = false;
+            return;
+        }
+
+        document.getElementById("audit-log-subtitle").textContent =
+            "Bản ghi nhật ký #" + parseInt(rawId, 10)
+            + " – người thực hiện, thời điểm và giá trị trước/sau thay đổi.";
+    })();
+</script>
+
+</body>
+</html>

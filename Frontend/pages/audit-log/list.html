@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Nhật ký hệ thống | CRM System</title>
+
+    <!-- FOUNDATION -->
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+
+    <!-- AUDIT LOG MODULE -->
+    <link rel="stylesheet" href="../../assets/css/modules/audit-log.css">
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="app-header">
+
+        <div class="header-left">
+
+            <a class="header-brand" href="../../index.html">
+
+                <span class="brand-mark">
+                    CRM
+                </span>
+
+                <span>
+                    CRM System
+                </span>
+
+            </a>
+
+            <div class="header-divider"></div>
+
+            <nav
+                class="breadcrumb"
+                aria-label="Breadcrumb">
+
+                <a href="../../index.html">
+                    Trang chủ
+                </a>
+
+                <span>/</span>
+
+                <span class="breadcrumb-current">
+                    Nhật ký hệ thống
+                </span>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <nav aria-label="Điều hướng chính">
+
+            <!-- TỔNG QUAN -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="../dashboard/index.html">
+                    <span class="nav-icon" aria-hidden="true">◫</span>
+                    <span>Dashboard</span>
+                </a>
+
+            </div>
+
+
+            <!-- KINH DOANH -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◎</span>
+                    <span>Khách hàng</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◇</span>
+                    <span>Lead</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">△</span>
+                    <span>Cơ hội</span>
+                </a>
+
+                <a class="nav-item" href="../activities/list.html">
+                    <span class="nav-icon" aria-hidden="true">○</span>
+                    <span>Hoạt động</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">▣</span>
+                    <span>Báo giá & Hợp đồng</span>
+                </a>
+
+            </div>
+
+
+            <!-- PHÂN TÍCH -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◈</span>
+                    <span>Chỉ tiêu & KPI</span>
+                </a>
+
+                <a class="nav-item" href="../reports/overview.html">
+                    <span class="nav-icon" aria-hidden="true">▤</span>
+                    <span>Báo cáo & Dashboard</span>
+                </a>
+
+            </div>
+
+
+            <!-- HỆ THỐNG -->
+
+            <div class="sidebar-section">
+
+                <a class="nav-item" href="../accounts/list.html">
+                    <span class="nav-icon" aria-hidden="true">□</span>
+                    <span>Quản lý tài khoản</span>
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>Vai trò & phân quyền</span>
+                </a>
+
+                <a
+                    class="nav-item active"
+                    href="list.html"
+                    aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">≡</span>
+                    <span>Nhật ký hệ thống</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= CONTENT ================= -->
+
+    <main class="main-content audit-log-page">
+
+        <div class="content-container">
+
+            <!-- PAGE HEADER -->
+
+            <div class="page-header">
+
+                <div>
+
+                    <h1 class="page-title">
+                        Nhật ký thay đổi dữ liệu
+                    </h1>
+
+                    <p class="page-description">
+                        Tra cứu ai đã thay đổi dữ liệu nhạy cảm, vào thời điểm nào và giá trị trước/sau thay đổi.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- CARD -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <!--
+                        S2-04 - API 1: GET /audit-log
+                        Tham số: userId, entityType, fromDate, toDate, page, pageSize.
+                        URL tương đối theo cấu trúc webapp (Frontend/ ≙ context root),
+                        không hard-code context path.
+                    -->
+
+                    <form
+                        id="audit-log-filter-form"
+                        class="audit-log-filters"
+                        action="../../audit-log"
+                        method="get"
+                        novalidate>
+
+                        <div class="audit-log-filter-grid">
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="audit-log-user-id">
+                                    Người thực hiện (mã người dùng)
+                                </label>
+
+                                <input
+                                    id="audit-log-user-id"
+                                    class="form-control"
+                                    type="number"
+                                    name="userId"
+                                    min="1"
+                                    step="1"
+                                    inputmode="numeric"
+                                    placeholder="Tất cả người dùng">
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="audit-log-entity-type">
+                                    Loại đối tượng
+                                </label>
+
+                                <input
+                                    id="audit-log-entity-type"
+                                    class="form-control"
+                                    type="text"
+                                    name="entityType"
+                                    maxlength="50"
+                                    placeholder="Tất cả loại đối tượng">
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="audit-log-from-date">
+                                    Từ ngày
+                                </label>
+
+                                <input
+                                    id="audit-log-from-date"
+                                    class="form-control"
+                                    type="date"
+                                    name="fromDate">
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="audit-log-to-date">
+                                    Đến ngày
+                                </label>
+
+                                <input
+                                    id="audit-log-to-date"
+                                    class="form-control"
+                                    type="date"
+                                    name="toDate"
+                                    aria-describedby="audit-log-filter-error">
+
+                            </div>
+
+                        </div>
+
+
+                        <p
+                            id="audit-log-filter-error"
+                            class="form-error"
+                            role="alert"
+                            hidden>
+                        </p>
+
+
+                        <!-- Lọc mới luôn quay về trang 1; giữ số dòng/trang (mặc định 20 - S1-08) -->
+                        <input type="hidden" name="page" value="1">
+                        <input type="hidden" name="pageSize" value="20">
+
+
+                        <div class="audit-log-filter-actions">
+
+                            <a class="btn btn-secondary" href="../../audit-log">
+                                Xóa bộ lọc
+                            </a>
+
+                            <button class="btn btn-primary" type="submit">
+                                Lọc
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <!-- TABLE -->
+
+                    <div class="table-container">
+
+                        <table class="table audit-log-table">
+
+                            <thead>
+
+                            <tr>
+                                <th scope="col">Mã</th>
+                                <th scope="col">Thời điểm</th>
+                                <th scope="col">Người thực hiện</th>
+                                <th scope="col">Đối tượng</th>
+                                <th scope="col">Hành động</th>
+                                <th scope="col">Thao tác</th>
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody id="audit-log-rows">
+
+                            <!-- Trạng thái rỗng: không có auditLogs phù hợp bộ lọc -->
+                            <tr class="audit-log-empty-row">
+                                <td class="audit-log-empty-cell" colspan="6">
+                                    Không có nhật ký thay đổi nào phù hợp với bộ lọc.
+                                </td>
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!--
+                        Cấu trúc một dòng auditLogs (mỗi phần tử AuditLog).
+                        data-field ánh xạ đúng thuộc tính trong API Contract;
+                        giá trị phải được escape khi render (c:out / textContent).
+                    -->
+
+                    <template id="audit-log-row-template">
+
+                        <tr>
+
+                            <td>
+                                <span class="audit-log-id" data-field="auditLogId"></span>
+                            </td>
+
+                            <td>
+                                <span class="audit-log-time" data-field="changedAt"></span>
+                            </td>
+
+                            <td>
+                                <span class="audit-log-user" data-field="user"></span>
+                            </td>
+
+                            <td>
+                                <div class="audit-log-entity">
+                                    <span class="badge badge-neutral" data-field="entityType"></span>
+                                    <span class="audit-log-entity-id">
+                                        Mã: <span data-field="entityId"></span>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="badge badge-info audit-log-action" data-field="action"></span>
+                            </td>
+
+                            <td>
+                                <div class="table-actions">
+                                    <!-- GET /audit-log/detail?auditLogId={auditLogId} -->
+                                    <a
+                                        class="btn btn-secondary btn-sm"
+                                        data-field="detailLink"
+                                        href="../../audit-log/detail?auditLogId=">
+                                        Chi tiết
+                                    </a>
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    </template>
+
+
+                    <!--
+                        PAGINATION
+                        data-total-items / data-total-pages / data-current-page
+                        nhận totalItems / totalPages / currentPage từ response.
+                    -->
+
+                    <div
+                        id="audit-log-pagination"
+                        class="audit-log-pagination"
+                        data-total-items=""
+                        data-total-pages=""
+                        data-current-page=""
+                        hidden>
+
+                        <div
+                            id="audit-log-pagination-info"
+                            class="audit-log-pagination-info">
+                        </div>
+
+                        <nav
+                            id="audit-log-pagination-nav"
+                            class="pagination"
+                            aria-label="Phân trang nhật ký">
+                        </nav>
+
+                    </div>
+
+                    <p class="audit-log-timezone-note">
+                        Thời điểm hiển thị theo giờ Việt Nam (Asia/Ho_Chi_Minh).
+                    </p>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+    (function () {
+        var form = document.getElementById("audit-log-filter-form");
+        var fromInput = form.elements.fromDate;
+        var toInput = form.elements.toDate;
+        var userIdInput = form.elements.userId;
+        var errorBox = document.getElementById("audit-log-filter-error");
+        var query = new URLSearchParams(window.location.search);
+
+        function toPositiveInt(value) {
+            if (value === null || !/^\d+$/.test(String(value).trim())) {
+                return null;
+            }
+            var number = parseInt(value, 10);
+            return number > 0 ? number : null;
+        }
+
+        /* ---------- Giữ lại bộ lọc đang áp dụng ---------- */
+
+        ["userId", "entityType", "fromDate", "toDate"].forEach(function (name) {
+            var value = query.get(name);
+            if (value !== null) {
+                form.elements[name].value = value;
+            }
+        });
+
+        var pageSize = toPositiveInt(query.get("pageSize"));
+        if (pageSize !== null) {
+            form.elements.pageSize.value = String(pageSize);
+        }
+
+        /* ---------- Kiểm tra dữ liệu lọc (hỗ trợ UX, Backend vẫn validate) ---------- */
+
+        function showError(message, field) {
+            errorBox.textContent = message;
+            errorBox.hidden = false;
+            if (field) {
+                field.classList.add("is-error");
+                field.focus();
+            }
+        }
+
+        function clearError() {
+            errorBox.textContent = "";
+            errorBox.hidden = true;
+            [userIdInput, fromInput, toInput].forEach(function (field) {
+                field.classList.remove("is-error");
+            });
+        }
+
+        function syncDateLimits() {
+            toInput.min = fromInput.value || "";
+            fromInput.max = toInput.value || "";
+        }
+
+        fromInput.addEventListener("change", function () {
+            syncDateLimits();
+            clearError();
+        });
+        toInput.addEventListener("change", function () {
+            syncDateLimits();
+            clearError();
+        });
+        userIdInput.addEventListener("input", clearError);
+        syncDateLimits();
+
+        form.addEventListener("submit", function (event) {
+            clearError();
+
+            var userId = userIdInput.value.trim();
+            if (userId !== "" && toPositiveInt(userId) === null) {
+                event.preventDefault();
+                showError("Mã người dùng phải là số nguyên dương.", userIdInput);
+                return;
+            }
+
+            if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
+                event.preventDefault();
+                showError("\"Từ ngày\" không được sau \"Đến ngày\".", toInput);
+                return;
+            }
+
+            form.elements.page.value = "1";
+        });
+
+        /* ---------- Phân trang giữ nguyên tham số lọc ---------- */
+
+        var pager = document.getElementById("audit-log-pagination");
+        var pagerInfo = document.getElementById("audit-log-pagination-info");
+        var pagerNav = document.getElementById("audit-log-pagination-nav");
+
+        var totalItems = parseInt(pager.getAttribute("data-total-items"), 10);
+        var totalPages = toPositiveInt(pager.getAttribute("data-total-pages"));
+        var currentPage = toPositiveInt(pager.getAttribute("data-current-page")) || 1;
+
+        if (isNaN(totalItems) || totalPages === null) {
+            return;
+        }
+
+        currentPage = Math.min(currentPage, totalPages);
+
+        function pageUrl(page) {
+            var params = new URLSearchParams(window.location.search);
+            params.set("page", String(page));
+            return form.getAttribute("action") + "?" + params.toString();
+        }
+
+        function addLink(label, page, ariaLabel) {
+            var disabled = page < 1 || page > totalPages;
+            var item = document.createElement(disabled ? "span" : "a");
+
+            item.className = "pagination-item";
+            item.textContent = label;
+
+            if (ariaLabel) {
+                item.setAttribute("aria-label", ariaLabel);
+            }
+
+            if (disabled) {
+                item.classList.add("is-disabled");
+                item.setAttribute("aria-disabled", "true");
+            } else {
+                item.href = pageUrl(page);
+                if (page === currentPage && !ariaLabel) {
+                    item.classList.add("active");
+                    item.setAttribute("aria-current", "page");
+                }
+            }
+
+            pagerNav.appendChild(item);
+        }
+
+        function addGap() {
+            var gap = document.createElement("span");
+            gap.className = "pagination-gap";
+            gap.textContent = "…";
+            pagerNav.appendChild(gap);
+        }
+
+        pagerInfo.textContent =
+            "Tổng số " + totalItems + " bản ghi · Trang " + currentPage + "/" + totalPages;
+
+        addLink("‹", currentPage - 1, "Trang trước");
+
+        var start = Math.max(1, currentPage - 2);
+        var end = Math.min(totalPages, currentPage + 2);
+
+        if (start > 1) {
+            addLink("1", 1);
+            if (start > 2) {
+                addGap();
+            }
+        }
+
+        for (var page = start; page <= end; page++) {
+            addLink(String(page), page);
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) {
+                addGap();
+            }
+            addLink(String(totalPages), totalPages);
+        }
+
+        addLink("›", currentPage + 1, "Trang sau");
+
+        pager.hidden = false;
+    })();
+</script>
+
+</body>
+</html>

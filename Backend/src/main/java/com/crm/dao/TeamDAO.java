@@ -14,8 +14,8 @@ public class TeamDAO {
         List<Team> teams = new ArrayList<>();
 
         String sql =
-                "SELECT id, name, description " +
-                "FROM teams ORDER BY name";
+                "SELECT team_id AS id, team_name AS name, description " +
+                "FROM teams ORDER BY team_name";
 
         try (
             Connection connection = DBConnection.getConnection();
@@ -44,8 +44,8 @@ public class TeamDAO {
     public Team findById(int id) throws SQLException {
 
         String sql =
-                "SELECT id, name, description " +
-                "FROM teams WHERE id = ?";
+                "SELECT team_id AS id, team_name AS name, description " +
+                "FROM teams WHERE team_id = ?";
 
         try (
             Connection connection = DBConnection.getConnection();

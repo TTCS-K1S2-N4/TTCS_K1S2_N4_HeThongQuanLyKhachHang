@@ -17,66 +17,66 @@ import java.io.IOException;
 @WebServlet("/auth/login")
 public class LoginServlet extends HttpServlet {
 
-    private AuthService authService;
+        private AuthService authService;
 
-    @Override
-    public void init() {
-        authService = new AuthService();
-    }
-
-    @Override
-    protected void doGet(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws ServletException, IOException {
-
-        request.getRequestDispatcher(
-                "/WEB-INF/views/auth/login.jsp"
-        ).forward(request, response);
-    }
-
-    @Override
-    protected void doPost(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws ServletException, IOException {
-
-        request.setCharacterEncoding("UTF-8");
-
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-
-        LoginRequest loginRequest =
-                new LoginRequest(username, password);
-
-        try {
-
-            Account account =
-                    authService.authenticate(loginRequest);
-
-            HttpSession session = request.getSession(true);
-
-            session.setAttribute("currentUser", account);
-
-            response.sendRedirect(
-                    request.getContextPath() + "/"
-            );
-
-        } catch (AuthenticationException e) {
-
-            request.setAttribute(
-                    "loginError",
-                    e.getMessage()
-            );
-
-            request.setAttribute(
-                    "username",
-                    username
-            );
-
-            request.getRequestDispatcher(
-                    "/WEB-INF/views/auth/login.jsp"
-            ).forward(request, response);
+        @Override
+        public void init() {
+                authService = new AuthService();
         }
-    }
+
+        @Override
+        protected void doGet(
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws ServletException, IOException {
+
+                request.getRequestDispatcher(
+                                "/WEB-INF/views/auth/login.jsp").forward(request, response);
+        }
+
+        @Override
+        protected void doPost(
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws ServletException, IOException {
+
+                request.setCharacterEncoding("UTF-8");
+
+                String username = request.getParameter("username");
+                String password = request.getParameter("password");
+
+                LoginRequest loginRequest = new LoginRequest(username, password);
+
+                try {
+
+                        Account account = authService.authenticate(loginRequest);
+
+                        HttpSession session = request.getSession(true);
+                        // Thời gian hết hạn session: 15 phút không thao tác (15 * 60 = 900s)
+                        session.setMaxInactiveInterval(15*60);
+
+                        session.setAttribute("currentUser", account);
+                        session.setAttribute("userId", account.getAccountId());
+                        session.setAttribute("roleId", account.getRoleId());
+                        session.setAttribute("roleIds", new java.util.ArrayList<>(account.getRoleIds()));
+                        session.setAttribute("teamId", account.getTeamId());
+                        session.setAttribute("teamName", account.getTeamName());
+                        com.crm.util.SessionListener.invalidateOtherUserSessions(account.getAccountId(), session.getId());
+                        com.crm.util.SessionListener.registerUserSession(account.getAccountId(), session);
+
+                        response.sendRedirect(
+                                        request.getContextPath() + "/");
+
+                } catch (AuthenticationException e) {
+
+                        request.setAttribute(
+                                        "loginError",
+                                        e.getMessage());
+
+                        request.setAttribute(
+                                        "username",
+                                        username);
+
+                        request.getRequestDispatcher(
+                                        "/WEB-INF/views/auth/login.jsp").forward(request, response);
+                }
+        }
 }

@@ -1,7 +1,9 @@
 package com.crm.controller.account;
 
 import com.crm.dao.AccountDAO;
+import com.crm.dao.RoleDAO;
 import com.crm.model.Account;
+import com.crm.model.Role;
 import com.crm.service.RoleService;
 
 import jakarta.servlet.ServletException;
@@ -9,17 +11,21 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet("/accounts/assign-role")
 public class AssignRoleServlet extends HttpServlet {
 
     private RoleService roleService;
     private AccountDAO accountDAO;
+    private RoleDAO roleDAO;
 
     @Override
     public void init() {
         roleService = new RoleService();
         accountDAO = new AccountDAO();
+        roleDAO = new RoleDAO();
     }
 
     @Override
@@ -85,28 +91,67 @@ public class AssignRoleServlet extends HttpServlet {
                     request.getParameter("accountId")
             );
 
-            int roleId = Integer.parseInt(
-                    request.getParameter("roleId")
-            );
+            String[] roleIdValues = request.getParameterValues("roleIds");
+            List<Integer> roleIds = new ArrayList<>();
+            if (roleIdValues != null) {
+                for (String value : roleIdValues) roleIds.add(Integer.parseInt(value));
+            }
+            String teamIdValue = request.getParameter("teamId");
+            Integer teamId = teamIdValue == null || teamIdValue.isBlank() ? null : Integer.valueOf(teamIdValue);
 
-            int teamId = Integer.parseInt(
-                    request.getParameter("teamId")
-            );
+            boolean validRoles = !roleIds.isEmpty();
+            boolean isTeamLead = false;
+            boolean hasAdminRole = false;
 
-            if (!roleService.isValidRole(roleId)
-                    || !roleService.isValidTeam(teamId)) {
+            for (Integer roleId : roleIds) {
+                validRoles &= roleService.isValidRole(roleId);
+                Role role = roleDAO.findById(roleId);
+                if (role != null) {
+                    if ("ADMIN".equals(role.getCode())) {
+                        hasAdminRole = true;
+                    }
+                    if ("TEAM_LEAD".equals(role.getCode())) {
+                        isTeamLead = true;
+                    }
+                }
+            }
 
+            if (!validRoles || (teamId != null && !roleService.isValidTeam(teamId))) {
                 response.sendError(
                         HttpServletResponse.SC_BAD_REQUEST
                 );
                 return;
             }
 
-            accountDAO.updateRoleAndTeam(
+            Integer loggedUserId = (Integer) request.getSession().getAttribute("userId");
+            if (loggedUserId != null && loggedUserId.equals(accountId) && !hasAdminRole) {
+                request.setAttribute("error", "Bạn không thể tự thu hồi vai trò Quản trị (Admin) của chính mình.");
+                request.setAttribute("account", accountDAO.findById(accountId));
+                request.setAttribute("roles", roleService.getAllRoles());
+                request.setAttribute("teams", roleService.getAllTeams());
+                request.getRequestDispatcher("/WEB-INF/views/accounts/assign-role.jsp").forward(request, response);
+                return;
+            }
+
+            if (isTeamLead && teamId == null) {
+                request.setAttribute("error", "Trưởng nhóm kinh doanh phải được gán vào một nhóm cụ thể.");
+                request.setAttribute("account", accountDAO.findById(accountId));
+                request.setAttribute("roles", roleService.getAllRoles());
+                request.setAttribute("teams", roleService.getAllTeams());
+                request.getRequestDispatcher("/WEB-INF/views/accounts/assign-role.jsp").forward(request, response);
+                return;
+            }
+
+            boolean updated = accountDAO.updateRoleAndTeam(
                     accountId,
-                    roleId,
+                    roleIds,
                     teamId
             );
+
+            if (!updated) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
 
             response.sendRedirect(
                     request.getContextPath()

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Hoạt động | CRM System</title>
+
+    <!-- FOUNDATION -->
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+
+    <!-- ACTIVITIES MODULE -->
+    <link rel="stylesheet" href="../../assets/css/modules/activities.css">
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="app-header">
+
+        <div class="header-left">
+
+            <a class="header-brand" href="../../index.html">
+                <span class="brand-mark">CRM</span>
+                <span>CRM System</span>
+            </a>
+
+            <div class="header-divider"></div>
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="../../index.html">Trang chủ</a>
+                <span>/</span>
+                <span class="breadcrumb-current">Hoạt động</span>
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <nav aria-label="Điều hướng chính">
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="../dashboard/index.html">
+                    <span class="nav-icon" aria-hidden="true">◫</span>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◎</span>
+                    <span>Khách hàng</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◇</span>
+                    <span>Lead</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">△</span>
+                    <span>Cơ hội</span>
+                </a>
+                <a class="nav-item active" href="list.html" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">○</span>
+                    <span>Hoạt động</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">▣</span>
+                    <span>Báo giá & Hợp đồng</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◈</span>
+                    <span>Chỉ tiêu & KPI</span>
+                </a>
+                <a class="nav-item" href="../reports/overview.html">
+                    <span class="nav-icon" aria-hidden="true">▤</span>
+                    <span>Báo cáo & Dashboard</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="../accounts/list.html">
+                    <span class="nav-icon" aria-hidden="true">□</span>
+                    <span>Quản lý tài khoản</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>Vai trò & phân quyền</span>
+                </a>
+                <a class="nav-item" href="../audit-log/list.html">
+                    <span class="nav-icon" aria-hidden="true">≡</span>
+                    <span>Nhật ký hệ thống</span>
+                </a>
+            </div>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= CONTENT ================= -->
+
+    <main class="main-content activity-page">
+
+        <div class="content-container">
+
+            <!-- PAGE HEADER -->
+
+            <div class="page-header">
+
+                <div>
+                    <h1 class="page-title">Hoạt động</h1>
+                    <p class="page-description">
+                        Lịch sử cuộc gọi, cuộc gặp, email và ghi chú với khách hàng.
+                    </p>
+                </div>
+
+                <div class="page-actions">
+                    <!-- [API 5] GET /activities/create -->
+                    <a class="btn btn-primary" href="../../activities/create">
+                        + Ghi nhận hoạt động
+                    </a>
+                </div>
+
+            </div>
+
+
+            <!-- THÀNH CÔNG: hiển thị khi response có success -->
+
+            <div
+                id="activity-success"
+                class="activity-alert activity-alert-success"
+                role="status"
+                hidden>
+                Đã lưu hoạt động thành công.
+            </div>
+
+
+            <section class="card">
+
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Danh sách hoạt động</h2>
+                        <p class="card-description">
+                            Chỉ hiển thị hoạt động trong phạm vi dữ liệu bạn được phép xem.
+                        </p>
+                    </div>
+                </div>
+
+
+                <div class="card-body">
+
+                    <!-- [API 3] GET /activities - response: activities -->
+
+                    <div class="table-container">
+
+                        <table class="table activity-table">
+
+                            <thead>
+                            <tr>
+                                <th scope="col">Loại</th>
+                                <th scope="col">Khách hàng</th>
+                                <th scope="col">Người liên hệ</th>
+                                <th scope="col">Cơ hội</th>
+                                <th scope="col">Thời điểm</th>
+                                <th scope="col">Kết quả</th>
+                                <th scope="col">Thao tác</th>
+                            </tr>
+                            </thead>
+
+                            <tbody id="activity-rows">
+
+                            <!-- Trạng thái rỗng: không có activities -->
+                            <tr class="activity-empty-row">
+                                <td class="activity-empty-cell" colspan="7">
+                                    Chưa có hoạt động nào được ghi nhận.
+                                </td>
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!--
+                        Cấu trúc một dòng activities[i]: activityId, activityType,
+                        customerName, contactName, opportunityName, activityTime,
+                        durationMinutes, result. Giá trị phải được escape khi render.
+                        activityType giữ nguyên giá trị enum (CALL/MEETING/EMAIL/NOTE)
+                        trong data-activity-type; nhãn tiếng Việt do script gán.
+                    -->
+
+                    <template id="activity-row-template">
+
+                        <tr>
+
+                            <td>
+                                <span
+                                    class="badge badge-info activity-type"
+                                    data-field="activityType"
+                                    data-activity-type=""></span>
+                            </td>
+
+                            <td>
+                                <span class="activity-customer" data-field="customerName"></span>
+                            </td>
+
+                            <td>
+                                <span data-field="contactName"></span>
+                            </td>
+
+                            <td>
+                                <span data-field="opportunityName"></span>
+                            </td>
+
+                            <td>
+                                <span class="activity-time" data-field="activityTime"></span>
+                                <span class="activity-sub">
+                                    <span data-field="durationMinutes"></span> phút
+                                </span>
+                            </td>
+
+                            <td>
+                                <div class="activity-result" data-field="result"></div>
+                            </td>
+
+                            <td>
+                                <div class="table-actions">
+                                    <!-- [API 4] GET /activities/detail?activityId= -->
+                                    <a
+                                        class="btn btn-secondary btn-sm"
+                                        data-field="detailLink"
+                                        href="../../activities/detail?activityId=">
+                                        Chi tiết
+                                    </a>
+                                    <!-- [API 7] GET /activities/edit?activityId= -->
+                                    <a
+                                        class="btn btn-secondary btn-sm"
+                                        data-field="editLink"
+                                        href="../../activities/edit?activityId=">
+                                        Sửa
+                                    </a>
+                                </div>
+                            </td>
+
+                        </tr>
+
+                    </template>
+
+
+                    <!-- PAGINATION: totalItems / totalPages / currentPage -->
+
+                    <div
+                        id="activity-pagination"
+                        class="activity-pagination"
+                        data-total-items=""
+                        data-total-pages=""
+                        data-current-page=""
+                        hidden>
+
+                        <div id="activity-pagination-info" class="activity-pagination-info"></div>
+
+                        <nav
+                            id="activity-pagination-nav"
+                            class="pagination"
+                            aria-label="Phân trang hoạt động">
+                        </nav>
+
+                    </div>
+
+                    <p class="activity-timezone-note">
+                        Thời điểm hiển thị theo giờ Việt Nam (Asia/Ho_Chi_Minh).
+                    </p>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+    (function () {
+        var TYPE_LABELS = {
+            CALL: "Cuộc gọi",
+            MEETING: "Cuộc gặp",
+            EMAIL: "Email",
+            NOTE: "Ghi chú"
+        };
+
+        /* ---------- Nhãn tiếng Việt cho activityType (giữ nguyên nếu không khớp enum) ---------- */
+
+        var typeCells = document.querySelectorAll("#activity-rows [data-activity-type]");
+        for (var i = 0; i < typeCells.length; i++) {
+            var code = typeCells[i].getAttribute("data-activity-type");
+            if (Object.prototype.hasOwnProperty.call(TYPE_LABELS, code)) {
+                typeCells[i].textContent = TYPE_LABELS[code];
+            }
+        }
+
+        /* ---------- Phân trang (page, pageSize), giữ nguyên tham số hiện có ---------- */
+
+        function toPositiveInt(value) {
+            if (value === null || !/^\d+$/.test(String(value).trim())) {
+                return null;
+            }
+            var number = parseInt(value, 10);
+            return number > 0 ? number : null;
+        }
+
+        var pager = document.getElementById("activity-pagination");
+        var pagerInfo = document.getElementById("activity-pagination-info");
+        var pagerNav = document.getElementById("activity-pagination-nav");
+
+        var totalItems = parseInt(pager.getAttribute("data-total-items"), 10);
+        var totalPages = toPositiveInt(pager.getAttribute("data-total-pages"));
+        var currentPage = toPositiveInt(pager.getAttribute("data-current-page")) || 1;
+
+        if (isNaN(totalItems) || totalPages === null) {
+            return;
+        }
+
+        currentPage = Math.min(currentPage, totalPages);
+
+        function pageUrl(page) {
+            var params = new URLSearchParams(window.location.search);
+            params.set("page", String(page));
+            return "../../activities?" + params.toString();
+        }
+
+        function addLink(label, page, ariaLabel) {
+            var disabled = page < 1 || page > totalPages;
+            var item = document.createElement(disabled ? "span" : "a");
+
+            item.className = "pagination-item";
+            item.textContent = label;
+
+            if (ariaLabel) {
+                item.setAttribute("aria-label", ariaLabel);
+            }
+
+            if (disabled) {
+                item.classList.add("is-disabled");
+                item.setAttribute("aria-disabled", "true");
+            } else {
+                item.href = pageUrl(page);
+                if (page === currentPage && !ariaLabel) {
+                    item.classList.add("active");
+                    item.setAttribute("aria-current", "page");
+                }
+            }
+
+            pagerNav.appendChild(item);
+        }
+
+        function addGap() {
+            var gap = document.createElement("span");
+            gap.className = "pagination-gap";
+            gap.textContent = "…";
+            pagerNav.appendChild(gap);
+        }
+
+        pagerInfo.textContent =
+            "Tổng số " + totalItems + " hoạt động · Trang " + currentPage + "/" + totalPages;
+
+        addLink("‹", currentPage - 1, "Trang trước");
+
+        var start = Math.max(1, currentPage - 2);
+        var end = Math.min(totalPages, currentPage + 2);
+
+        if (start > 1) {
+            addLink("1", 1);
+            if (start > 2) {
+                addGap();
+            }
+        }
+
+        for (var page = start; page <= end; page++) {
+            addLink(String(page), page);
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) {
+                addGap();
+            }
+            addLink(String(totalPages), totalPages);
+        }
+
+        addLink("›", currentPage + 1, "Trang sau");
+
+        pager.hidden = false;
+    })();
+</script>
+
+</body>
+</html>
