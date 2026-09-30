@@ -139,3 +139,29 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Bảng Định nghĩa trường tùy chỉnh (custom_field_definitions)
+CREATE TABLE IF NOT EXISTS custom_field_definitions (
+    field_id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    field_name VARCHAR(100) NOT NULL,
+    field_label VARCHAR(150) NOT NULL,
+    field_type VARCHAR(50) NOT NULL DEFAULT 'TEXT',
+    is_required TINYINT(1) DEFAULT 0,
+    options_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_entity_field (entity_type, field_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 13. Bảng Giá trị trường tùy chỉnh (custom_field_values)
+CREATE TABLE IF NOT EXISTS custom_field_values (
+    value_id INT AUTO_INCREMENT PRIMARY KEY,
+    field_id INT NOT NULL,
+    entity_id INT NOT NULL,
+    field_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (field_id) REFERENCES custom_field_definitions(field_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_field_entity (field_id, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
