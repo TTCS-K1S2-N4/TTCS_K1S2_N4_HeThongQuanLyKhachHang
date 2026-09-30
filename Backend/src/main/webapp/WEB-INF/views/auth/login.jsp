@@ -113,6 +113,10 @@
             <% if ("true".equals(request.getParameter("expired"))) { %>
                 showToast("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.", "warning");
             <% } %>
+
+            <% if ("true".equals(request.getParameter("concurrent"))) { %>
+                showToast("Tài khoản của bạn đã được đăng nhập ở nơi khác.", "warning");
+            <% } %>
         };
     </script>
 

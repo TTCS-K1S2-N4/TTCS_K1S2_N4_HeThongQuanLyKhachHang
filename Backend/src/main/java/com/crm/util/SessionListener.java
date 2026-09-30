@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebListener
 public class SessionListener implements HttpSessionListener {
     private static final Map<Integer, Set<HttpSession>> activeSessions = new ConcurrentHashMap<>();
+    private static final Set<String> kickedSessionIds = ConcurrentHashMap.newKeySet();
     private static final Object SESSION_LOCK = new Object();
 
     public static void registerUserSession(int userId, HttpSession session) {
@@ -29,7 +30,10 @@ public class SessionListener implements HttpSessionListener {
             }
         }
         for (HttpSession s : toInvalidate) {
-            try { s.invalidate(); } catch (IllegalStateException ignored) {}
+            try { 
+                kickedSessionIds.add(s.getId());
+                s.invalidate(); 
+            } catch (IllegalStateException ignored) {}
         }
     }
 
@@ -50,8 +54,16 @@ public class SessionListener implements HttpSessionListener {
             }
         }
         for (HttpSession s : toInvalidate) {
-            try { s.invalidate(); } catch (IllegalStateException ignored) {}
+            try { 
+                kickedSessionIds.add(s.getId());
+                s.invalidate(); 
+            } catch (IllegalStateException ignored) {}
         }
+    }
+
+    public static boolean isKickedSession(String sessionId) {
+        if (sessionId == null) return false;
+        return kickedSessionIds.remove(sessionId);
     }
 
     public static boolean hasActiveSession(int userId) {

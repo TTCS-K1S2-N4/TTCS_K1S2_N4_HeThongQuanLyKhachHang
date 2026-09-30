@@ -59,6 +59,7 @@ public class LoginServlet extends HttpServlet {
                         session.setAttribute("roleIds", new java.util.ArrayList<>(account.getRoleIds()));
                         session.setAttribute("teamId", account.getTeamId());
                         session.setAttribute("teamName", account.getTeamName());
+                        com.crm.util.SessionListener.invalidateOtherUserSessions(account.getAccountId(), session.getId());
                         com.crm.util.SessionListener.registerUserSession(account.getAccountId(), session);
 
                         response.sendRedirect(
