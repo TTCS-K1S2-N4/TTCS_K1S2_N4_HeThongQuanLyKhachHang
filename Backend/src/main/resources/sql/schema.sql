@@ -89,11 +89,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     action_type VARCHAR(50) NOT NULL,
     performed_by INT NOT NULL,
-    target_user_id INT NOT NULL,
+    target_user_id INT DEFAULT 0,
     description TEXT,
+    old_value TEXT,
+    new_value TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (performed_by) REFERENCES users(user_id),
-    FOREIGN KEY (target_user_id) REFERENCES users(user_id)
+    FOREIGN KEY (performed_by) REFERENCES users(user_id)
 );
 
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
