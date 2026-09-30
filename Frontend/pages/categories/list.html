@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh mục dùng chung | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/categories.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a class="header-brand" href="../../index.html" aria-label="CRM System">
+                    <span class="brand-mark">CRM</span>
+                    <span>CRM System</span>
+                </a>
+                <div class="header-divider"></div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../../index.html">Trang chủ</a>
+                    <span aria-hidden="true">/</span>
+                    <span class="breadcrumb-current">Danh mục dùng chung</span>
+                </nav>
+            </div>
+            <div class="header-right">
+                <button class="header-action" type="button" aria-label="Thông báo" title="Thông báo">
+                    <span aria-hidden="true">🔔</span>
+                </button>
+                <div class="header-user">
+                    <div class="user-avatar" aria-hidden="true">AD</div>
+                    <div class="header-user-info">
+                        <div class="user-name">Nguyễn Văn A</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav aria-label="Điều hướng chính">
+                <div class="sidebar-section">
+                    <a class="nav-item" href="../../index.html">
+                        <span class="nav-icon" aria-hidden="true">◫</span>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <a class="nav-item active" href="list.html" aria-current="page">
+                        <span class="nav-icon" aria-hidden="true">🏷️</span>
+                        <span>Danh mục dùng chung</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Danh mục dùng chung</h1>
+                        <p class="page-description">Quản lý các danh mục phân loại trong hệ thống.</p>
+                    </div>
+                </div>
+
+                <section class="dashboard-content-grid"
+                    style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+
+                    <!-- Update Form -->
+                    <article class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Cập nhật danh mục</h2>
+                        </div>
+                        <div class="card-body">
+                            <form action="/categories/update" method="POST">
+                                <div class="form-group">
+                                    <label for="action">Thao tác</label>
+                                    <select id="action" name="action" class="form-control"
+                                        style="width: 100%; height: 32px;" required>
+                                        <option value="CREATE">Tạo mới (CREATE)</option>
+                                        <option value="UPDATE">Cập nhật (UPDATE)</option>
+                                        <option value="DEACTIVATE">Vô hiệu hoá (DEACTIVATE)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="categoryType">Loại danh mục</label>
+                                    <input type="text" id="categoryType" name="categoryType" class="form-control"
+                                        required placeholder="VD: Nguồn lead, Quy mô...">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="categoryId">Mã danh mục</label>
+                                    <input type="text" id="categoryId" name="categoryId" class="form-control"
+                                        placeholder="Bắt buộc khi Cập nhật/Vô hiệu hoá">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="categoryName">Tên danh mục</label>
+                                    <input type="text" id="categoryName" name="categoryName" class="form-control"
+                                        required>
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="displayOrder">Thứ tự hiển thị</label>
+                                    <input type="number" id="displayOrder" name="displayOrder" class="form-control">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="status">Trạng thái (status)</label>
+                                    <input type="text" id="status" name="status" class="form-control">
+                                </div>
+                                <div class="form-actions" style="margin-top: 1.5rem;">
+                                    <button type="submit" class="btn btn-primary">Thực hiện</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+
+                    <!-- List / Filter -->
+                    <article class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Danh sách (Filter)</h2>
+                        </div>
+                        <div class="card-body">
+                            <form action="/categories" method="GET"
+                                style="margin-bottom: 1rem; display: flex; gap: 0.5rem;">
+                                <input type="text" name="categoryType" class="form-control"
+                                    placeholder="Lọc theo loại danh mục..." style="flex: 1;">
+                                <button type="submit" class="btn btn-secondary">Lọc</button>
+                            </form>
+                            <div class="table-container">
+                                <table class="table" style="width: 100%; text-align: left;">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Loại</th>
+                                            <th>Tên</th>
+                                            <th>Thứ tự</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="5" style="text-align: center; color: var(--text-secondary);">
+                                                Chưa có dữ liệu. (Đợi Backend)
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
