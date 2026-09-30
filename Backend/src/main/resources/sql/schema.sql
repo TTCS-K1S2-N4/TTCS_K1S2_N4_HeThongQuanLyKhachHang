@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     failed_attempts INT DEFAULT 0,
+    lockout_until TIMESTAMP NULL DEFAULT NULL,
     reset_token VARCHAR(255) NULL,
     reset_token_expiry TIMESTAMP NULL,
     activation_token VARCHAR(255) NULL,

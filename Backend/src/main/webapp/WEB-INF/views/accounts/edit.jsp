@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ page import="com.crm.model.Account" %>
 <%@ page import="com.crm.model.Role" %>
 <%@ page import="com.crm.model.Team" %>
@@ -7,17 +7,9 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chỉnh sửa tài khoản | CRM System</title>
-
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/variables.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
+    <jsp:include page="/WEB-INF/views/fragments/head.jsp"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/accounts.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="app">
@@ -92,7 +84,8 @@
 
                         <div class="form-group">
                             <label class="form-label" for="roleIds">Vai trò <span class="form-required">*</span></label>
-                            <select id="roleIds" name="roleIds" class="form-control" multiple required style="height: 120px;">
+                            <select id="roleIds" name="roleIds" class="form-control" required>
+                                <option value="">-- Chọn vai trò --</option>
                                 <% 
                                 List<Role> roles = (List<Role>) request.getAttribute("roles");
                                 if (roles != null) {
@@ -105,11 +98,10 @@
                                 } 
                                 %>
                             </select>
-                            <small class="text-muted">Giữ Ctrl (hoặc Cmd) để chọn nhiều vai trò</small>
                         </div>
 
                         <div class="account-form-actions">
-                            <a class="btn btn-secondary" href="${pageContext.request.contextPath}/accounts/detail?accountId=<%= account.getAccountId() %>">Hủy</a>
+                            <a class="btn btn-secondary" href="${pageContext.request.contextPath}/accounts/list">Hủy</a>
                             <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
                         </div>
                     </form>

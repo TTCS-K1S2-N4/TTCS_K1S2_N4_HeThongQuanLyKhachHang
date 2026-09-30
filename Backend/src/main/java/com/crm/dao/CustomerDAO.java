@@ -59,6 +59,44 @@ public class CustomerDAO {
         return list;
     }
 
+    public List<Customer> getListForExport(String keyword, List<Integer> ownerIds) {
+        if (ownerIds != null && ownerIds.isEmpty()) return new ArrayList<>();
+        
+        List<Customer> list = new ArrayList<>();
+        String sql = "SELECT * FROM customers WHERE 1=1";
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql += " AND customer_name LIKE ?";
+        }
+        
+        if (ownerIds != null) {
+            String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
+            sql += " AND owner_id IN (" + inClause + ")";
+        }
+        
+        sql += " ORDER BY customer_id DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            int idx = 1;
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                ps.setString(idx++, "%" + keyword.trim() + "%");
+            }
+            if (ownerIds != null) {
+                for (Integer oid : ownerIds) {
+                    ps.setInt(idx++, oid);
+                }
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public int count(String keyword, List<Integer> ownerIds) {
         if (ownerIds != null && ownerIds.isEmpty()) return 0;
         

@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ page import="com.crm.service.PermissionService" %>
 <%@ page import="com.crm.model.MenuItem" %>
 <%@ page import="java.util.List" %>

@@ -12,9 +12,31 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- AUTH MODULE STYLES -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/auth.css">
+    <style>
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .toggle-password-btn {
+            position: absolute;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 1rem;
+            padding: 4px;
+            z-index: 5;
+        }
+        .toggle-password-btn:hover {
+            color: #4f46e5;
+        }
+    </style>
 </head>
 <body class="auth-page">
 
@@ -51,6 +73,23 @@
             }, 5000);
         }
 
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.className = 'fa-solid fa-eye-slash';
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.className = 'fa-solid fa-eye';
+                }
+            }
+        }
+
         window.onload = function() {
             <% if (request.getAttribute("loginError") != null) { 
                 String error = (String) request.getAttribute("loginError");
@@ -72,7 +111,7 @@
             <% } %>
 
             <% if ("true".equals(request.getParameter("expired"))) { %>
-                showToast("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "warning");
+                showToast("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.", "warning");
             <% } %>
         };
     </script>
@@ -91,12 +130,18 @@
 
                 <div class="form-group">
                     <label class="form-label" for="password">Mật khẩu</label>
-                    <input id="password"
-                           name="password"
-                           class="form-control"
-                           type="password"
-                           placeholder="••••••••"
-                           required>
+                    <div class="password-wrapper">
+                        <input id="password"
+                               name="password"
+                               class="form-control"
+                               type="password"
+                               placeholder="••••••••"
+                               style="padding-right: 2.5rem;"
+                               required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword('password', this)" title="Hiện/Ẩn mật khẩu">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                     <div style="text-align: right; margin-top: 0.5rem;">
                         <a href="${pageContext.request.contextPath}/auth/forgot-password" class="auth-link" style="font-size: 0.85rem;">Quên mật khẩu?</a>
                     </div>

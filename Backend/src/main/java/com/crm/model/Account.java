@@ -24,6 +24,7 @@ public class Account {
     private Timestamp activationTokenExpiry;
     private Timestamp createdAt;
     private int failedAttempts;
+    private Timestamp lockoutUntil;
     private Timestamp updatedAt;
 
     public Account() {
@@ -194,6 +195,14 @@ public class Account {
 
     public void setFailedAttempts(int failedAttempts) {
         this.failedAttempts = failedAttempts;
+    }
+
+    public Timestamp getLockoutUntil() {
+        return lockoutUntil;
+    }
+
+    public void setLockoutUntil(Timestamp lockoutUntil) {
+        this.lockoutUntil = lockoutUntil;
     }
 
     public Timestamp getUpdatedAt() {

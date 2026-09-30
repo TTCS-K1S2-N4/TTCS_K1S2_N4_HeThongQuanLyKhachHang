@@ -11,23 +11,73 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebListener
 public class SessionListener implements HttpSessionListener {
     private static final Map<Integer, Set<HttpSession>> activeSessions = new ConcurrentHashMap<>();
+    private static final Object SESSION_LOCK = new Object();
 
     public static void registerUserSession(int userId, HttpSession session) {
-        activeSessions.computeIfAbsent(userId, ignored -> ConcurrentHashMap.newKeySet()).add(session);
+        if (session == null) return;
+        synchronized (SESSION_LOCK) {
+            activeSessions.computeIfAbsent(userId, ignored -> ConcurrentHashMap.newKeySet()).add(session);
+        }
     }
 
     public static void invalidateUserSession(int userId) {
-        Set<HttpSession> sessions = activeSessions.remove(userId);
-        if (sessions != null) {
-            for (HttpSession session : sessions) {
-                try { session.invalidate(); } catch (IllegalStateException ignored) {}
+        java.util.List<HttpSession> toInvalidate = new java.util.ArrayList<>();
+        synchronized (SESSION_LOCK) {
+            Set<HttpSession> sessions = activeSessions.remove(userId);
+            if (sessions != null) {
+                toInvalidate.addAll(sessions);
             }
+        }
+        for (HttpSession s : toInvalidate) {
+            try { s.invalidate(); } catch (IllegalStateException ignored) {}
+        }
+    }
+
+    public static void invalidateOtherUserSessions(int userId, String currentSessionId) {
+        if (currentSessionId == null) return;
+        java.util.List<HttpSession> toInvalidate = new java.util.ArrayList<>();
+        synchronized (SESSION_LOCK) {
+            Set<HttpSession> sessions = activeSessions.get(userId);
+            if (sessions != null) {
+                for (HttpSession s : sessions) {
+                    try {
+                        if (s != null && !currentSessionId.equals(s.getId())) {
+                            toInvalidate.add(s);
+                        }
+                    } catch (IllegalStateException ignored) {}
+                }
+                sessions.removeAll(toInvalidate);
+            }
+        }
+        for (HttpSession s : toInvalidate) {
+            try { s.invalidate(); } catch (IllegalStateException ignored) {}
+        }
+    }
+
+    public static boolean hasActiveSession(int userId) {
+        synchronized (SESSION_LOCK) {
+            Set<HttpSession> sessions = activeSessions.get(userId);
+            return sessions != null && !sessions.isEmpty();
         }
     }
 
     @Override
     public void sessionDestroyed(HttpSessionEvent se) {
-        activeSessions.values().forEach(sessions -> sessions.remove(se.getSession()));
-        activeSessions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        HttpSession session = se.getSession();
+        if (session == null) return;
+        String destroyedId = session.getId();
+
+        synchronized (SESSION_LOCK) {
+            activeSessions.forEach((userId, sessions) -> {
+                sessions.removeIf(s -> {
+                    try {
+                        return s == null || destroyedId.equals(s.getId());
+                    } catch (Exception e) {
+                        return true;
+                    }
+                });
+            });
+            activeSessions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        }
     }
 }

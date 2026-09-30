@@ -82,14 +82,14 @@ public class AuthServiceTest {
         when(accountDAO.findByResetToken(anyString())).thenReturn(mockAcc);
         when(accountDAO.updatePasswordAndClearResetToken(anyString(), anyString())).thenReturn(true);
 
-        authService.resetPasswordWithToken("token-xyz", "newPassword123", "newPassword123");
+        authService.resetPasswordWithToken("token-xyz", "NewPassword123@", "NewPassword123@");
         verify(accountDAO).updatePasswordAndClearResetToken(anyString(), anyString());
     }
 
     @Test
     void testResetPasswordWithToken_PasswordMismatch() {
         assertThrows(AuthenticationException.class, () -> {
-            authService.resetPasswordWithToken("token-xyz", "newPassword123", "differentPassword");
+            authService.resetPasswordWithToken("token-xyz", "NewPassword123@", "DifferentPassword123@");
         });
     }
 }

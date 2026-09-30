@@ -1,21 +1,22 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.crm.model.Role" %>
 <%@ page import="com.crm.model.Team" %>
 
+<%
+    String fullNameVal = request.getAttribute("fullName") != null ? (String) request.getAttribute("fullName") : "";
+    String emailVal = request.getAttribute("email") != null ? (String) request.getAttribute("email") : "";
+    String phoneVal = request.getAttribute("phone") != null ? (String) request.getAttribute("phone") : "";
+    String teamIdVal = request.getAttribute("teamIdStr") != null ? (String) request.getAttribute("teamIdStr") : "";
+    String[] roleIdsVal = (String[]) request.getAttribute("roleIdsParam");
+%>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tạo mới tài khoản | CRM System</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/variables.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/reset.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
+    <jsp:include page="/WEB-INF/views/fragments/head.jsp"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/accounts.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="app">
@@ -51,35 +52,35 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label" for="editFullName">Họ và tên <span class="form-required">*</span></label>
-                                <input id="editFullName" name="fullName" class="form-control" type="text" required>
+                                <input id="editFullName" name="fullName" class="form-control" type="text" value="<%= fullNameVal %>" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="editEmail">Email <span class="form-required">*</span></label>
-                                <input id="editEmail" name="email" class="form-control" type="email" required>
+                                <input id="editEmail" name="email" class="form-control" type="email" value="<%= emailVal %>" required>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label" for="editPhone">Số điện thoại</label>
-                                <input id="editPhone" name="phone" class="form-control" type="text">
+                                <input id="editPhone" name="phone" class="form-control" type="text" value="<%= phoneVal %>">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="roleIds">Vai trò <span class="form-required">*</span></label>
-                                <select id="roleIds" name="roleIds" class="form-control" multiple required style="height: 120px;">
-                                    
+                                <select id="roleIds" name="roleIds" class="form-control" required>
+                                    <option value="">-- Chọn vai trò --</option>
                                     <% 
                                     List<Role> roles = (List<Role>) request.getAttribute("roles");
                                     if (roles != null) {
                                         for (Role r : roles) {
+                                            boolean selected = roleIdsVal != null && roleIdsVal.length > 0 && String.valueOf(r.getId()).equals(roleIdsVal[0]);
                                     %>
-                                    <option value="<%= r.getId() %>"><%= r.getName() %></option>
+                                    <option value="<%= r.getId() %>" <%= selected ? "selected" : "" %>><%= r.getName() %></option>
                                     <% 
                                         }
                                     } 
                                     %>
                                 </select>
-                                <small class="text-muted">Giữ Ctrl (hoặc Cmd) để chọn nhiều vai trò</small>
                             </div>
                         </div>
 
@@ -92,19 +93,19 @@
                                     List<Team> teams = (List<Team>) request.getAttribute("teams");
                                     if (teams != null) {
                                         for (Team t : teams) {
+                                            boolean selected = teamIdVal.equals(String.valueOf(t.getId()));
                                     %>
-                                    <option value="<%= t.getId() %>"><%= t.getName() %></option>
+                                    <option value="<%= t.getId() %>" <%= selected ? "selected" : "" %>><%= t.getName() %></option>
                                     <% 
                                         }
                                     } 
                                     %>
                                 </select>
-                                <small class="text-muted">Giữ Ctrl (hoặc Cmd) để chọn nhiều vai trò</small>
                             </div>
                         </div>
 
                         <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                            Mật khẩu tạm thời sẽ được tự động sinh và gửi qua Email sau khi tạo.
+                            Mật khẩu tạm thời sẽ được hệ thống sinh ngẫu nhiên đủ mạnh. Nếu cấu hình SMTP hợp lệ, thông tin kích hoạt sẽ tự động gửi tới Email người dùng.
                         </p>
 
                         <div class="account-form-actions">
@@ -119,4 +120,3 @@
 </div>
 </body>
 </html>
-
