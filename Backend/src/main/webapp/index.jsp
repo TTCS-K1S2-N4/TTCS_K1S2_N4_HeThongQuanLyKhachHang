@@ -20,53 +20,14 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
 <div class="app">
 
     <!-- HEADER -->
-    <header class="app-header">
-        <div class="header-left">
-            <a class="header-brand" href="${pageContext.request.contextPath}/" aria-label="CRM System">
-                <span class="brand-mark">CRM</span>
-                <span>CRM System</span>
-            </a>
-                <div class="header-divider"></div>
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <a href="${pageContext.request.contextPath}/">Trang chủ</a>
-                <span aria-hidden="true">/</span>
-                <span class="breadcrumb-current">Tổng quan</span>
-            </nav>
-        </div>
-
-        <div class="header-right">
-            <button class="header-action" type="button" aria-label="Thông báo" title="Thông báo">
-                <span aria-hidden="true">🔔</span>
-            </button>
-
-            <div class="header-user">
-                <div class="user-avatar" aria-hidden="true">
-                    <%= userInitial %>
-                </div>
-
-                <div class="header-user-info">
-                    <div class="user-name">
-                        <%= userName %>
-                    </div>
-                    <div class="user-role">
-                        <%= userTeam %>
-                    </div>
-                </div>
-
-                <div style="margin-left: 12px;">
-                    <a href="${pageContext.request.contextPath}/auth/logout" class="btn btn-secondary btn-sm" title="Đăng xuất">
-                        Đăng xuất
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
+    <jsp:include page="/WEB-INF/views/fragments/header.jsp" />
 
     <!-- SIDEBAR THEO QUYỀN -->
     <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp" />

@@ -82,6 +82,14 @@ public class AvatarServlet extends HttpServlet {
 
             Map<String, String> result = avatarService.uploadAvatar(userId != null ? userId : 0, part.getInputStream(), fileName, uploadRealPath, contextPath);
 
+            String avatarUrl = result.get("avatarUrl");
+            if (avatarUrl != null && userId != null && userId > 0) {
+                new com.crm.dao.AccountDAO().updateAvatarUrl(userId, avatarUrl);
+                if (session.getAttribute("currentUser") instanceof com.crm.model.Account) {
+                    ((com.crm.model.Account) session.getAttribute("currentUser")).setAvatarUrl(avatarUrl);
+                }
+            }
+
             response.setContentType("application/json;charset=UTF-8");
             PrintWriter out = response.getWriter();
             out.print("{\"avatarUrl\":\"" + escapeJson(result.get("avatarUrl")) + "\",\"thumbnailUrl\":\"" + escapeJson(result.get("thumbnailUrl")) + "\"}");

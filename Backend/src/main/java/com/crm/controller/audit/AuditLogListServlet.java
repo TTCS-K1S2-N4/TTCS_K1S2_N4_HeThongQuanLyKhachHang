@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/audit-log", "/audit/list"})
+@WebServlet("/audit-log")
 public class AuditLogListServlet extends HttpServlet {
 
     private AuditLogService auditLogService;

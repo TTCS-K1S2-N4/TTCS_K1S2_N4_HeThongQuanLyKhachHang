@@ -46,6 +46,7 @@ public class AuthorizationFilter implements Filter {
 
         protectedUrlMap.put("/accounts/create", "USER_CREATE");
         protectedUrlMap.put("/accounts/edit", "USER_EDIT");
+        protectedUrlMap.put("/accounts/resend-email", "USER_EDIT");
         protectedUrlMap.put("/accounts/assign-role", "USER_EDIT");
         protectedUrlMap.put("/accounts/lock", "USER_DELETE");
         protectedUrlMap.put("/accounts/unlock", "USER_DELETE");
@@ -64,6 +65,17 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");
         protectedUrlMap.put("/quotes/detail", "QUOTE_VIEW");
         protectedUrlMap.put("/quotes", "QUOTE_VIEW");
+
+        protectedUrlMap.put("/products/create", "PRODUCT_EDIT");
+        protectedUrlMap.put("/products/edit", "PRODUCT_EDIT");
+        protectedUrlMap.put("/products/status", "PRODUCT_EDIT");
+        protectedUrlMap.put("/products/detail", "PRODUCT_VIEW");
+        protectedUrlMap.put("/products", "PRODUCT_VIEW");
+
+        protectedUrlMap.put("/audit/list", "USER_VIEW");
+        protectedUrlMap.put("/audit/detail", "USER_VIEW");
+        protectedUrlMap.put("/audit-log/detail", "USER_VIEW");
+        protectedUrlMap.put("/audit-log", "USER_VIEW");
 
         LOGGER.info("AuthorizationFilter (BE3) khởi tạo hoàn tất.");
     }

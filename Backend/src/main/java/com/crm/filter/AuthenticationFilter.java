@@ -44,31 +44,41 @@ public class AuthenticationFilter implements Filter {
         }
 
         HttpSession session = httpRequest.getSession(false);
+        String requestedSessionId = httpRequest.getRequestedSessionId();
+        boolean isKicked = (requestedSessionId != null && com.crm.util.SessionListener.isKickedSession(requestedSessionId)) ||
+                           (session != null && com.crm.util.SessionListener.isKickedSession(session.getId()));
+
+        if (isKicked) {
+            LOGGER.info("Từ chối truy cập do đăng nhập ở vị trí khác: " + path);
+            if (session != null) {
+                try { session.invalidate(); } catch (Exception ignored) {}
+            }
+            if (isAjaxRequest(httpRequest)) {
+                httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                httpResponse.setContentType("application/json;charset=UTF-8");
+                PrintWriter out = httpResponse.getWriter();
+                out.print("{\"status\": 401, \"message\": \"Tài khoản của bạn đã được đăng nhập ở một vị trí/thiết bị khác.\"}");
+                out.flush();
+            } else {
+                httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login?concurrent=true");
+            }
+            return;
+        }
+
         boolean isLoggedIn = (session != null && (session.getAttribute("currentUser") != null || session.getAttribute("userId") != null));
 
         if (isLoggedIn) {
             chain.doFilter(request, response);
         } else {
-            String requestedSessionId = httpRequest.getRequestedSessionId();
-            boolean isKicked = com.crm.util.SessionListener.isKickedSession(requestedSessionId);
-
-            LOGGER.info("Từ chối truy cập chưa xác thực tới: " + path + (isKicked ? " (do đăng nhập ở nơi khác)" : ""));
+            LOGGER.info("Từ chối truy cập chưa xác thực tới: " + path);
             if (isAjaxRequest(httpRequest)) {
                 httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 httpResponse.setContentType("application/json;charset=UTF-8");
                 PrintWriter out = httpResponse.getWriter();
-                if (isKicked) {
-                    out.print("{\"status\": 401, \"message\": \"Tài khoản của bạn đã được đăng nhập ở một vị trí/thiết bị khác.\"}");
-                } else {
-                    out.print("{\"status\": 401, \"message\": \"Phiên đăng nhập đã hết hạn hoặc chưa đăng nhập.\"}");
-                }
+                out.print("{\"status\": 401, \"message\": \"Phiên đăng nhập đã hết hạn hoặc chưa đăng nhập.\"}");
                 out.flush();
             } else {
-                if (isKicked) {
-                    httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login?concurrent=true");
-                } else {
-                    httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login?expired=true");
-                }
+                httpResponse.sendRedirect(httpRequest.getContextPath() + "/auth/login?expired=true");
             }
         }
     }

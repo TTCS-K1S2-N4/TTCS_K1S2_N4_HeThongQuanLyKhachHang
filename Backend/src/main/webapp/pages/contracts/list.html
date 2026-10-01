@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách Hợp đồng | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/contracts.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Hợp đồng</h1>
+                <a href="create.html" class="btn btn-primary">+ Tạo mới Hợp đồng</a>
+            </div>
+            
+            <div class="filter-section card">
+                <div class="card-body">
+                    <form id="filterForm">
+                        <div class="form-row">
+                            <input type="text" name="keyword" class="form-control" placeholder="Tìm kiếm theo mã, tên hợp đồng...">
+                            <select name="status" class="form-control">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="ACTIVE">Đang hiệu lực</option>
+                                <option value="PENDING">Chờ duyệt</option>
+                                <option value="EXPIRED">Hết hạn</option>
+                            </select>
+                            <input type="date" name="signDate" class="form-control" title="Ngày ký">
+                            <button type="submit" class="btn btn-secondary">Lọc</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body table-container">
+                    <table class="table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Tên HĐ</th>
+                                <th>Khách hàng</th>
+                                <th>Giá trị</th>
+                                <th>Ngày ký</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data rendered via JS -->
+                        </tbody>
+                    </table>
+                    <div id="listMessage" class="toast-message" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function loadContracts() {
+            const formData = new FormData(document.getElementById('filterForm'));
+            const params = new URLSearchParams(formData).toString();
+            const messageDiv = document.getElementById('listMessage');
+            
+            fetch('/contracts?' + params)
+                .then(res => {
+                    if(!res.ok) throw new Error('API Error');
+                    return res.json();
+                })
+                .then(data => {
+                    const tbody = document.querySelector('#dataTable tbody');
+                    tbody.innerHTML = '';
+                    if(data && data.contracts) {
+                        data.contracts.forEach(item => {
+                            let badgeClass = 'badge-inactive';
+                            if (item.status === 'ACTIVE') badgeClass = 'badge-active';
+                            if (item.status === 'PENDING') badgeClass = 'badge-pending';
+                            
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${item.contractCode || ''}</td>
+                                <td>${item.contractName || ''}</td>
+                                <td>${item.customerName || ''}</td>
+                                <td>${item.contractValue ? Number(item.contractValue).toLocaleString() : ''}</td>
+                                <td>${item.signDate || ''}</td>
+                                <td>
+                                    <span class="badge ${badgeClass}">${item.status || ''}</span>
+                                </td>
+                                <td>
+                                    <a href="detail.html?id=${item.contractId}" class="btn-link">Chi tiết</a> | 
+                                    <a href="edit.html?id=${item.contractId}" class="btn-link">Sửa</a>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                })
+                .catch(err => {
+                    messageDiv.textContent = 'Không thể tải danh sách hợp đồng.';
+                    messageDiv.className = 'toast-message error';
+                    messageDiv.style.display = 'block';
+                });
+        }
+        
+        document.getElementById('filterForm').addEventListener('submit', e => {
+            e.preventDefault();
+            loadContracts();
+        });
+        
+        // Initial load simulate
+        // loadContracts();
+    </script>
+</body>
+</html>

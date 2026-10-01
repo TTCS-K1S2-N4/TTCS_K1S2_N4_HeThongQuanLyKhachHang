@@ -204,7 +204,7 @@
                     <form
                         id="audit-log-filter-form"
                         class="audit-log-filters"
-                        action="../../audit-log"
+                        action="list.html"
                         method="get"
                         novalidate>
 
@@ -294,7 +294,7 @@
 
                         <div class="audit-log-filter-actions">
 
-                            <a class="btn btn-secondary" href="../../audit-log">
+                            <a class="btn btn-secondary" href="list.html">
                                 Xóa bộ lọc
                             </a>
 
@@ -384,11 +384,11 @@
 
                             <td>
                                 <div class="table-actions">
-                                    <!-- GET /audit-log/detail?auditLogId={auditLogId} -->
+                                    <!-- FE detail page route: detail.html?auditLogId={logId} -->
                                     <a
                                         class="btn btn-secondary btn-sm"
                                         data-field="detailLink"
-                                        href="../../audit-log/detail?auditLogId=">
+                                        href="detail.html?auditLogId=">
                                         Chi tiết
                                     </a>
                                 </div>
@@ -447,32 +447,22 @@
         var fromInput = form.elements.fromDate;
         var toInput = form.elements.toDate;
         var userIdInput = form.elements.userId;
+        var entityTypeInput = form.elements.entityType;
         var errorBox = document.getElementById("audit-log-filter-error");
-        var query = new URLSearchParams(window.location.search);
+        var rowsContainer = document.getElementById("audit-log-rows");
+        var template = document.getElementById("audit-log-row-template");
+
+        var pager = document.getElementById("audit-log-pagination");
+        var pagerInfo = document.getElementById("audit-log-pagination-info");
+        var pagerNav = document.getElementById("audit-log-pagination-nav");
 
         function toPositiveInt(value) {
-            if (value === null || !/^\d+$/.test(String(value).trim())) {
+            if (value === null || value === undefined || !/^\d+$/.test(String(value).trim())) {
                 return null;
             }
             var number = parseInt(value, 10);
             return number > 0 ? number : null;
         }
-
-        /* ---------- Giữ lại bộ lọc đang áp dụng ---------- */
-
-        ["userId", "entityType", "fromDate", "toDate"].forEach(function (name) {
-            var value = query.get(name);
-            if (value !== null) {
-                form.elements[name].value = value;
-            }
-        });
-
-        var pageSize = toPositiveInt(query.get("pageSize"));
-        if (pageSize !== null) {
-            form.elements.pageSize.value = String(pageSize);
-        }
-
-        /* ---------- Kiểm tra dữ liệu lọc (hỗ trợ UX, Backend vẫn validate) ---------- */
 
         function showError(message, field) {
             errorBox.textContent = message;
@@ -487,7 +477,7 @@
             errorBox.textContent = "";
             errorBox.hidden = true;
             [userIdInput, fromInput, toInput].forEach(function (field) {
-                field.classList.remove("is-error");
+                if (field) field.classList.remove("is-error");
             });
         }
 
@@ -496,119 +486,237 @@
             fromInput.max = toInput.value || "";
         }
 
-        fromInput.addEventListener("change", function () {
+        if (fromInput && toInput) {
+            fromInput.addEventListener("change", function () {
+                syncDateLimits();
+                clearError();
+            });
+            toInput.addEventListener("change", function () {
+                syncDateLimits();
+                clearError();
+            });
             syncDateLimits();
-            clearError();
+        }
+        if (userIdInput) {
+            userIdInput.addEventListener("input", clearError);
+        }
+
+        // Initialize inputs from URL query string
+        var initialQuery = new URLSearchParams(window.location.search);
+        ["userId", "entityType", "fromDate", "toDate"].forEach(function (name) {
+            var value = initialQuery.get(name);
+            if (value !== null && form.elements[name]) {
+                form.elements[name].value = value;
+            }
         });
-        toInput.addEventListener("change", function () {
-            syncDateLimits();
+
+        var initialPageSize = toPositiveInt(initialQuery.get("pageSize"));
+        if (initialPageSize !== null && form.elements.pageSize) {
+            form.elements.pageSize.value = String(initialPageSize);
+        }
+        var initialPage = toPositiveInt(initialQuery.get("page")) || 1;
+
+        function fetchAuditLogs(page) {
             clearError();
-        });
-        userIdInput.addEventListener("input", clearError);
-        syncDateLimits();
+            var currentPageNum = page || 1;
+            form.elements.page.value = String(currentPageNum);
+
+            var params = new URLSearchParams();
+            var userIdVal = userIdInput ? userIdInput.value.trim() : "";
+            var entityTypeVal = entityTypeInput ? entityTypeInput.value.trim() : "";
+            var fromDateVal = fromInput ? fromInput.value : "";
+            var toDateVal = toInput ? toInput.value : "";
+            var pageSizeVal = form.elements.pageSize ? form.elements.pageSize.value : "20";
+
+            if (userIdVal !== "") params.append("userId", userIdVal);
+            if (entityTypeVal !== "") params.append("entityType", entityTypeVal);
+            if (fromDateVal !== "") params.append("fromDate", fromDateVal);
+            if (toDateVal !== "") params.append("toDate", toDateVal);
+            params.append("page", String(currentPageNum));
+            params.append("pageSize", pageSizeVal);
+
+            // Update URL query string without reloading page
+            var newUrl = window.location.pathname + "?" + params.toString();
+            window.history.replaceState({}, "", newUrl);
+
+            // Fetch API from Backend
+            fetch("../../audit-log?" + params.toString(), {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                }
+            })
+            .then(function (response) {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
+                    } else if (response.status === 403) {
+                        throw new Error("Bạn không có quyền truy cập nhật ký hệ thống.");
+                    } else if (response.status === 400) {
+                        throw new Error("Yêu cầu không hợp lệ. Vui lòng kiểm tra lại bộ lọc.");
+                    } else {
+                        throw new Error("Không thể tải nhật ký hệ thống. Lỗi máy chủ (" + response.status + ").");
+                    }
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                renderTable(data.auditLogs || []);
+                renderPagination(data.totalItems || 0, data.totalPages || 0, data.currentPage || currentPageNum);
+            })
+            .catch(function (error) {
+                showError(error.message);
+                renderTable([]);
+                renderPagination(0, 0, 1);
+            });
+        }
+
+        function renderTable(logs) {
+            rowsContainer.innerHTML = "";
+            if (!logs || logs.length === 0) {
+                var emptyTr = document.createElement("tr");
+                emptyTr.className = "audit-log-empty-row";
+                emptyTr.innerHTML = '<td class="audit-log-empty-cell" colspan="6">Không có nhật ký thay đổi nào phù hợp với bộ lọc.</td>';
+                rowsContainer.appendChild(emptyTr);
+                return;
+            }
+
+            logs.forEach(function (log) {
+                var clone = template.content.cloneNode(true);
+                var idEl = clone.querySelector('[data-field="auditLogId"]');
+                if (idEl) idEl.textContent = log.logId !== undefined && log.logId !== null ? log.logId : "";
+
+                var timeEl = clone.querySelector('[data-field="changedAt"]');
+                if (timeEl) timeEl.textContent = log.changedAt || log.createdAt || "";
+
+                var userEl = clone.querySelector('[data-field="user"]');
+                if (userEl) userEl.textContent = log.performedByName || log.user || (log.userId ? "Mã " + log.userId : "N/A");
+
+                var entityTypeEl = clone.querySelector('[data-field="entityType"]');
+                if (entityTypeEl) entityTypeEl.textContent = log.entityType || "";
+
+                var entityIdEl = clone.querySelector('[data-field="entityId"]');
+                if (entityIdEl) entityIdEl.textContent = log.entityId !== undefined && log.entityId !== null ? log.entityId : "";
+
+                var actionEl = clone.querySelector('[data-field="action"]');
+                if (actionEl) actionEl.textContent = log.action || "";
+
+                var detailLink = clone.querySelector('[data-field="detailLink"]');
+                if (detailLink) {
+                    detailLink.href = "detail.html?auditLogId=" + encodeURIComponent(log.logId);
+                }
+
+                rowsContainer.appendChild(clone);
+            });
+        }
+
+        function renderPagination(totalItems, totalPages, currentPage) {
+            pagerNav.innerHTML = "";
+            pagerInfo.textContent = "";
+
+            if (totalItems === 0 || totalPages <= 0) {
+                pager.hidden = true;
+                return;
+            }
+
+            pager.setAttribute("data-total-items", totalItems);
+            pager.setAttribute("data-total-pages", totalPages);
+            pager.setAttribute("data-current-page", currentPage);
+
+            pagerInfo.textContent = "Tổng số " + totalItems + " bản ghi · Trang " + currentPage + "/" + totalPages;
+
+            function createPageItem(label, targetPage, isDisabled, isActive, ariaLabel) {
+                var item = document.createElement(isDisabled ? "span" : "button");
+                item.className = "pagination-item";
+                if (isDisabled) {
+                    item.classList.add("is-disabled");
+                    item.setAttribute("aria-disabled", "true");
+                }
+                if (isActive) {
+                    item.classList.add("active");
+                    item.setAttribute("aria-current", "page");
+                }
+                item.textContent = label;
+                if (ariaLabel) {
+                    item.setAttribute("aria-label", ariaLabel);
+                }
+                if (!isDisabled) {
+                    item.type = "button";
+                    item.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        fetchAuditLogs(targetPage);
+                    });
+                }
+                return item;
+            }
+
+            function addGap() {
+                var gap = document.createElement("span");
+                gap.className = "pagination-gap";
+                gap.textContent = "…";
+                pagerNav.appendChild(gap);
+            }
+
+            // Prev
+            pagerNav.appendChild(createPageItem("‹", currentPage - 1, currentPage <= 1, false, "Trang trước"));
+
+            var start = Math.max(1, currentPage - 2);
+            var end = Math.min(totalPages, currentPage + 2);
+
+            if (start > 1) {
+                pagerNav.appendChild(createPageItem("1", 1, false, currentPage === 1));
+                if (start > 2) addGap();
+            }
+
+            for (var p = start; p <= end; p++) {
+                pagerNav.appendChild(createPageItem(String(p), p, false, p === currentPage));
+            }
+
+            if (end < totalPages) {
+                if (end < totalPages - 1) addGap();
+                pagerNav.appendChild(createPageItem(String(totalPages), totalPages, false, totalPages === currentPage));
+            }
+
+            // Next
+            pagerNav.appendChild(createPageItem("›", currentPage + 1, currentPage >= totalPages, false, "Trang sau"));
+
+            pager.hidden = false;
+        }
 
         form.addEventListener("submit", function (event) {
+            event.preventDefault();
             clearError();
 
             var userId = userIdInput.value.trim();
             if (userId !== "" && toPositiveInt(userId) === null) {
-                event.preventDefault();
                 showError("Mã người dùng phải là số nguyên dương.", userIdInput);
                 return;
             }
 
             if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
-                event.preventDefault();
                 showError("\"Từ ngày\" không được sau \"Đến ngày\".", toInput);
                 return;
             }
 
-            form.elements.page.value = "1";
+            fetchAuditLogs(1);
         });
 
-        /* ---------- Phân trang giữ nguyên tham số lọc ---------- */
-
-        var pager = document.getElementById("audit-log-pagination");
-        var pagerInfo = document.getElementById("audit-log-pagination-info");
-        var pagerNav = document.getElementById("audit-log-pagination-nav");
-
-        var totalItems = parseInt(pager.getAttribute("data-total-items"), 10);
-        var totalPages = toPositiveInt(pager.getAttribute("data-total-pages"));
-        var currentPage = toPositiveInt(pager.getAttribute("data-current-page")) || 1;
-
-        if (isNaN(totalItems) || totalPages === null) {
-            return;
+        // Handle "Xóa bộ lọc" button
+        var clearBtn = form.querySelector('a.btn-secondary[href], button.btn-secondary');
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                form.reset();
+                if (userIdInput) userIdInput.value = "";
+                if (entityTypeInput) entityTypeInput.value = "";
+                if (fromInput) fromInput.value = "";
+                if (toInput) toInput.value = "";
+                fetchAuditLogs(1);
+            });
         }
 
-        currentPage = Math.min(currentPage, totalPages);
-
-        function pageUrl(page) {
-            var params = new URLSearchParams(window.location.search);
-            params.set("page", String(page));
-            return form.getAttribute("action") + "?" + params.toString();
-        }
-
-        function addLink(label, page, ariaLabel) {
-            var disabled = page < 1 || page > totalPages;
-            var item = document.createElement(disabled ? "span" : "a");
-
-            item.className = "pagination-item";
-            item.textContent = label;
-
-            if (ariaLabel) {
-                item.setAttribute("aria-label", ariaLabel);
-            }
-
-            if (disabled) {
-                item.classList.add("is-disabled");
-                item.setAttribute("aria-disabled", "true");
-            } else {
-                item.href = pageUrl(page);
-                if (page === currentPage && !ariaLabel) {
-                    item.classList.add("active");
-                    item.setAttribute("aria-current", "page");
-                }
-            }
-
-            pagerNav.appendChild(item);
-        }
-
-        function addGap() {
-            var gap = document.createElement("span");
-            gap.className = "pagination-gap";
-            gap.textContent = "…";
-            pagerNav.appendChild(gap);
-        }
-
-        pagerInfo.textContent =
-            "Tổng số " + totalItems + " bản ghi · Trang " + currentPage + "/" + totalPages;
-
-        addLink("‹", currentPage - 1, "Trang trước");
-
-        var start = Math.max(1, currentPage - 2);
-        var end = Math.min(totalPages, currentPage + 2);
-
-        if (start > 1) {
-            addLink("1", 1);
-            if (start > 2) {
-                addGap();
-            }
-        }
-
-        for (var page = start; page <= end; page++) {
-            addLink(String(page), page);
-        }
-
-        if (end < totalPages) {
-            if (end < totalPages - 1) {
-                addGap();
-            }
-            addLink(String(totalPages), totalPages);
-        }
-
-        addLink("›", currentPage + 1, "Trang sau");
-
-        pager.hidden = false;
+        // Initial fetch
+        fetchAuditLogs(initialPage);
     })();
 </script>
 
