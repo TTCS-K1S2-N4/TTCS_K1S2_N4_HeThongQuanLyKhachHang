@@ -11,9 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.io.PrintWriter;
 
-@WebServlet({"/profile", "/profile/update"})
+@WebServlet({ "/profile", "/profile/update" })
 public class ProfileServlet extends HttpServlet {
     private ProfileService profileService;
 
@@ -23,9 +22,10 @@ public class ProfileServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         String path = request.getServletPath();
-        
+
         if ("/profile".equals(path)) {
             handleGetProfile(request, response);
         } else {
@@ -34,9 +34,10 @@ public class ProfileServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         String path = request.getServletPath();
-        
+
         if ("/profile/update".equals(path)) {
             handleUpdateProfile(request, response);
         } else {
@@ -44,32 +45,44 @@ public class ProfileServlet extends HttpServlet {
         }
     }
 
-    private void handleGetProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void handleGetProfile(
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+
         Integer userId = getUserIdFromSession(request);
+
         if (userId == null) {
-            response.sendRedirect(request.getContextPath() + "/auth/login");
+            writeErrorJson(
+                    response,
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Vui lòng đăng nhập.");
             return;
         }
 
         UserProfile profile = profileService.getProfile(userId);
+
         if (profile == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy hồ sơ.");
+            writeErrorJson(
+                    response,
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "Không tìm thấy hồ sơ.");
             return;
         }
 
-        // Return JSON response or forward to JSP based on request type
-        // Assuming the contract expects JSON response for the data based on typical patterns, 
-        // but if it's a frontend render, we put it in attribute. The instructions state:
-        // Output: profile {...} and Frontend file: pages/profile/index.html
-        
-        request.setAttribute("profile", profile);
-        request.getRequestDispatcher("/pages/profile/index.html").forward(request, response);
+        writeProfileJson(response, profile);
     }
 
-    private void handleUpdateProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void handleUpdateProfile(
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+
         Integer userId = getUserIdFromSession(request);
+
         if (userId == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập.");
+            writeErrorJson(
+                    response,
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Vui lòng đăng nhập.");
             return;
         }
 
@@ -77,44 +90,131 @@ public class ProfileServlet extends HttpServlet {
         String phone = request.getParameter("phone");
         String emailSignature = request.getParameter("emailSignature");
 
-        ProfileUpdateRequest updateReq = new ProfileUpdateRequest(fullName, phone, emailSignature);
+        ProfileUpdateRequest updateReq = new ProfileUpdateRequest(
+                fullName,
+                phone,
+                emailSignature);
+
         String errorMessage = profileService.updateProfile(userId, updateReq);
 
         if (errorMessage != null) {
-            request.setAttribute("errors", errorMessage);
-        } else {
-            request.setAttribute("successMessage", "Cập nhật hồ sơ thành công.");
+            writeErrorJson(
+                    response,
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    errorMessage);
+            return;
         }
-        
-        UserProfile profile = profileService.getProfile(userId);
-        request.setAttribute("profile", profile);
-        request.getRequestDispatcher("/pages/profile/index.html").forward(request, response);
+
+        writeUpdateSuccessJson(response);
+    }
+
+    private void prepareJsonResponse(HttpServletResponse response) {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    private void writeProfileJson(
+            HttpServletResponse response,
+            UserProfile profile) throws IOException {
+
+        prepareJsonResponse(response);
+
+        StringBuilder json = new StringBuilder();
+
+        json.append("{");
+        json.append("\"profile\":{");
+
+        json.append("\"fullName\":\"")
+                .append(escapeJson(profile.getFullName()))
+                .append("\",");
+
+        json.append("\"email\":\"")
+                .append(escapeJson(profile.getEmail()))
+                .append("\",");
+
+        json.append("\"phone\":\"")
+                .append(escapeJson(profile.getPhone()))
+                .append("\",");
+
+        json.append("\"emailSignature\":\"")
+                .append(escapeJson(profile.getEmailSignature()))
+                .append("\",");
+
+        json.append("\"team\":\"")
+                .append(escapeJson(profile.getTeam()))
+                .append("\",");
+
+        json.append("\"roles\":[");
+
+        if (profile.getRoles() != null) {
+            for (int i = 0; i < profile.getRoles().size(); i++) {
+                if (i > 0) {
+                    json.append(",");
+                }
+
+                json.append("\"")
+                        .append(escapeJson(profile.getRoles().get(i)))
+                        .append("\"");
+            }
+        }
+
+        json.append("]");
+        json.append("}");
+        json.append("}");
+
+        response.getWriter().write(json.toString());
+    }
+
+    private void writeUpdateSuccessJson(
+            HttpServletResponse response) throws IOException {
+
+        prepareJsonResponse(response);
+
+        response.getWriter().write(
+                "{\"success\":true,\"message\":\"Cập nhật hồ sơ thành công.\"}");
+    }
+
+    private void writeErrorJson(
+            HttpServletResponse response,
+            int status,
+            String message) throws IOException {
+
+        prepareJsonResponse(response);
+        response.setStatus(status);
+
+        String json = "{\"success\":false,\"error\":\""
+                + escapeJson(message)
+                + "\"}";
+
+        response.getWriter().write(json);
     }
 
     private Integer getUserIdFromSession(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if (session != null) {
-            Object userIdObj = session.getAttribute("userId");
-            if (userIdObj instanceof Integer) {
-                return (Integer) userIdObj;
-            }
-            // Some systems store the whole Account object in currentUser
-            Object currentUser = session.getAttribute("currentUser");
-            if (currentUser != null) {
-                try {
-                    // Using reflection or assuming it's an Account model
-                    java.lang.reflect.Method getIdMethod = currentUser.getClass().getMethod("getAccountId");
-                    return (Integer) getIdMethod.invoke(currentUser);
-                } catch (Exception e) {
-                    try {
-                        java.lang.reflect.Method getUserIdMethod = currentUser.getClass().getMethod("getUserId");
-                        return (Integer) getUserIdMethod.invoke(currentUser);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
+
+        if (session == null) {
+            return null;
         }
+
+        Object userId = session.getAttribute("userId");
+
+        if (userId instanceof Integer) {
+            return (Integer) userId;
+        }
+
         return null;
     }
 }

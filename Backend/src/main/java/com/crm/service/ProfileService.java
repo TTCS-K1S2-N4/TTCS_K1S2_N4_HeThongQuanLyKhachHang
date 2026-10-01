@@ -5,7 +5,7 @@ import com.crm.dto.ProfileUpdateRequest;
 import com.crm.model.UserProfile;
 
 public class ProfileService {
-    
+
     private final ProfileDAO profileDAO;
 
     public ProfileService() {
@@ -20,27 +20,41 @@ public class ProfileService {
         if (request == null) {
             return "Dữ liệu yêu cầu không hợp lệ.";
         }
-        
-        if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+
+        String fullName = request.getFullName() != null
+                ? request.getFullName().trim()
+                : null;
+
+        if (fullName == null || fullName.isEmpty()) {
             return "Họ và tên không được để trống.";
         }
-        
-        // Basic phone validation if present
-        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-            if (!request.getPhone().matches("^[0-9]{10,15}$")) {
-                return "Số điện thoại không hợp lệ.";
+
+        String phone = request.getPhone() != null
+                ? request.getPhone().trim()
+                : null;
+
+        if (phone != null && phone.isEmpty()) {
+            phone = null;
+        }
+
+        if (phone != null && !phone.isEmpty()) {
+            if (!phone.matches("^0(3|5|7|8|9)[0-9]{8}$")) {
+                return "Số điện thoại không đúng định dạng Việt Nam.";
             }
         }
-        
-        boolean success = profileDAO.updateProfile(userId, 
-                                                   request.getFullName().trim(), 
-                                                   request.getPhone() != null ? request.getPhone().trim() : null, 
-                                                   request.getEmailSignature() != null ? request.getEmailSignature().trim() : null);
-        
-        if (success) {
-            return null; // No errors
-        } else {
-            return "Cập nhật hồ sơ thất bại do lỗi hệ thống.";
-        }
+
+        String emailSignature = request.getEmailSignature() != null
+                ? request.getEmailSignature().trim()
+                : null;
+
+        boolean success = profileDAO.updateProfile(
+                userId,
+                fullName,
+                phone,
+                emailSignature);
+
+        return success
+                ? null
+                : "Cập nhật hồ sơ thất bại do lỗi hệ thống.";
     }
 }

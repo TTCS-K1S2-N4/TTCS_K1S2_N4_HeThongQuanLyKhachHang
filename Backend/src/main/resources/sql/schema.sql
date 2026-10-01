@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    email_signature TEXT NULL,
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     failed_attempts INT DEFAULT 0,
