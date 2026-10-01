@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Quản lý tài khoản | CRM System</title>
+
+    <!-- FOUNDATION -->
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+
+    <!-- ACCOUNT MODULE -->
+    <link rel="stylesheet" href="../../assets/css/modules/accounts.css">
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="app-header">
+
+        <div class="header-left">
+
+            <a class="header-brand" href="../../index.html">
+
+                <span class="brand-mark">
+                    CRM
+                </span>
+
+                <span>
+                    CRM System
+                </span>
+
+            </a>
+
+        </div>
+
+
+        <div class="header-right">
+
+            <div class="header-user">
+
+                <div class="user-avatar">
+                    AD
+                </div>
+
+                <div class="header-user-info">
+
+                    <div class="user-name">
+                        Nguyễn Văn A
+                    </div>
+
+                    <div class="user-role">
+                        Administrator
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <nav aria-label="Điều hướng chính">
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-title">
+                    Tổng quan
+                </div>
+
+                <a class="nav-item" href="../../index.html">
+                    <span class="nav-icon">◫</span>
+                    Dashboard
+                </a>
+
+            </div>
+
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-title">
+                    Kinh doanh
+                </div>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">◎</span>
+                    Khách hàng
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">◇</span>
+                    Lead
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">△</span>
+                    Cơ hội
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">○</span>
+                    Hoạt động
+                </a>
+
+            </div>
+
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-title">
+                    Hệ thống
+                </div>
+<a class="nav-item active" href="list.html">
+                    <span class="nav-icon">□</span>
+                    Tài khoản
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">⚙</span>
+                    Vai trò & phân quyền
+                </a>
+
+                <a class="nav-item" href="#">
+                    <span class="nav-icon">≡</span>
+                    Nhật ký hệ thống
+                </a>
+
+            </div>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= CONTENT ================= -->
+
+    <main class="main-content">
+
+        <div class="content-container">
+
+            <!-- BREADCRUMB -->
+
+            <nav
+                class="breadcrumb"
+                aria-label="Breadcrumb">
+
+                <a href="../../index.html">
+                    Trang chủ
+                </a>
+
+                <span>/</span>
+
+                <span class="breadcrumb-current">
+                    Tài khoản
+                </span>
+
+            </nav>
+
+
+            <!-- PAGE HEADER -->
+
+            <div class="page-header">
+
+                <div>
+
+                    <h1 class="page-title">
+                        Quản lý tài khoản
+                    </h1>
+
+                    <p class="page-description">
+                        Quản lý tài khoản người dùng trong hệ thống CRM.
+                    </p>
+
+                </div>
+
+
+                <div class="page-actions">
+
+                    <a
+                        class="btn btn-primary"
+                        href="create.html">
+
+                        + Tạo tài khoản
+
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- CARD -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <h2 class="card-title">
+                            Danh sách tài khoản
+                        </h2>
+
+                        <p class="card-description">
+                            Danh sách người dùng được cấp quyền truy cập hệ thống.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card-body">
+
+                    <!-- FILTER -->
+
+                    <div class="account-toolbar">
+
+                        <div class="account-filters">
+
+                            <input
+                                class="form-control account-search"
+                                type="search"
+                                placeholder="Tìm tên, email, tài khoản...">
+
+                            <select
+                                class="form-control account-filter"
+                                aria-label="Lọc theo vai trò">
+
+                                <option value="">
+                                    Tất cả vai trò
+                                </option>
+
+                                <option>
+Sales Rep
+                                </option>
+
+                                <option>
+                                    Team Lead
+                                </option>
+
+                                <option>
+                                    Director
+                                </option>
+
+                                <option>
+                                    Marketing
+                                </option>
+
+                                <option>
+                                    Customer Success
+                                </option>
+
+                                <option>
+                                    Accountant
+                                </option>
+
+                                <option>
+                                    Admin
+                                </option>
+
+                            </select>
+
+
+                            <select
+                                class="form-control account-filter"
+                                aria-label="Lọc theo trạng thái">
+
+                                <option value="">
+                                    Tất cả trạng thái
+                                </option>
+
+                                <option>
+                                    Hoạt động
+                                </option>
+
+                                <option>
+                                    Đã khóa
+                                </option>
+
+                            </select>
+
+
+                            <button class="btn btn-secondary">
+                                Làm mới
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TABLE -->
+
+                    <div class="table-container">
+
+                        <table class="table">
+
+                            <thead>
+
+                            <tr>
+                                <th>Người dùng</th>
+                                <th>Tài khoản</th>
+                                <th>Vai trò</th>
+                                <th>Nhóm</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                            <tr>
+
+                                <td>
+
+                                    <div class="account-user">
+
+                                        <div class="account-avatar">
+                                            NA
+                                        </div>
+
+                                        <div>
+
+                                            <div class="account-name">
+                                                Nguyễn Văn An
+                                            </div>
+
+                                            <div class="account-email">
+an.nguyen@example.com
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    nguyenvanan
+                                </td>
+
+                                <td>
+                                    Sales Rep
+                                </td>
+
+                                <td>
+                                    Sales Team A
+                                </td>
+
+                                <td>
+
+                                    <span class="badge badge-success">
+                                        Hoạt động
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="table-actions">
+
+                                        <a
+                                            class="btn btn-secondary btn-sm"
+                                            href="detail.html">
+
+                                            Chi tiết
+
+                                        </a>
+
+                                        <a
+                                            class="btn btn-secondary btn-sm"
+                                            href="edit.html">
+
+                                            Sửa
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+
+                            <tr>
+
+                                <td>
+
+                                    <div class="account-user">
+
+                                        <div class="account-avatar">
+                                            TB
+                                        </div>
+
+                                        <div>
+
+                                            <div class="account-name">
+                                                Trần Thị Bình
+                                            </div>
+
+                                            <div class="account-email">
+                                                binh.tran@example.com
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+                                <td>
+                                    tranthibinh
+                                </td>
+
+                                <td>
+                                    Team Lead
+                                </td>
+
+                                <td>
+                                    Sales Team B
+                                </td>
+
+                                <td>
+
+                                    <span class="badge badge-danger">
+Đã khóa
+                                    </span>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="table-actions">
+
+                                        <a
+                                            class="btn btn-secondary btn-sm"
+                                            href="detail.html">
+
+                                            Chi tiết
+
+                                        </a>
+
+                                        <a
+                                            class="btn btn-secondary btn-sm"
+                                            href="edit.html">
+
+                                            Sửa
+
+                                        </a>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <!-- PAGINATION -->
+
+                    <nav
+                        class="pagination"
+                        aria-label="Phân trang">
+
+                        <a class="pagination-item" href="#">
+                            ‹
+                        </a>
+
+                        <a class="pagination-item active" href="#">
+                            1
+                        </a>
+
+                        <a class="pagination-item" href="#">
+                            2
+                        </a>
+
+                        <a class="pagination-item" href="#">
+                            3
+                        </a>
+
+                        <a class="pagination-item" href="#">
+                            ›
+                        </a>
+
+                    </nav>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
