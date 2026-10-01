@@ -1,4 +1,4 @@
-package com.crm.controller.product;
+package com.crm.controller.customfield;
 
 import com.crm.dto.CustomFieldRequest;
 import com.crm.model.CustomFieldDefinition;
@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-@WebServlet("/custom-fields")
+@WebServlet("/api/custom-fields")
 public class CustomFieldServlet extends HttpServlet {
 
     private CustomFieldService customFieldService = new CustomFieldService();
