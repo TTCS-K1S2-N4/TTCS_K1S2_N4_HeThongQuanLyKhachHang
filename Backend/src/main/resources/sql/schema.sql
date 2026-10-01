@@ -132,6 +132,37 @@ CREATE TABLE IF NOT EXISTS menu_items (
     display_order INT DEFAULT 0,
     parent_id INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 6.3. Bảng cấu hình các giai đoạn Pipeline - S2-09
+CREATE TABLE IF NOT EXISTS pipeline_stages (
+    pipeline_stage_id INT AUTO_INCREMENT PRIMARY KEY,
+    stage_name VARCHAR(100) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    default_probability DECIMAL(5,2) NOT NULL DEFAULT 0,
+    exit_condition TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 6.4. Bảng lý do thắng/thua - S2-10
+CREATE TABLE IF NOT EXISTS win_loss_reasons (
+    reason_id INT AUTO_INCREMENT PRIMARY KEY,
+    reason_type ENUM('WIN', 'LOSS') NOT NULL,
+    reason_name VARCHAR(200) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 6.5. Bảng đối thủ cạnh tranh - S2-10
+CREATE TABLE IF NOT EXISTS competitors (
+    competitor_id INT AUTO_INCREMENT PRIMARY KEY,
+    competitor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 -- 11. Bảng Danh mục Sản phẩm / Dịch vụ (S2-05)
 CREATE TABLE IF NOT EXISTS products (
