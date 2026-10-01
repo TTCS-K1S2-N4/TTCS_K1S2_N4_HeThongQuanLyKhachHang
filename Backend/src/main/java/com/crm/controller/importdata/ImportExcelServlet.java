@@ -17,10 +17,15 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet({"/import/excel", "/import/excel/template", "/import/excel/preview", "/import/excel/execute"})
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+@WebServlet({ "/import/excel", "/import/excel/template", "/import/excel/preview", "/import/excel/execute" })
 @MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 1024 * 1024 * 10, maxRequestSize = 1024 * 1024 * 15)
 public class ImportExcelServlet extends HttpServlet {
-    
+
     private ImportExcelService importExcelService;
 
     @Override
@@ -29,21 +34,40 @@ public class ImportExcelServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         String path = request.getServletPath();
-        
+
         if ("/import/excel".equals(path)) {
             request.getRequestDispatcher("/pages/import/excel.html").forward(request, response);
         } else if ("/import/excel/template".equals(path)) {
-            response.setContentType("text/csv");
-            response.setHeader("Content-Disposition", "attachment; filename=\"template.csv\"");
-            
-            String header = "Họ và tên,Email,Số điện thoại\n";
-            String example = "Nguyễn Văn A,nguyenvana@example.com,0123456789\n";
-            
-            try (OutputStream out = response.getOutputStream()) {
-                out.write(header.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                out.write(example.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            response.setContentType(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            response.setHeader(
+                    "Content-Disposition",
+                    "attachment; filename=\"user-import-template.xlsx\"");
+
+            try (Workbook workbook = new XSSFWorkbook();
+                    OutputStream out = response.getOutputStream()) {
+
+                Sheet sheet = workbook.createSheet("Users");
+
+                Row header = sheet.createRow(0);
+                header.createCell(0).setCellValue("Họ và tên");
+                header.createCell(1).setCellValue("Email");
+                header.createCell(2).setCellValue("Số điện thoại");
+
+                Row example = sheet.createRow(1);
+                example.createCell(0).setCellValue("Nguyễn Văn A");
+                example.createCell(1).setCellValue("nguyenvana@example.com");
+                example.createCell(2).setCellValue("0912345678");
+
+                sheet.autoSizeColumn(0);
+                sheet.autoSizeColumn(1);
+                sheet.autoSizeColumn(2);
+
+                workbook.write(out);
             }
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -51,51 +75,215 @@ public class ImportExcelServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         String path = request.getServletPath();
-        
+
         if ("/import/excel/preview".equals(path)) {
             Part filePart = request.getPart("file");
             if (filePart == null || filePart.getSize() == 0) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "File is missing");
+                writeErrorJson(
+                        response,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Vui lòng chọn file Excel.");
                 return;
             }
-            
+
+            String submittedFileName = filePart.getSubmittedFileName();
+
+            if (submittedFileName == null
+                    || !submittedFileName.toLowerCase().endsWith(".xlsx")) {
+
+                response.sendError(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Chỉ chấp nhận file Excel định dạng .xlsx");
+                return;
+            }
+            if (submittedFileName == null
+                    || !submittedFileName.toLowerCase().endsWith(".xlsx")) {
+
+                writeErrorJson(
+                        response,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Chỉ chấp nhận file Excel định dạng .xlsx");
+                return;
+            }
+
             try (InputStream is = filePart.getInputStream()) {
                 List<ImportExcelRequest> rows = ExcelImportUtil.parsePreview(is);
                 Map<String, Object> result = importExcelService.validatePreview(rows);
-                
-                // Store in session for execution step
+
+                // Lưu dữ liệu preview vào session để bước execute sử dụng lại
                 request.getSession().setAttribute("importRows", rows);
-                
-                request.setAttribute("validRows", result.get("validRows"));
-                request.setAttribute("invalidRows", result.get("invalidRows"));
-                request.setAttribute("rowErrors", result.get("rowErrors"));
-                
-                request.getRequestDispatcher("/pages/import/excel.html").forward(request, response);
+
+                // Trả kết quả preview dưới dạng JSON cho frontend
+                writePreviewJson(response, result);
             }
         } else if ("/import/excel/execute".equals(path)) {
+
             @SuppressWarnings("unchecked")
-            List<ImportExcelRequest> rows = (List<ImportExcelRequest>) request.getSession().getAttribute("importRows");
-            
+            List<ImportExcelRequest> rows = (List<ImportExcelRequest>) request.getSession()
+                    .getAttribute("importRows");
+
             if (rows == null) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "No preview data found");
+                writeErrorJson(
+                        response,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Không tìm thấy dữ liệu preview. Vui lòng xem trước dữ liệu trước khi import.");
                 return;
             }
-            
+
             Map<String, Object> result = importExcelService.executeImport(rows);
-            
-            // Clear session data after execute
+
+            // Xóa dữ liệu session sau khi import
             request.getSession().removeAttribute("importRows");
-            
-            request.setAttribute("totalRows", result.get("totalRows"));
-            request.setAttribute("successCount", result.get("successCount"));
-            request.setAttribute("failedCount", result.get("failedCount"));
-            request.setAttribute("errors", result.get("errors"));
-            
-            request.getRequestDispatcher("/pages/import/excel.html").forward(request, response);
+
+            // Trả kết quả JSON cho frontend
+            writeExecuteJson(response, result);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
+    }
+
+    private void prepareJsonResponse(HttpServletResponse response) {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+    }
+
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    private void writePreviewJson(
+            HttpServletResponse response,
+            Map<String, Object> result) throws IOException {
+
+        prepareJsonResponse(response);
+
+        @SuppressWarnings("unchecked")
+        List<ImportExcelRequest> rowErrors = (List<ImportExcelRequest>) result.get("rowErrors");
+
+        StringBuilder json = new StringBuilder();
+
+        json.append("{");
+
+        json.append("\"validRows\":")
+                .append(result.get("validRows"))
+                .append(",");
+
+        json.append("\"invalidRows\":")
+                .append(result.get("invalidRows"))
+                .append(",");
+
+        json.append("\"rowErrors\":[");
+
+        if (rowErrors != null) {
+            for (int i = 0; i < rowErrors.size(); i++) {
+
+                ImportExcelRequest row = rowErrors.get(i);
+
+                if (i > 0) {
+                    json.append(",");
+                }
+
+                json.append("{");
+
+                json.append("\"fullName\":\"")
+                        .append(escapeJson(row.getFullName()))
+                        .append("\",");
+
+                json.append("\"email\":\"")
+                        .append(escapeJson(row.getEmail()))
+                        .append("\",");
+
+                json.append("\"phone\":\"")
+                        .append(escapeJson(row.getPhone()))
+                        .append("\",");
+
+                json.append("\"error\":\"")
+                        .append(escapeJson(row.getError()))
+                        .append("\"");
+
+                json.append("}");
+            }
+        }
+
+        json.append("]");
+
+        json.append("}");
+
+        response.getWriter().write(json.toString());
+    }
+
+    private void writeExecuteJson(
+            HttpServletResponse response,
+            Map<String, Object> result) throws IOException {
+
+        prepareJsonResponse(response);
+
+        @SuppressWarnings("unchecked")
+        List<String> errors = (List<String>) result.get("errors");
+
+        StringBuilder json = new StringBuilder();
+
+        json.append("{");
+
+        json.append("\"totalRows\":")
+                .append(result.get("totalRows"))
+                .append(",");
+
+        json.append("\"successCount\":")
+                .append(result.get("successCount"))
+                .append(",");
+
+        json.append("\"failedCount\":")
+                .append(result.get("failedCount"))
+                .append(",");
+
+        json.append("\"errors\":[");
+
+        if (errors != null) {
+            for (int i = 0; i < errors.size(); i++) {
+
+                if (i > 0) {
+                    json.append(",");
+                }
+
+                json.append("\"")
+                        .append(escapeJson(errors.get(i)))
+                        .append("\"");
+            }
+        }
+
+        json.append("]");
+
+        json.append("}");
+
+        response.getWriter().write(json.toString());
+    }
+
+    private void writeErrorJson(
+            HttpServletResponse response,
+            int status,
+            String message) throws IOException {
+
+        prepareJsonResponse(response);
+
+        response.setStatus(status);
+
+        String json = "{\"error\":\""
+                + escapeJson(message)
+                + "\"}";
+
+        response.getWriter().write(json);
     }
 }

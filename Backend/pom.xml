@@ -106,6 +106,13 @@
             <version>2.2.224</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Apache POI - Excel .xlsx -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.4.1</version>
+        </dependency>
     </dependencies>
 
     <build>
