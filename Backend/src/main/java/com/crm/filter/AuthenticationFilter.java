@@ -92,7 +92,8 @@ public class AuthenticationFilter implements Filter {
         }
 
         if (path.startsWith("/assets/") || path.startsWith("/css/") ||
-            path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith("/icons/")) {
+            path.startsWith("/js/") || path.startsWith("/images/") || path.startsWith("/icons/") ||
+            path.startsWith("/uploads/")) {
             return true;
         }
 
