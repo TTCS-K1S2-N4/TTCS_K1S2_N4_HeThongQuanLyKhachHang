@@ -1,12 +1,17 @@
 CREATE DATABASE IF NOT EXISTS crm_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE crm_db;
 
--- 1. Bảng Nhóm kinh doanh
+-- 1. Bảng Nhóm kinh doanh (Cập nhật Sprint 02)
 CREATE TABLE IF NOT EXISTS teams (
     team_id INT AUTO_INCREMENT PRIMARY KEY,
     team_name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    parent_team_id INT NULL,
+    leader_id INT NULL,
+    region VARCHAR(100) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
 -- 2. Bảng Vai trò (7 vai trò theo tài liệu)
@@ -141,4 +146,16 @@ CREATE TABLE IF NOT EXISTS products (
     status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Bảng Danh mục dùng chung (S2-07)
+CREATE TABLE IF NOT EXISTS categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_type VARCHAR(50) NOT NULL,
+    category_name VARCHAR(100) NOT NULL,
+    display_order INT DEFAULT 0,
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_type_name (category_type, category_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
