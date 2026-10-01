@@ -1,4 +1,4 @@
-/* customers.css - Module Khách hàng (S2-08 Custom Fields)
+/* customers.css - Module Khách hàng (S2-08 Custom Fields + Sprint 3 bản nháp)
    Các class dùng chung (form-group, form-actions, toast-message) được khai báo lại
    vì trang này không import products.css. Giá trị khớp với products.css. */
 
@@ -99,6 +99,23 @@
     display: block;
     margin-top: 0.25rem;
     color: #6b7280;
+}
+
+/* ---------- Khách hàng (Sprint 3 - bản nháp) ---------- */
+.form-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.form-row .form-control {
+    flex: 1;
+    min-width: 160px;
+}
+.kh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
 }
 
 @media (max-width: 480px) {
