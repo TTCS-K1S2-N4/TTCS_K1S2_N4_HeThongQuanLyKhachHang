@@ -1,0 +1,22 @@
+/* import.css */
+.import-container { max-width: 800px; margin: 0 auto; }
+.import-area { border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px; background: #fafafa; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+.import-area:hover, .import-area.dragover { border-color: var(--primary-color, #1976d2); background: #f0f8ff; }
+.preview-table { margin-top: 20px; width: 100%; border-collapse: collapse; font-size: 14px; }
+.preview-table th, .preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+.preview-table th { background-color: #f5f5f5; font-weight: bold; }
+.row-valid { background-color: #e8f5e9; }
+.row-invalid { background-color: #ffebee; }
+.toast-message {
+    padding: 10px;
+    margin-top: 15px;
+    border-radius: 4px;
+    font-weight: 500;
+    display: none;
+    white-space: pre-line;
+}
+.toast-message.success { background-color: var(--success-bg, #e8f5e9); color: var(--success-text, #2e7d32); border: 1px solid #c8e6c9; }
+.toast-message.error { background-color: var(--error-bg, #ffebee); color: var(--error-text, #c62828); border: 1px solid #ffcdd2; }
+.stats-summary { display: flex; gap: 15px; margin-bottom: 15px; font-weight: bold; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #e0e0e0; }
+.text-danger { color: #c62828; font-size: 12px; display: block; }
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }

@@ -5,6 +5,7 @@ import com.crm.dto.LoginRequest;
 import com.crm.exception.AuthenticationException;
 import com.crm.model.Account;
 import com.crm.security.PasswordUtil;
+import com.crm.util.EmailUtil;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -24,6 +25,8 @@ public class AuthService {
         this.accountDAO = accountDAO;
     }
 
+    private static final String DUMMY_BCRYPT_HASH = "$2a$12$e8bA.U/W5S.eS12s7H5F2.E/K2B3jP4oN5M6L7K8J9I0H1G2F3E4D";
+
     public Account authenticate(LoginRequest request) throws AuthenticationException {
         if (request == null) {
             throw new AuthenticationException("Thông tin đăng nhập không hợp lệ.");
@@ -36,34 +39,81 @@ public class AuthService {
             throw new AuthenticationException("Vui lòng nhập tên đăng nhập và mật khẩu.");
         }
 
+        java.sql.Connection conn = null;
         try {
-            Account account = accountDAO.findByUsername(username.trim());
+            conn = com.crm.util.DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            Account account = accountDAO.findByUsernameForUpdate(conn, username.trim());
 
             if (account == null) {
+                conn.commit();
+                PasswordUtil.verify(password, DUMMY_BCRYPT_HASH);
                 throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không chính xác.");
             }
 
             if (!"ACTIVE".equals(account.getStatus())) {
+                conn.commit();
                 throw new AuthenticationException("Tài khoản hiện không thể đăng nhập.");
             }
 
-            if (!PasswordUtil.verify(password, account.getPasswordHash())) {
-                throw new AuthenticationException("Tên đăng nhập hoặc mật khẩu không chính xác.");
+            Timestamp now = new Timestamp(System.currentTimeMillis());
+            boolean isLockExpired = (account.getLockoutUntil() != null && !account.getLockoutUntil().after(now));
+            boolean isCurrentlyLocked = (account.getLockoutUntil() != null && account.getLockoutUntil().after(now));
+
+            if (isCurrentlyLocked) {
+                conn.commit();
+                long remainingMinutes = Math.max(1, (account.getLockoutUntil().getTime() - now.getTime() + 59999) / 60000);
+                throw new AuthenticationException("Tài khoản hiện đang bị khóa tạm thời. Vui lòng thử lại sau " + remainingMinutes + " phút.");
             }
+
+            boolean passwordValid = PasswordUtil.verify(password, account.getPasswordHash());
+
+            if (!passwordValid) {
+                int currentAttempts = isLockExpired ? 0 : account.getFailedAttempts();
+                int newAttempts = currentAttempts + 1;
+                Timestamp newLockoutUntil = null;
+
+                if (newAttempts >= 5) {
+                    newAttempts = 5;
+                    newLockoutUntil = new Timestamp(now.getTime() + 15 * 60 * 1000L);
+                }
+
+                accountDAO.updateFailedAttemptsAndLockout(conn, account.getAccountId(), newAttempts, newLockoutUntil);
+                conn.commit();
+
+                if (newAttempts >= 5) {
+                    throw new AuthenticationException("Tài khoản đã bị khóa do đăng nhập sai 5 lần liên tiếp. Vui lòng thử lại sau 15 phút.");
+                } else {
+                    int attemptsLeft = 5 - newAttempts;
+                    if (attemptsLeft == 1) {
+                        throw new AuthenticationException("Mật khẩu không chính xác. Bạn còn 1 lần thử trước khi tài khoản bị khóa 15 phút.");
+                    } else {
+                        throw new AuthenticationException("Mật khẩu không chính xác. Bạn còn " + attemptsLeft + " lần thử.");
+                    }
+                }
+            }
+
+            accountDAO.resetFailedLogin(conn, account.getAccountId());
+            conn.commit();
+            account.setFailedAttempts(0);
+            account.setLockoutUntil(null);
 
             return account;
         } catch (AuthenticationException e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ignored) {}
             throw e;
         } catch (Exception e) {
+            if (conn != null) try { conn.rollback(); } catch (Exception ignored) {}
             throw new AuthenticationException("Không thể xử lý đăng nhập.", e);
+        } finally {
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (Exception ignored) {}
         }
     }
 
     /**
-     * S1-03: Phien tao Token reset mat khau cho user dua vao Email.
-     * Token co thoi han 30 phut.
+     * Sinh token/mật khẩu tạm thời cho email và lưu vào CSDL (hạn 30 phút).
      */
-    
     public String generateResetToken(String email) throws AuthenticationException {
         if (email == null || email.trim().isEmpty()) {
             throw new AuthenticationException("Vui lòng nhập địa chỉ email.");
@@ -71,27 +121,55 @@ public class AuthService {
 
         Account account = accountDAO.findByEmail(email.trim());
         if (account == null) {
-            throw new AuthenticationException("Không tìm thấy tài khoản với email này trong hệ thống.");
+            throw new AuthenticationException("Không tìm thấy tài khoản với địa chỉ email này trong hệ thống.");
         }
 
         if ("LOCKED".equalsIgnoreCase(account.getStatus())) {
             throw new AuthenticationException("Tài khoản đã bị khóa, không thể yêu cầu đặt lại mật khẩu.");
         }
 
-        java.security.SecureRandom random = new java.security.SecureRandom();
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        String rawToken = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        
-        String tokenHash = PasswordUtil.hashToken(rawToken);
+        String tempPassword = PasswordUtil.generateTemporaryPassword();
+        String tokenHash = PasswordUtil.hashToken(tempPassword);
         Timestamp expiryTime = Timestamp.valueOf(LocalDateTime.now().plusMinutes(30));
 
         boolean saved = accountDAO.saveResetToken(account.getAccountId(), tokenHash, expiryTime);
         if (!saved) {
-            throw new AuthenticationException("Lỗi hệ thống khi tạo token reset mật khẩu. Vui lòng thử lại.");
+            throw new AuthenticationException("Lỗi hệ thống khi tạo mật khẩu tạm thời. Vui lòng thử lại.");
         }
 
-        return rawToken;
+        return tempPassword;
+    }
+
+    /**
+     * Sinh mật khẩu tạm thời ngẫu nhiên cho Quen mat khau, luu token hash (30 phut) va gui qua email.
+     */
+    public String generateAndSendResetPassword(String email) throws AuthenticationException {
+        Account account = accountDAO.findByEmail(email != null ? email.trim() : "");
+        String tempPassword = generateResetToken(email);
+
+        try {
+            sendResetPasswordEmail(account.getEmail(), account.getFullName(), tempPassword);
+        } catch (Exception e) {
+            throw new AuthenticationException("Gửi email thất bại: " + e.getMessage());
+        }
+
+        return tempPassword;
+    }
+
+    public void sendResetPasswordEmail(String toEmail, String fullName, String tempPassword) throws Exception {
+        String htmlContent = "<div style=\"font-family: Arial, sans-serif; padding: 20px; color: #333;\">"
+            + "<h2>Yêu cầu đặt lại mật khẩu CRM</h2>"
+            + "<p>Xin chào <b>" + (fullName != null ? fullName : toEmail) + "</b>,</p>"
+            + "<p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản CRM.</p>"
+            + "<div style=\"background: #f8fafc; border-left: 4px solid #4f46e5; padding: 15px; margin: 15px 0;\">"
+            + "<p style=\"margin: 0; font-size: 14px; color: #64748b;\">Mật khẩu tạm thời của bạn:</p>"
+            + "<p style=\"margin: 5px 0; font-size: 20px; font-weight: bold; color: #4f46e5; letter-spacing: 1px;\">" + tempPassword + "</p>"
+            + "</div>"
+            + "<p>Mật khẩu tạm thời này có hiệu lực trong <b>30 phút</b> và chỉ được dùng <b>một lần</b>.</p>"
+            + "<p>Vui lòng nhập mật khẩu tạm thời này tại màn hình Đặt lại mật khẩu để đổi sang mật khẩu mới.</p>"
+            + "</div>";
+
+        EmailUtil.sendEmail(toEmail, "Mật khẩu tạm thời đặt lại mật khẩu CRM", htmlContent);
     }
 
     public boolean validateResetToken(String token) {
@@ -108,29 +186,29 @@ public class AuthService {
         return account.getResetTokenExpiry().after(new Timestamp(System.currentTimeMillis()));
     }
 
-    public void resetPasswordWithToken(String token, String newPassword, String confirmPassword)
+    public void resetPasswordWithToken(String tempPassword, String newPassword, String confirmPassword)
             throws AuthenticationException {
 
-        if (token == null || token.trim().isEmpty()) {
-            throw new AuthenticationException("Token khôi phục mật khẩu không hợp lệ.");
+        if (tempPassword == null || tempPassword.trim().isEmpty()) {
+            throw new AuthenticationException("Vui lòng nhập mật khẩu tạm thời.");
         }
 
         if (newPassword == null || newPassword.trim().isEmpty()) {
             throw new AuthenticationException("Vui lòng nhập mật khẩu mới.");
         }
 
+        if (!newPassword.equals(confirmPassword)) {
+            throw new AuthenticationException("Xác nhận mật khẩu mới không trùng khớp.");
+        }
+
         if (!PasswordUtil.validatePasswordRules(newPassword)) {
-            throw new AuthenticationException("Mật khẩu mới phải có tối thiểu 8 ký tự, bao gồm cả chữ cái và chữ số.");
+            throw new AuthenticationException("Mật khẩu mới không đáp ứng yêu cầu bảo mật: Phải từ 8 ký tự trở lên, gồm ít nhất 1 chữ cái, 1 chữ số và 1 ký tự đặc biệt.");
         }
 
-        if (confirmPassword == null || !newPassword.equals(confirmPassword)) {
-            throw new AuthenticationException("Xác nhận mật khẩu mới không khớp.");
-        }
-
-        String tokenHash = PasswordUtil.hashToken(token.trim());
+        String tokenHash = PasswordUtil.hashToken(tempPassword.trim());
         Account account = accountDAO.findByResetToken(tokenHash);
         if (account == null || account.getResetTokenExpiry() == null || !account.getResetTokenExpiry().after(new Timestamp(System.currentTimeMillis()))) {
-            throw new AuthenticationException("Token khôi phục mật khẩu không hợp lệ hoặc đã hết hạn.");
+            throw new AuthenticationException("Mật khẩu tạm thời không chính xác, đã hết hạn hoặc đã được sử dụng.");
         }
 
         String newPasswordHash = PasswordUtil.hash(newPassword);
@@ -139,47 +217,6 @@ public class AuthService {
         if (!updated) {
             throw new AuthenticationException("Không thể cập nhật mật khẩu mới. Vui lòng thử lại.");
         }
-    }
-
-    public void sendResetEmail(String toEmail, String resetUrl) throws Exception {
-        String host = System.getenv("SMTP_HOST");
-        if (host == null) host = "smtp.gmail.com";
-        String port = System.getenv("SMTP_PORT");
-        if (port == null) port = "587";
-        String username = System.getenv("SMTP_USERNAME");
-        String password = System.getenv("SMTP_PASSWORD");
-        String from = System.getenv("SMTP_FROM");
-        if (from == null) from = "no-reply@crm.com";
-
-        if (username == null || password == null) {
-            throw new Exception("SMTP credentials not configured.");
-        }
-
-        java.util.Properties props = new java.util.Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", host);
-        props.put("mail.smtp.port", port);
-
-        jakarta.mail.Session session = jakarta.mail.Session.getInstance(props, new jakarta.mail.Authenticator() {
-            @Override
-            protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
-                return new jakarta.mail.PasswordAuthentication(username, password);
-            }
-        });
-
-        jakarta.mail.Message message = new jakarta.mail.internet.MimeMessage(session);
-        message.setFrom(new jakarta.mail.internet.InternetAddress(from));
-        message.setRecipients(jakarta.mail.Message.RecipientType.TO, jakarta.mail.internet.InternetAddress.parse(toEmail));
-        message.setSubject("Yêu cầu đặt lại mật khẩu CRM");
-        
-        String htmlContent = "<p>Xin chào,</p>"
-            + "<p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu của bạn (có hiệu lực trong 30 phút):</p>"
-            + "<p><a href=\"" + resetUrl + "\">Đặt lại mật khẩu</a></p>"
-            + "<p>Nếu bạn không yêu cầu, vui lòng bỏ qua email này.</p>";
-            
-        message.setContent(htmlContent, "text/html; charset=utf-8");
-        jakarta.mail.Transport.send(message);
     }
 
     public void changePassword(int userId, String oldPassword, String newPassword, String confirmPassword)
@@ -196,7 +233,7 @@ public class AuthService {
         }
 
         if (!PasswordUtil.validatePasswordRules(newPassword)) {
-            throw new AuthenticationException("Mật khẩu mới phải có tối thiểu 8 ký tự, bao gồm cả chữ cái và chữ số.");
+            throw new AuthenticationException("Mật khẩu mới không đáp ứng yêu cầu bảo mật: Phải từ 8 ký tự trở lên, gồm ít nhất 1 chữ cái, 1 chữ số và 1 ký tự đặc biệt.");
         }
 
         if (oldPassword.equals(newPassword)) {

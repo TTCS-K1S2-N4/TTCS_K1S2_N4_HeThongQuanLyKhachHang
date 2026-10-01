@@ -1,5 +1,5 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %><%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Khóa tài khoản | CRM</title><link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css"><link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css"></head>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %><%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html><html lang="vi"><head><title>Khóa tài khoản | CRM</title><jsp:include page="/WEB-INF/views/fragments/head.jsp"/></head>
 <body><div class="app"><jsp:include page="/WEB-INF/views/fragments/header.jsp"/><jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/><main class="main-content"><div class="content-container"><h1>Khóa tài khoản và bàn giao dữ liệu</h1>
 <p>Bạn đang khóa <strong><c:out value="${account.fullName}"/></strong> (<c:out value="${account.email}"/>). Tài khoản đang sở hữu ${ownedCount} bản ghi.</p>
 <form method="post" action="${pageContext.request.contextPath}/accounts/transfer-data"><input type="hidden" name="accountId" value="${account.accountId}">

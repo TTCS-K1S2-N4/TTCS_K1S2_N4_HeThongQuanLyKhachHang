@@ -23,9 +23,11 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    email_signature TEXT NULL,
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     failed_attempts INT DEFAULT 0,
+    lockout_until TIMESTAMP NULL DEFAULT NULL,
     reset_token VARCHAR(255) NULL,
     reset_token_expiry TIMESTAMP NULL,
     activation_token VARCHAR(255) NULL,
@@ -88,11 +90,12 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     action_type VARCHAR(50) NOT NULL,
     performed_by INT NOT NULL,
-    target_user_id INT NOT NULL,
+    target_user_id INT DEFAULT 0,
     description TEXT,
+    old_value TEXT,
+    new_value TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (performed_by) REFERENCES users(user_id),
-    FOREIGN KEY (target_user_id) REFERENCES users(user_id)
+    FOREIGN KEY (performed_by) REFERENCES users(user_id)
 );
 
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
@@ -155,3 +158,18 @@ CREATE TABLE IF NOT EXISTS competitors (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- 11. Bảng Danh mục Sản phẩm / Dịch vụ (S2-05)
+CREATE TABLE IF NOT EXISTS products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_code VARCHAR(50) NOT NULL UNIQUE,
+    product_name VARCHAR(200) NOT NULL,
+    product_type ENUM('ONE_TIME', 'SUBSCRIPTION') NOT NULL DEFAULT 'ONE_TIME',
+    unit VARCHAR(50) NOT NULL,
+    list_price DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    floor_price DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    cost_price DECIMAL(15, 2) DEFAULT NULL,
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

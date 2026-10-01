@@ -80,6 +80,7 @@ public class AccountDAO {
         } catch (SQLException ignored) {}
         try {
             acc.setFailedAttempts(rs.getInt("failed_attempts"));
+            acc.setLockoutUntil(rs.getTimestamp("lockout_until"));
             acc.setUpdatedAt(rs.getTimestamp("updated_at"));
         } catch (SQLException ignored) {}
         try {
@@ -103,7 +104,7 @@ public class AccountDAO {
     }
 
     public boolean createAccount(String email, String passwordHash, String fullName, String phone, java.util.List<Integer> roleIds, Integer teamId, String tokenHash, java.sql.Timestamp expiry) {
-        String sql = "INSERT INTO users (email, password_hash, full_name, phone, team_id, activation_token, activation_token_expiry, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO users (email, password_hash, full_name, phone, team_id, activation_token, activation_token_expiry, is_active, failed_attempts, lockout_until) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)";
         if (roleIds == null || roleIds.isEmpty()) return false;
         Connection conn = null;
         try {
@@ -252,6 +253,69 @@ public class AccountDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public Account findByEmailForUpdate(Connection conn, String email) throws SQLException {
+        if (email == null || email.trim().isEmpty()) return null;
+        String sql = "SELECT u.*, t.team_name, ur.role_id, r.role_name, r.role_code FROM users u " +
+                     "LEFT JOIN teams t ON u.team_id = t.team_id " +
+                     "LEFT JOIN user_roles ur ON u.user_id = ur.user_id " +
+                     "LEFT JOIN roles r ON ur.role_id = r.role_id WHERE u.email = ? FOR UPDATE";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                Account account = null;
+                while (rs.next()) {
+                    if (account == null) {
+                        account = mapResultSetToAccount(rs);
+                        account.setRoleIds(new ArrayList<>());
+                        account.setRoleNames(new ArrayList<>());
+                        account.setRoleCodes(new ArrayList<>());
+                    }
+                    int roleId = rs.getInt("role_id");
+                    if (!rs.wasNull() && !account.getRoleIds().contains(roleId)) {
+                        account.getRoleIds().add(roleId);
+                        account.getRoleNames().add(rs.getString("role_name"));
+                        account.getRoleCodes().add(rs.getString("role_code"));
+                    }
+                }
+                return account;
+            }
+        }
+    }
+
+    public Account findByUsernameForUpdate(Connection conn, String username) throws SQLException {
+        return findByEmailForUpdate(conn, username);
+    }
+
+    public boolean updateFailedAttemptsAndLockout(Connection conn, int userId, int failedAttempts, Timestamp lockoutUntil) throws SQLException {
+        String sql = "UPDATE users SET failed_attempts = ?, lockout_until = ? WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, failedAttempts);
+            ps.setTimestamp(2, lockoutUntil);
+            ps.setInt(3, userId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean resetFailedLogin(Connection conn, int userId) throws SQLException {
+        String sql = "UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean unlockAccount(int userId) {
+        String sql = "UPDATE users SET is_active = 1, failed_attempts = 0, lockout_until = NULL WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public Account findByUsername(String username) {

@@ -2,6 +2,8 @@ package com.crm.controller.account;
 
 import com.crm.dto.AccountCreateRequest;
 import com.crm.service.AccountService;
+import com.crm.service.AccountService.CreateAccountResult;
+import com.crm.service.AccountService.CreateAccountStatus;
 import com.crm.model.Role;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -31,11 +33,19 @@ public class AccountCreateServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
         String email = req.getParameter("email");
         String fullName = req.getParameter("fullName");
         String phone = req.getParameter("phone");
         String[] roleIdsParam = req.getParameterValues("roleIds");
         String teamIdStr = req.getParameter("teamId");
+
+        // Lưu các dữ liệu không nhạy cảm vào request attribute để khôi phục lại khi có lỗi
+        req.setAttribute("fullName", fullName);
+        req.setAttribute("email", email);
+        req.setAttribute("phone", phone);
+        req.setAttribute("roleIdsParam", roleIdsParam);
+        req.setAttribute("teamIdStr", teamIdStr);
 
         if (!com.crm.util.ValidationUtil.isValidEmail(email)
                 || !com.crm.util.ValidationUtil.isNotEmpty(fullName)
@@ -94,19 +104,21 @@ public class AccountCreateServlet extends HttpServlet {
             throw new ServletException("Không thể kiểm tra vai trò/nhóm.", e);
         }
 
-        AccountCreateRequest createReq = new AccountCreateRequest(email, null, fullName, phone, roleIds, teamId);
-
         if (accountService.isEmailExists(email)) {
-            req.setAttribute("error", "Email này đã được sử dụng.");
+            req.setAttribute("error", "Email này đã được sử dụng. Không thể tạo trùng tài khoản.");
             forwardWithData(req, resp);
             return;
         }
 
-        boolean success = accountService.createAccount(createReq);
-        if (success) {
-            resp.sendRedirect(req.getContextPath() + "/accounts/list?msg=created");
+        AccountCreateRequest createReq = new AccountCreateRequest(email, null, fullName, phone, roleIds, teamId);
+        CreateAccountResult result = accountService.createAccountResult(createReq);
+
+        if (result.getStatus() == CreateAccountStatus.SUCCESS_EMAIL_SENT) {
+            resp.sendRedirect(req.getContextPath() + "/accounts/list?msg=created_email_sent");
+        } else if (result.getStatus() == CreateAccountStatus.SUCCESS_EMAIL_FAILED) {
+            resp.sendRedirect(req.getContextPath() + "/accounts/list?msg=created_email_failed");
         } else {
-            req.setAttribute("error", "Không thể tạo tài khoản, vui lòng thử lại sau.");
+            req.setAttribute("error", result.getErrorMessage() != null ? result.getErrorMessage() : "Không thể tạo tài khoản, vui lòng thử lại sau.");
             forwardWithData(req, resp);
         }
     }

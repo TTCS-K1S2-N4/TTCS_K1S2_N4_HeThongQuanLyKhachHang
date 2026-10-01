@@ -1,5 +1,5 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %><%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Chi tiết hoạt động | CRM</title><link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/common.css"><link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/layout.css"></head>
+<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %><%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html><html lang="vi"><head><title>Chi tiết hoạt động | CRM</title><jsp:include page="/WEB-INF/views/fragments/head.jsp"/></head>
 <body><div class="app"><jsp:include page="/WEB-INF/views/fragments/header.jsp"/><jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/><main class="main-content"><div class="content-container"><h1>Chi tiết hoạt động</h1>
 <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if><c:if test="${not empty activity}"><p>ID: ${activity.activityId}</p><p>Tiêu đề: <c:out value="${activity.title}"/></p><p>Mô tả: <c:out value="${activity.description}"/></p></c:if>
 <a class="btn btn-secondary" href="${pageContext.request.contextPath}/activities">Quay lại</a></div></main></div></body></html>
