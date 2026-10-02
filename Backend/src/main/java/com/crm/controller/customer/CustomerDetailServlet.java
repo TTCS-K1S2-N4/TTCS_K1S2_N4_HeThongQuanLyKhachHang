@@ -4,6 +4,7 @@ import com.crm.dao.CustomerDAO;
 import com.crm.model.Customer;
 import com.crm.service.PermissionService;
 import com.crm.exception.AuthorizationException;
+import com.crm.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,10 +12,13 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 @WebServlet("/customers/detail")
 public class CustomerDetailServlet extends HttpServlet {
     private CustomerDAO dao = new CustomerDAO();
+    private PermissionService permissionService = new PermissionService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -32,21 +36,23 @@ public class CustomerDetailServlet extends HttpServlet {
                 return;
             }
 
-            // Enforce Data Scope here using PermissionService
-            PermissionService permissionService = new PermissionService();
+            // Enforce Data Scope here using central PermissionService
             Integer userId = (Integer) req.getSession().getAttribute("userId");
-            java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
+            List<Integer> roleIds = ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
             Integer roleId = (Integer) req.getSession().getAttribute("roleId");
 
-            if (userId == null || roleId == null) {
+            if (userId == null || (roleId == null && (roleIds == null || roleIds.isEmpty()))) {
                 resp.sendRedirect(req.getContextPath() + "/auth/login");
                 return;
             }
             
+            List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty()) ? roleIds : Collections.singletonList(roleId);
+
             try {
-                permissionService.validateDataAccessForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "ACCOUNT", obj.getOwnerId());
+                permissionService.validateDataAccessForRoles(userId, effectiveRoles, "ACCOUNT", obj.getOwnerId());
             } catch (AuthorizationException e) {
-                req.setAttribute("errorMessage", "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân truy cÃ¡ÂºÂ­p dÃ¡Â»Â¯ liÃ¡Â»â€¡u nÃƒÂ y.");
+                req.setAttribute("errorMessage", "Bạn không có quyền truy cập dữ liệu này.");
+                req.setAttribute("exception", e);
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }
@@ -55,6 +61,8 @@ public class CustomerDetailServlet extends HttpServlet {
             req.getRequestDispatcher("/WEB-INF/views/customers/detail.jsp").forward(req, resp);
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        } catch (ServletException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServletException("Không thể tải chi tiết khách hàng.", e);
         }

@@ -47,6 +47,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/accounts/create", "USER_CREATE");
         protectedUrlMap.put("/accounts/edit", "USER_EDIT");
         protectedUrlMap.put("/accounts/assign-role", "USER_EDIT");
+        protectedUrlMap.put("/accounts/resend-email", "USER_EDIT");
         protectedUrlMap.put("/accounts/lock", "USER_DELETE");
         protectedUrlMap.put("/accounts/unlock", "USER_DELETE");
         protectedUrlMap.put("/accounts/transfer-data", "USER_DELETE");
@@ -64,6 +65,35 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");
         protectedUrlMap.put("/quotes/detail", "QUOTE_VIEW");
         protectedUrlMap.put("/quotes", "QUOTE_VIEW");
+
+        protectedUrlMap.put("/products/create", "PRODUCT_MANAGE");
+        protectedUrlMap.put("/products/edit", "PRODUCT_MANAGE");
+        protectedUrlMap.put("/products/status", "PRODUCT_MANAGE");
+        protectedUrlMap.put("/products/detail", "PRODUCT_VIEW");
+        protectedUrlMap.put("/products", "PRODUCT_VIEW");
+
+        protectedUrlMap.put("/organization/teams/update", "ORG_MANAGE");
+        protectedUrlMap.put("/organization/teams", "ORG_VIEW");
+
+        protectedUrlMap.put("/categories/update", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/categories", "CATEGORY_VIEW");
+
+        protectedUrlMap.put("/api/custom-fields", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/custom-fields", "CATEGORY_MANAGE");
+
+        protectedUrlMap.put("/pipeline/stages", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/pipeline/win-loss-reasons", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/pipeline/competitors", "CATEGORY_MANAGE");
+
+        protectedUrlMap.put("/audit-log/detail", "AUDIT_VIEW");
+        protectedUrlMap.put("/audit/detail", "AUDIT_VIEW");
+        protectedUrlMap.put("/audit-log", "AUDIT_VIEW");
+        protectedUrlMap.put("/audit/list", "AUDIT_VIEW");
+
+        protectedUrlMap.put("/import/excel/execute", "IMPORT_DATA");
+        protectedUrlMap.put("/import/excel/preview", "IMPORT_DATA");
+        protectedUrlMap.put("/import/excel/template", "IMPORT_DATA");
+        protectedUrlMap.put("/import/excel", "IMPORT_DATA");
 
         LOGGER.info("AuthorizationFilter (BE3) khởi tạo hoàn tất.");
     }

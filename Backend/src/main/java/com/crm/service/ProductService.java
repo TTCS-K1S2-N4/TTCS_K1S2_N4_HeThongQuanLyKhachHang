@@ -18,36 +18,41 @@ public class ProductService {
     private static final Logger LOGGER = Logger.getLogger(ProductService.class.getName());
 
     private final ProductDAO productDAO;
+    private PermissionService permissionService;
 
     public ProductService() {
         this.productDAO = new ProductDAO();
+        this.permissionService = new PermissionService();
     }
 
     public ProductService(ProductDAO productDAO) {
         this.productDAO = Objects.requireNonNull(productDAO, "ProductDAO không được để null");
+        this.permissionService = new PermissionService();
+    }
+
+    public ProductService(ProductDAO productDAO, PermissionService permissionService) {
+        this.productDAO = Objects.requireNonNull(productDAO, "ProductDAO không được để null");
+        this.permissionService = Objects.requireNonNull(permissionService, "PermissionService không được để null");
+    }
+
+    public void setPermissionService(PermissionService permissionService) {
+        if (permissionService != null) {
+            this.permissionService = permissionService;
+        }
     }
 
     /**
      * Kiểm tra quyền quản lý danh mục sản phẩm (Tạo, Sửa, Đổi trạng thái).
-     * Dành cho Giám đốc kinh doanh (DIRECTOR) và Admin (ADMIN).
+     * Kiểm tra permission PRODUCT_EDIT thông qua PermissionService.
      */
     public boolean canManageProducts(Account user) {
         if (user == null) return false;
-        List<String> roleCodes = user.getRoleCodes();
-        if (roleCodes != null && !roleCodes.isEmpty()) {
-            for (String code : roleCodes) {
-                if ("DIRECTOR".equalsIgnoreCase(code) || "ADMIN".equalsIgnoreCase(code)) {
-                    return true;
-                }
-            }
+        List<Integer> roleIds = user.getRoleIds();
+        if (roleIds != null && !roleIds.isEmpty()) {
+            return permissionService.hasPermissionForRoles(roleIds, "PRODUCT_EDIT");
         }
-        // Legacy fallback check roleName / roleId if roleCodes empty
-        if (user.getRoleName() != null) {
-            String roleNameUpper = user.getRoleName().toUpperCase();
-            if (roleNameUpper.contains("DIRECTOR") || roleNameUpper.contains("ADMIN") ||
-                roleNameUpper.contains("GIÁM ĐỐC") || roleNameUpper.contains("QUẢN TRỊ")) {
-                return true;
-            }
+        if (user.getRoleId() != null && user.getRoleId() > 0) {
+            return permissionService.hasPermission(user.getRoleId(), "PRODUCT_EDIT");
         }
         return false;
     }
@@ -123,7 +128,14 @@ public class ProductService {
         }
         product.setStatus(status);
 
-        return productDAO.create(product, includeCostPrice);
+        com.crm.model.AuditLog log = new com.crm.model.AuditLog();
+        log.setAction("DISCOUNT_CREATE");
+        log.setUserId(user != null ? user.getAccountId() : 0);
+        log.setDetails("Tạo sản phẩm và thiết lập chiết khấu/bảng giá mã " + product.getProductCode());
+        log.setOldValue("N/A");
+        log.setNewValue("ListPrice: " + product.getListPrice() + ", FloorPrice: " + product.getFloorPrice());
+
+        return productDAO.create(product, includeCostPrice, log);
     }
 
     public boolean updateProduct(ProductRequest request, Account user) throws ValidationException, AuthorizationException {
@@ -157,7 +169,15 @@ public class ProductService {
         }
         product.setStatus(status);
 
-        return productDAO.update(product, includeCostPrice);
+        com.crm.model.AuditLog log = new com.crm.model.AuditLog();
+        log.setAction("DISCOUNT_UPDATE");
+        log.setUserId(user != null ? user.getAccountId() : 0);
+        log.setTargetUserId(product.getProductId());
+        log.setDetails("Cập nhật chiết khấu/bảng giá cho sản phẩm mã " + product.getProductCode());
+        log.setOldValue("Product ID: " + product.getProductId());
+        log.setNewValue("ListPrice: " + product.getListPrice() + ", FloorPrice: " + product.getFloorPrice());
+
+        return productDAO.update(product, includeCostPrice, log);
     }
 
     public boolean updateProductStatus(int productId, String status, Account user) throws ValidationException, AuthorizationException {
@@ -173,7 +193,15 @@ public class ProductService {
             throw new ValidationException("Trạng thái sản phẩm không hợp lệ (chỉ nhận ACTIVE hoặc INACTIVE).");
         }
 
-        return productDAO.updateStatus(productId, status.trim().toUpperCase());
+        com.crm.model.AuditLog log = new com.crm.model.AuditLog();
+        log.setAction("DISCOUNT_STATUS_CHANGE");
+        log.setUserId(user != null ? user.getAccountId() : 0);
+        log.setTargetUserId(productId);
+        log.setDetails("Thay đổi trạng thái kinh doanh/chiết khấu sản phẩm ID " + productId);
+        log.setOldValue("Product ID: " + productId);
+        log.setNewValue("Status: " + status.trim().toUpperCase());
+
+        return productDAO.updateStatus(productId, status.trim().toUpperCase(), log);
     }
 
     private void validateProductRequest(ProductRequest request, boolean isUpdate, boolean includeCostPrice) throws ValidationException {

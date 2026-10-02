@@ -10,10 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AuditLogDAO {
-    public boolean insertLog(AuditLog log) {
+    public boolean insertLog(Connection conn, AuditLog log) throws SQLException {
         String sql = "INSERT INTO audit_logs (action_type, performed_by, target_user_id, description, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, log.getAction());
             ps.setInt(2, log.getUserId());
             ps.setInt(3, log.getTargetUserId());
@@ -21,6 +20,12 @@ public class AuditLogDAO {
             ps.setString(5, log.getOldValue());
             ps.setString(6, log.getNewValue());
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean insertLog(AuditLog log) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return insertLog(conn, log);
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

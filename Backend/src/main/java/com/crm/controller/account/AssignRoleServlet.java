@@ -142,10 +142,19 @@ public class AssignRoleServlet extends HttpServlet {
                 return;
             }
 
+            com.crm.model.AuditLog auditLog = new com.crm.model.AuditLog();
+            auditLog.setAction("ASSIGN_ROLE");
+            auditLog.setUserId(loggedUserId != null ? loggedUserId : 0);
+            auditLog.setTargetUserId(accountId);
+            auditLog.setDetails("Gán vai trò và phòng ban cho tài khoản ID " + accountId);
+            auditLog.setOldValue("Account ID: " + accountId);
+            auditLog.setNewValue("Roles: " + roleIds.toString() + ", Team: " + teamId);
+
             boolean updated = accountDAO.updateRoleAndTeam(
                     accountId,
                     roleIds,
-                    teamId
+                    teamId,
+                    auditLog
             );
 
             if (!updated) {

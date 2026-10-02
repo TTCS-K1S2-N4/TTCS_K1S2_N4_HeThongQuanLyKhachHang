@@ -116,7 +116,11 @@ public class AccountService {
     }
 
     public boolean updateAccount(AccountUpdateRequest req) {
-        return accountDAO.updateAccount(req.getAccountId(), req.getFullName(), req.getPhone(), req.getTeamId(), req.getRoleIds());
+        return updateAccount(req, null);
+    }
+
+    public boolean updateAccount(AccountUpdateRequest req, com.crm.model.AuditLog auditLog) {
+        return accountDAO.updateAccount(req.getAccountId(), req.getFullName(), req.getPhone(), req.getTeamId(), req.getRoleIds(), auditLog);
     }
 
     public int countOwnedAssets(int accountId) {

@@ -51,6 +51,9 @@
         <url-pattern>/deals/*</url-pattern>
         <url-pattern>/activities/*</url-pattern>
         <url-pattern>/quotes/*</url-pattern>
+        <url-pattern>/audit/*</url-pattern>
+        <url-pattern>/audit-log/*</url-pattern>
+        <url-pattern>/audit-log</url-pattern>
     </filter-mapping>
 
     <!-- 

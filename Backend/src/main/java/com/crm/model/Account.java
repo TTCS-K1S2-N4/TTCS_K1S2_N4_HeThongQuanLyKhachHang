@@ -22,6 +22,7 @@ public class Account {
     private Timestamp resetTokenExpiry;
     private String activationToken;
     private Timestamp activationTokenExpiry;
+    private String avatarUrl;
     private Timestamp createdAt;
     private int failedAttempts;
     private Timestamp lockoutUntil;
@@ -211,5 +212,13 @@ public class Account {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

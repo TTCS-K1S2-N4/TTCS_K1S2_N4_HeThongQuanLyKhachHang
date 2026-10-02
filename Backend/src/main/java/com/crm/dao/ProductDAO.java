@@ -163,91 +163,145 @@ public class ProductDAO {
     }
 
     public boolean create(Product product, boolean includeCostPrice) {
+        return create(product, includeCostPrice, null);
+    }
+
+    public boolean create(Product product, boolean includeCostPrice, com.crm.model.AuditLog auditLog) {
         String sql = "INSERT INTO products (product_code, product_name, product_type, unit, list_price, floor_price, cost_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                stmt.setString(1, product.getProductCode());
+                stmt.setString(2, product.getProductName());
+                stmt.setString(3, product.getProductType());
+                stmt.setString(4, product.getUnit());
+                stmt.setBigDecimal(5, product.getListPrice() != null ? product.getListPrice() : BigDecimal.ZERO);
+                stmt.setBigDecimal(6, product.getFloorPrice() != null ? product.getFloorPrice() : BigDecimal.ZERO);
 
-            stmt.setString(1, product.getProductCode());
-            stmt.setString(2, product.getProductName());
-            stmt.setString(3, product.getProductType());
-            stmt.setString(4, product.getUnit());
-            stmt.setBigDecimal(5, product.getListPrice() != null ? product.getListPrice() : BigDecimal.ZERO);
-            stmt.setBigDecimal(6, product.getFloorPrice() != null ? product.getFloorPrice() : BigDecimal.ZERO);
-
-            if (includeCostPrice && product.getCostPrice() != null) {
-                stmt.setBigDecimal(7, product.getCostPrice());
-            } else {
-                stmt.setNull(7, java.sql.Types.DECIMAL);
-            }
-
-            stmt.setString(8, product.getStatus() != null ? product.getStatus() : "ACTIVE");
-
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        product.setProductId(generatedKeys.getInt(1));
-                    }
+                if (includeCostPrice && product.getCostPrice() != null) {
+                    stmt.setBigDecimal(7, product.getCostPrice());
+                } else {
+                    stmt.setNull(7, java.sql.Types.DECIMAL);
                 }
-                return true;
+
+                stmt.setString(8, product.getStatus() != null ? product.getStatus() : "ACTIVE");
+
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            product.setProductId(generatedKeys.getInt(1));
+                        }
+                    }
+                    if (auditLog != null) {
+                        auditLog.setTargetUserId(product.getProductId());
+                        new AuditLogDAO().insertLog(conn, auditLog);
+                    }
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
             }
         } catch (SQLException e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
             LOGGER.log(Level.SEVERE, "Lỗi tạo sản phẩm mới", e);
+        } finally {
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
         }
 
         return false;
     }
 
     public boolean update(Product product, boolean includeCostPrice) {
+        return update(product, includeCostPrice, null);
+    }
+
+    public boolean update(Product product, boolean includeCostPrice, com.crm.model.AuditLog auditLog) {
         StringBuilder sql = new StringBuilder("UPDATE products SET product_code = ?, product_name = ?, product_type = ?, unit = ?, list_price = ?, floor_price = ?, status = ? ");
         if (includeCostPrice) {
             sql.append(", cost_price = ? ");
         }
         sql.append("WHERE product_id = ?");
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
 
-            int idx = 1;
-            stmt.setString(idx++, product.getProductCode());
-            stmt.setString(idx++, product.getProductName());
-            stmt.setString(idx++, product.getProductType());
-            stmt.setString(idx++, product.getUnit());
-            stmt.setBigDecimal(idx++, product.getListPrice() != null ? product.getListPrice() : BigDecimal.ZERO);
-            stmt.setBigDecimal(idx++, product.getFloorPrice() != null ? product.getFloorPrice() : BigDecimal.ZERO);
-            stmt.setString(idx++, product.getStatus() != null ? product.getStatus() : "ACTIVE");
+            try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+                int idx = 1;
+                stmt.setString(idx++, product.getProductCode());
+                stmt.setString(idx++, product.getProductName());
+                stmt.setString(idx++, product.getProductType());
+                stmt.setString(idx++, product.getUnit());
+                stmt.setBigDecimal(idx++, product.getListPrice() != null ? product.getListPrice() : BigDecimal.ZERO);
+                stmt.setBigDecimal(idx++, product.getFloorPrice() != null ? product.getFloorPrice() : BigDecimal.ZERO);
+                stmt.setString(idx++, product.getStatus() != null ? product.getStatus() : "ACTIVE");
 
-            if (includeCostPrice) {
-                if (product.getCostPrice() != null) {
-                    stmt.setBigDecimal(idx++, product.getCostPrice());
-                } else {
-                    stmt.setNull(idx++, java.sql.Types.DECIMAL);
+                if (includeCostPrice) {
+                    if (product.getCostPrice() != null) {
+                        stmt.setBigDecimal(idx++, product.getCostPrice());
+                    } else {
+                        stmt.setNull(idx++, java.sql.Types.DECIMAL);
+                    }
                 }
+
+                stmt.setInt(idx, product.getProductId());
+
+                if (stmt.executeUpdate() > 0) {
+                    if (auditLog != null) {
+                        auditLog.setTargetUserId(product.getProductId());
+                        new AuditLogDAO().insertLog(conn, auditLog);
+                    }
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
             }
-
-            stmt.setInt(idx, product.getProductId());
-
-            return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
             LOGGER.log(Level.SEVERE, "Lỗi cập nhật sản phẩm ID: " + product.getProductId(), e);
+        } finally {
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
         }
 
         return false;
     }
 
     public boolean updateStatus(int productId, String status) {
+        return updateStatus(productId, status, null);
+    }
+
+    public boolean updateStatus(int productId, String status, com.crm.model.AuditLog auditLog) {
         String sql = "UPDATE products SET status = ? WHERE product_id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
 
-            stmt.setString(1, status);
-            stmt.setInt(2, productId);
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, status);
+                stmt.setInt(2, productId);
 
-            return stmt.executeUpdate() > 0;
+                if (stmt.executeUpdate() > 0) {
+                    if (auditLog != null) {
+                        auditLog.setTargetUserId(productId);
+                        new AuditLogDAO().insertLog(conn, auditLog);
+                    }
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
+            }
         } catch (SQLException e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
             LOGGER.log(Level.SEVERE, "Lỗi cập nhật trạng thái sản phẩm ID: " + productId, e);
+        } finally {
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
         }
 
         return false;
