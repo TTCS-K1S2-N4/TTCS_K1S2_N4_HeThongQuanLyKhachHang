@@ -1,0 +1,266 @@
+﻿/* customers.css - JSP Trường tùy chỉnh khách hàng (S2-08) */
+
+/* ---- Thẻ thống kê ---- */
+.cf-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+}
+.cf-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.cf-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+.cf-stat-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+.cf-stat-ok .cf-stat-icon { background: var(--color-success-bg); color: var(--color-success); }
+.cf-stat-off .cf-stat-icon { background: var(--color-gray-100); color: var(--color-gray-500); }
+.cf-stat-req .cf-stat-icon { background: var(--color-warning-bg); color: var(--color-warning); }
+.cf-stat-num {
+    font-size: 1.75rem;
+    font-family: var(--font-heading, 'Georgia', serif);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+.cf-stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+/* ---- Bố cục hai cột ---- */
+.cf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: var(--space-6);
+    align-items: start;
+}
+.cf-form-card {
+    position: sticky;
+    top: calc(var(--header-height, 72px) + var(--space-6));
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--color-border);
+}
+
+/* ---- Thanh công cụ ---- */
+.cf-toolbar {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+.cf-search {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+.cf-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+.cf-search .form-control { 
+    padding-left: 40px; 
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    background: var(--color-gray-50);
+}
+.cf-search .form-control:focus {
+    background: var(--color-white);
+}
+.cf-filter { 
+    width: 200px; 
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ---- Bảng ---- */
+.cf-name {
+    font-weight: 600;
+    color: var(--color-gray-900);
+    font-size: 1.05rem;
+}
+.cf-req {
+    color: var(--color-danger);
+    margin-left: 4px;
+    font-weight: bold;
+}
+.cf-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-gray-700);
+    white-space: nowrap;
+    font-weight: 500;
+}
+.cf-type i { color: var(--color-primary); width: 16px; text-align: center; }
+.cf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.cf-chip {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.cf-row-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.cf-row-actions form { margin: 0; }
+.cf-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--color-gray-400);
+}
+.cf-empty i { font-size: 3.5rem; color: var(--color-gray-300); }
+.cf-empty strong { 
+    color: var(--color-gray-800); 
+    font-size: 1.25rem;
+    font-family: var(--font-heading, 'Georgia', serif);
+}
+.cf-empty span { color: var(--color-gray-500); }
+
+/* Elegant Table Adjustments for Fable */
+.table thead th {
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+.table tbody tr {
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid var(--color-border);
+}
+.table tbody tr:hover {
+    background-color: var(--color-primary-light);
+}
+.table tbody td {
+    padding: 1.25rem 1.5rem;
+    vertical-align: middle;
+}
+
+/* ---- Form ---- */
+.cf-form-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: var(--space-6);
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: var(--font-heading, 'Georgia', serif);
+    color: var(--color-gray-900);
+}
+.cf-form-title i { color: var(--color-primary); }
+.cf-hint {
+    display: block;
+    margin-top: 6px;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+}
+.cf-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-gray-100);
+}
+
+/* ---- Công tắc "Bắt buộc nhập" ---- */
+.cf-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    margin-top: 12px;
+}
+.cf-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.cf-switch-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--color-gray-300);
+    border-radius: var(--radius-pill);
+    transition: background var(--transition-normal);
+}
+.cf-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--color-white);
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal);
+}
+.cf-switch input:checked + .cf-switch-track { background: var(--color-primary); }
+.cf-switch input:checked + .cf-switch-track::after { transform: translateX(20px); }
+.cf-switch input:focus-visible + .cf-switch-track {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+}
+.cf-switch-text { font-weight: 600; color: var(--color-gray-800); }
+
+/* ---- Responsive ---- */
+@media (max-width: 1100px) {
+    .cf-layout { grid-template-columns: 1fr; }
+    .cf-form-card { position: static; box-shadow: var(--shadow-md); }
+}
+@media (max-width: 768px) {
+    .cf-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .cf-filter { width: 100%; }
+    .cf-row-actions .btn { width: 100%; }
+    .cf-form-actions .btn { flex: 1; }
+}
+.cf-hidden {
+    display: none !important;
+}
