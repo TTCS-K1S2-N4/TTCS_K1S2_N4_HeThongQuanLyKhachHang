@@ -181,7 +181,11 @@ if (createResult.getStatus()
                     + (createResult.getErrorMessage() != null
                             ? " - " + createResult.getErrorMessage()
                             : ""));
-}
+                }
+            } catch (Exception e) {
+                failedCount++;
+                errors.add("Lỗi tạo tài khoản cho email " + row.getEmail() + ": " + e.getMessage());
+            }
         }
 
         Map<String, Object> result = new HashMap<>();
