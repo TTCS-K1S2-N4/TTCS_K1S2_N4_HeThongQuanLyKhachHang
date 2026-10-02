@@ -1,0 +1,5 @@
+/* CSS for leads module */
+.lead-blocked-msg {
+    color: var(--danger-color, red);
+    font-weight: 500;
+}
