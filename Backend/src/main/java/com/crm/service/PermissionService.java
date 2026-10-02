@@ -117,4 +117,11 @@ public class PermissionService {
         }
         return permissionDAO.hasPermissionForRoles(roleIds, permissionCode);
     }
+
+    public boolean canViewProductCost(List<Integer> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return false;
+        }
+        return hasPermissionForRoles(roleIds, "PRODUCT_COST_VIEW");
+    }
 }
