@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id INT AUTO_INCREMENT PRIMARY KEY,
-    permission_code VARCHAR(50) NOT NULL UNIQUE,
+    permission_code VARCHAR(50) NOT NULL,
     permission_name VARCHAR(100) NOT NULL,
     module VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -130,7 +130,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
     icon VARCHAR(50) DEFAULT 'fa-folder',
     permission_code VARCHAR(50) NOT NULL UNIQUE,
     display_order INT DEFAULT 0,
-    parent_id INT DEFAULT 0
+    parent_id INT DEFAULT 0,
+    UNIQUE KEY uk_menu_url_permission (url, permission_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- 6.3. Bảng cấu hình các giai đoạn Pipeline - S2-09
 CREATE TABLE IF NOT EXISTS pipeline_stages (
