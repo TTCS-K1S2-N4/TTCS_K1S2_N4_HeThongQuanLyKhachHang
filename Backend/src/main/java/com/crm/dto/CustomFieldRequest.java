@@ -14,11 +14,36 @@ public class CustomFieldRequest {
     private Integer displayOrder;
     private String status;
 
+    private String action;
     private Integer entityId;
     private String fieldValue;
     private Map<Integer, String> fieldValues; // For batch value updates
 
     public CustomFieldRequest() {
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public Integer getCustomFieldId() {
+        return fieldId;
+    }
+
+    public void setCustomFieldId(Integer customFieldId) {
+        this.fieldId = customFieldId;
+    }
+
+    public String getFieldName() {
+        return fieldLabel;
+    }
+
+    public void setFieldName(String fieldName) {
+        this.fieldLabel = fieldName;
     }
 
     public Integer getFieldId() {
