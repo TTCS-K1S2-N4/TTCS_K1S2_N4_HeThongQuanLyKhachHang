@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trường tùy chỉnh khách hàng | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/customers.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container">
+            <div class="page-header">
+                <h1 class="page-title">Trường tùy chỉnh khách hàng</h1>
+                <a href="list.html" class="btn btn-secondary">Quay lại</a>
+            </div>
+
+            <!-- Danh sách trường -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="cf-table-wrap">
+                        <table class="cf-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên trường</th>
+                                    <th>Kiểu dữ liệu</th>
+                                    <th>Bắt buộc</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cfBody">
+                                <tr><td colspan="5" class="cf-empty">Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form thêm / sửa -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h2 id="cfFormTitle" class="cf-form-title">Thêm trường mới</h2>
+                    <form id="cfForm" action="/custom-fields" method="POST">
+                        <input type="hidden" name="action" value="CREATE">
+                        <input type="hidden" name="customFieldId" value="">
+                        <input type="hidden" name="entityType" value="CUSTOMER">
+
+                        <div class="form-group">
+                            <label>Tên trường (*)</label>
+                            <input type="text" name="fieldName" class="form-control" required maxlength="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Kiểu dữ liệu (*)</label>
+                            <select name="fieldType" id="cfFieldType" class="form-control" required>
+                                <option value="TEXT">Văn bản</option>
+                                <option value="NUMBER">Số</option>
+                                <option value="DATE">Ngày</option>
+                                <option value="SELECT">Danh sách chọn</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="cfOptionsGroup" style="display: none;">
+                            <label>Các lựa chọn (*)</label>
+                            <input type="text" name="options" id="cfOptions" class="form-control"
+                                   placeholder="Ví dụ: Nhỏ, Vừa, Lớn">
+                            <small class="cf-hint">Ngăn cách các lựa chọn bằng dấu phẩy.</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="cf-check">
+                                <input type="checkbox" name="required" value="true">
+                                Bắt buộc nhập
+                            </label>
+                        </div>
+
+                        <div class="form-actions mt-3">
+                            <button type="submit" id="cfSubmit" class="btn btn-primary">Lưu trường</button>
+                            <button type="button" id="cfCancel" class="btn btn-secondary" style="display: none;">Hủy sửa</button>
+                        </div>
+                        <div id="cfMessage" class="toast-message mt-2" style="display: none;"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ENDPOINT = '/custom-fields';
+        const ENTITY_TYPE = 'CUSTOMER';
+        const TYPE_LABELS = { TEXT: 'Văn bản', NUMBER: 'Số', DATE: 'Ngày', SELECT: 'Danh sách chọn' };
+
+        const form = document.getElementById('cfForm');
+        const tbody = document.getElementById('cfBody');
+        const msg = document.getElementById('cfMessage');
+        const typeSelect = document.getElementById('cfFieldType');
+        const optionsGroup = document.getElementById('cfOptionsGroup');
+        const optionsInput = document.getElementById('cfOptions');
+        const cancelBtn = document.getElementById('cfCancel');
+        let fieldsCache = [];
+
+        function showMessage(text, ok) {
+            msg.textContent = text;
+            msg.className = 'toast-message mt-2 ' + (ok ? 'success' : 'error');
+            msg.style.display = 'block';
+        }
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function toggleOptions() {
+            const isSelect = typeSelect.value === 'SELECT';
+            optionsGroup.style.display = isSelect ? 'block' : 'none';
+            optionsInput.required = isSelect;
+            if (!isSelect) optionsInput.value = '';
+        }
+        typeSelect.addEventListener('change', toggleOptions);
+
+        function isActive(f) {
+            return f.status ? f.status !== 'INACTIVE' : f.active !== false;
+        }
+
+        function renderTable(fields) {
+            if (!fields.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="cf-empty">Chưa có trường tùy chỉnh nào. Hãy thêm trường đầu tiên ở form bên dưới.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = fields.map(function (f) {
+                const active = isActive(f);
+                return '<tr>' +
+                    '<td>' + escapeHtml(f.fieldName) + '</td>' +
+                    '<td>' + escapeHtml(TYPE_LABELS[f.fieldType] || f.fieldType) + '</td>' +
+                    '<td>' + (f.required ? 'Có' : 'Không') + '</td>' +
+                    '<td><span class="cf-badge ' + (active ? 'cf-badge-active' : 'cf-badge-inactive') + '">' +
+                        (active ? 'Đang dùng' : 'Đã vô hiệu') + '</span></td>' +
+                    '<td class="cf-actions">' +
+                        '<button type="button" class="btn btn-secondary" data-edit="' + escapeHtml(f.customFieldId) + '">Sửa</button> ' +
+                        (active ? '<button type="button" class="btn btn-secondary" data-deactivate="' + escapeHtml(f.customFieldId) + '">Vô hiệu hóa</button>' : '') +
+                    '</td></tr>';
+            }).join('');
+        }
+
+        function loadFields() {
+            fetch(ENDPOINT + '?entityType=' + ENTITY_TYPE, { headers: { 'Accept': 'application/json' } })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('API Error');
+                    return res.json();
+                })
+                .then(function (data) {
+                    fieldsCache = data.customFields || [];
+                    renderTable(fieldsCache);
+                })
+                .catch(function () {
+                    tbody.innerHTML = '<tr><td colspan="5" class="cf-empty">Không tải được danh sách. Vui lòng thử lại sau.</td></tr>';
+                });
+        }
+
+        function resetForm() {
+            form.reset();
+            form.elements['action'].value = 'CREATE';
+            form.elements['customFieldId'].value = '';
+            document.getElementById('cfFormTitle').textContent = 'Thêm trường mới';
+            cancelBtn.style.display = 'none';
+            toggleOptions();
+        }
+
+        function startEdit(id) {
+            const f = fieldsCache.find(function (x) { return String(x.customFieldId) === String(id); });
+            if (!f) return;
+            form.elements['action'].value = 'UPDATE';
+            form.elements['customFieldId'].value = f.customFieldId;
+            form.elements['fieldName'].value = f.fieldName || '';
+            form.elements['fieldType'].value = f.fieldType || 'TEXT';
+            form.elements['required'].checked = !!f.required;
+            toggleOptions();
+            if (f.fieldType === 'SELECT') {
+                optionsInput.value = Array.isArray(f.options) ? f.options.join(', ') : (f.options || '');
+            }
+            document.getElementById('cfFormTitle').textContent = 'Sửa trường: ' + (f.fieldName || '');
+            cancelBtn.style.display = 'inline-block';
+            form.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function post(params) {
+            return fetch(ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(params).toString()
+            }).then(function (res) {
+                if (!res.ok) throw new Error('API Error');
+                return res.json();
+            });
+        }
+
+        function handleResult(data, successText) {
+            if (data.success) {
+                showMessage(successText, true);
+                resetForm();
+                loadFields();
+            } else {
+                showMessage(data.errors ? data.errors.join(', ') : 'Thao tác không thành công.', false);
+            }
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const name = form.elements['fieldName'].value.trim();
+            if (!name) { showMessage('Vui lòng nhập tên trường.', false); return; }
+            if (typeSelect.value === 'SELECT' && !optionsInput.value.trim()) {
+                showMessage('Vui lòng nhập các lựa chọn cho danh sách chọn.', false);
+                return;
+            }
+            const isUpdate = form.elements['action'].value === 'UPDATE';
+            const params = new FormData(form);
+            if (!form.elements['required'].checked) params.set('required', 'false');
+            post(Object.fromEntries(params))
+                .then(function (data) { handleResult(data, isUpdate ? 'Đã cập nhật trường.' : 'Đã thêm trường mới.'); })
+                .catch(function () { showMessage('Lỗi kết nối máy chủ.', false); });
+        });
+
+        cancelBtn.addEventListener('click', resetForm);
+
+        tbody.addEventListener('click', function (e) {
+            const editId = e.target.getAttribute('data-edit');
+            const offId = e.target.getAttribute('data-deactivate');
+            if (editId) startEdit(editId);
+            if (offId && confirm('Vô hiệu hóa trường này? Dữ liệu đã nhập vẫn được giữ lại.')) {
+                post({ action: 'DEACTIVATE', customFieldId: offId, entityType: ENTITY_TYPE })
+                    .then(function (data) { handleResult(data, 'Đã vô hiệu hóa trường.'); })
+                    .catch(function () { showMessage('Lỗi kết nối máy chủ.', false); });
+            }
+        });
+
+        toggleOptions();
+        loadFields();
+    </script>
+</body>
+</html>
