@@ -46,7 +46,7 @@ public class QuoteDetailServlet extends HttpServlet {
             try {
                 permissionService.validateDataAccessForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "QUOTE", obj.getOwnerId());
             } catch (AuthorizationException e) {
-                req.setAttribute("errorMessage", "BÃ¡ÂºÂ¡n khÃƒÂ´ng cÃƒÂ³ quyÃ¡Â»Ân truy cÃ¡ÂºÂ­p dÃ¡Â»Â¯ liÃ¡Â»â€¡u nÃƒÂ y.");
+                req.setAttribute("errorMessage", "Bạn không có quyền truy cập dữ liệu này.");
                 resp.sendError(HttpServletResponse.SC_FORBIDDEN);
                 return;
             }

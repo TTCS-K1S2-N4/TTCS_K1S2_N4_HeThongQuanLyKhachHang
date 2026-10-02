@@ -1,6 +1,5 @@
 -- Dữ liệu nền có thể chạy lại an toàn. Mọi liên kết quyền dùng role_code,
 -- không phụ thuộc thứ tự AUTO_INCREMENT.
-
 INSERT INTO roles (role_code, role_name) VALUES
 ('ADMIN', 'Quản trị hệ thống'),
 ('SALES_REP', 'Nhân viên kinh doanh'),
@@ -31,46 +30,102 @@ INSERT INTO permissions (permission_code, permission_name, module) VALUES
 ('USER_CREATE', 'Tạo mới Tài khoản', 'USER'),
 ('USER_EDIT', 'Chỉnh sửa/Gán quyền Tài khoản', 'USER'),
 ('USER_DELETE', 'Khóa/Bàn giao Tài khoản', 'USER'),
-('PRODUCT_VIEW', 'Xem Sản phẩm/Dịch vụ', 'PRODUCT'),
-('PRODUCT_EDIT', 'Khai báo/Chỉnh sửa Sản phẩm/Dịch vụ', 'PRODUCT')
+('PRODUCT_VIEW', 'Xem Sản phẩm', 'PRODUCT'),
+('PRODUCT_MANAGE', 'Quản lý Sản phẩm', 'PRODUCT'),
+('PRODUCT_COST_VIEW', 'Xem Giá vốn Sản phẩm', 'PRODUCT'),
+('CATEGORY_VIEW', 'Xem Danh mục dùng chung', 'CATEGORY'),
+('CATEGORY_MANAGE', 'Quản lý Danh mục dùng chung', 'CATEGORY'),
+('ORG_VIEW', 'Xem Cấu trúc Tổ chức', 'ORGANIZATION'),
+('ORG_MANAGE', 'Quản lý Cấu trúc Tổ chức', 'ORGANIZATION'),
+('AUDIT_VIEW', 'Xem Nhật ký Hệ thống', 'AUDIT'),
+('IMPORT_DATA', 'Import Dữ liệu Excel', 'IMPORT')
 ON DUPLICATE KEY UPDATE
 permission_name = VALUES(permission_name), module = VALUES(module);
 
 -- Chuẩn hóa lại các vai trò hệ thống nếu database từng chạy seed theo ID cũ.
-DELETE rp FROM role_permissions rp
-JOIN roles r ON r.role_id = rp.role_id
-WHERE r.role_code IN ('ADMIN', 'SALES_REP', 'TEAM_LEAD', 'DIRECTOR');
+DELETE FROM role_permissions;
 
--- Nhân viên kinh doanh: dữ liệu cá nhân.
-INSERT INTO role_permissions (role_id, permission_id, data_scope)
-SELECT r.role_id, p.permission_id, 'MY'
-FROM roles r JOIN permissions p
-  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','DEAL_VIEW','ACTIVITY_VIEW','QUOTE_VIEW')
-WHERE r.role_code = 'SALES_REP'
-ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
-
--- Trưởng nhóm: dữ liệu trong nhóm.
-INSERT INTO role_permissions (role_id, permission_id, data_scope)
-SELECT r.role_id, p.permission_id, 'TEAM'
-FROM roles r JOIN permissions p
-  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','ACCOUNT_EDIT','ACCOUNT_EXPORT','DEAL_VIEW','DEAL_CREATE','DEAL_EDIT','ACTIVITY_VIEW','QUOTE_VIEW')
-WHERE r.role_code = 'TEAM_LEAD'
-ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
-
--- Giám đốc và quản trị viên: toàn bộ dữ liệu và quản lý tài khoản.
+-- 1. ADMIN: Toàn quyền trên mọi module.
 INSERT INTO role_permissions (role_id, permission_id, data_scope)
 SELECT r.role_id, p.permission_id, 'ALL'
 FROM roles r CROSS JOIN permissions p
-WHERE r.role_code IN ('DIRECTOR', 'ADMIN')
+WHERE r.role_code = 'ADMIN'
 ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
 
-INSERT INTO menu_items (id, title, url, icon, permission_code, display_order, parent_id) VALUES
-(1, 'Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
-(2, 'Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
-(3, 'Hoạt động & Lịch hẹn', '/activities', 'fa-calendar-alt', 'ACTIVITY_VIEW', 3, 0),
-(4, 'Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0),
-(5, 'Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 5, 0),
-(6, 'Nhật ký hệ thống', '/audit/list', 'fa-history', 'USER_VIEW', 6, 0)
+-- 2. DIRECTOR: Toàn quyền nghiệp vụ, ngoại trừ User Management chỉ Read.
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r CROSS JOIN permissions p
+WHERE r.role_code = 'DIRECTOR'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+-- 3. TEAM_LEAD: Quản lý trong nhóm (TEAM).
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'TEAM'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','ACCOUNT_EDIT','ACCOUNT_DELETE','ACCOUNT_EXPORT','DEAL_VIEW','DEAL_CREATE','DEAL_EDIT','ACTIVITY_VIEW','QUOTE_VIEW','IMPORT_DATA')
+WHERE r.role_code = 'TEAM_LEAD'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('CATEGORY_VIEW','PRODUCT_VIEW','ORG_VIEW')
+WHERE r.role_code = 'TEAM_LEAD'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+-- 4. SALES_REP: Phạm vi cá nhân (MY).
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'MY'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','ACCOUNT_EDIT','DEAL_VIEW','DEAL_CREATE','DEAL_EDIT','ACTIVITY_VIEW','QUOTE_VIEW')
+WHERE r.role_code = 'SALES_REP'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('CATEGORY_VIEW','PRODUCT_VIEW')
+WHERE r.role_code = 'SALES_REP'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+-- 5. MARKETING: Phạm vi W/R theo ma trận.
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','ACCOUNT_EDIT','DEAL_VIEW','ACTIVITY_VIEW','CATEGORY_VIEW','PRODUCT_VIEW')
+WHERE r.role_code = 'MARKETING'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+-- 6. CUSTOMER SUCCESS: Phạm vi cá nhân (MY) / Read.
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'MY'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('ACCOUNT_VIEW','ACCOUNT_CREATE','ACCOUNT_EDIT','DEAL_VIEW','ACTIVITY_VIEW','QUOTE_VIEW')
+WHERE r.role_code = 'CUST_SUCCESS'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('CATEGORY_VIEW','PRODUCT_VIEW')
+WHERE r.role_code = 'CUST_SUCCESS'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+-- 7. ACCOUNTANT: Phạm vi Kế toán (Read Khách hàng/Cơ hội, Write Báo giá).
+INSERT INTO role_permissions (role_id, permission_id, data_scope)
+SELECT r.role_id, p.permission_id, 'ALL'
+FROM roles r JOIN permissions p
+  ON p.permission_code IN ('ACCOUNT_VIEW','DEAL_VIEW','QUOTE_VIEW','CATEGORY_VIEW','PRODUCT_VIEW')
+WHERE r.role_code = 'ACCOUNTANT'
+ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
+
+INSERT INTO menu_items (title, url, icon, permission_code, display_order, parent_id) VALUES
+('Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
+('Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
+('Hoạt động & Lịch hẹn', '/activities', 'fa-calendar-alt', 'ACTIVITY_VIEW', 3, 0),
+('Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0),
+('Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 5, 0)
 ON DUPLICATE KEY UPDATE
 title = VALUES(title), url = VALUES(url), icon = VALUES(icon),
 permission_code = VALUES(permission_code), display_order = VALUES(display_order);

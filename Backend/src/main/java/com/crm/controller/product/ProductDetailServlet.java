@@ -3,6 +3,7 @@ package com.crm.controller.product;
 import com.crm.model.Account;
 import com.crm.model.Product;
 import com.crm.service.ProductService;
+import com.crm.service.PermissionService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -70,8 +71,25 @@ public class ProductDetailServlet extends HttpServlet {
             return;
         }
 
+        PermissionService permissionService = new PermissionService();
+        java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
+        if (roleIds == null || roleIds.isEmpty()) {
+            Integer roleId = session != null ? (Integer) session.getAttribute("roleId") : null;
+            if (roleId == null && currentUser != null) {
+                roleId = currentUser.getRoleId();
+            }
+            if (roleId != null) {
+                roleIds = java.util.Collections.singletonList(roleId);
+            }
+        }
+        boolean canViewCost = permissionService.canViewProductCost(roleIds);
+
+        if (!canViewCost) {
+            product.setCostPrice(null);
+        }
+
         req.setAttribute("product", product);
-        req.setAttribute("canAccessCostPrice", productService.isCostPriceAllowed(currentUser));
+        req.setAttribute("canAccessCostPrice", canViewCost);
         req.setAttribute("canManageProducts", productService.canManageProducts(currentUser));
 
         if (isAjaxRequest(req)) {
@@ -87,7 +105,7 @@ public class ProductDetailServlet extends HttpServlet {
             json.append("\"unit\":\"").append(escapeJson(product.getUnit())).append("\",");
             json.append("\"listPrice\":").append(product.getListPrice() != null ? product.getListPrice() : 0).append(",");
             json.append("\"floorPrice\":").append(product.getFloorPrice() != null ? product.getFloorPrice() : 0).append(",");
-            if (product.getCostPrice() != null) {
+            if (canViewCost && product.getCostPrice() != null) {
                 json.append("\"costPrice\":").append(product.getCostPrice()).append(",");
             }
             json.append("\"status\":\"").append(escapeJson(product.getStatus())).append("\"");
