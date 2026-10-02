@@ -120,12 +120,20 @@ FROM roles r JOIN permissions p
 WHERE r.role_code = 'ACCOUNTANT'
 ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
 
+DELETE newer
+FROM menu_items AS newer
+JOIN menu_items AS older
+  ON newer.url = older.url
+ AND newer.permission_code = older.permission_code
+ AND newer.id > older.id;
+
 INSERT INTO menu_items (title, url, icon, permission_code, display_order, parent_id) VALUES
 ('Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
 ('Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
 ('Hoạt động & Lịch hẹn', '/activities', 'fa-calendar-alt', 'ACTIVITY_VIEW', 3, 0),
 ('Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0),
-('Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 5, 0)
+('Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 5, 0),
+('Nhật ký hệ thống', '/audit/list', 'fa-history', 'USER_VIEW', 6, 0)
 ON DUPLICATE KEY UPDATE
 title = VALUES(title), url = VALUES(url), icon = VALUES(icon),
 permission_code = VALUES(permission_code), display_order = VALUES(display_order);

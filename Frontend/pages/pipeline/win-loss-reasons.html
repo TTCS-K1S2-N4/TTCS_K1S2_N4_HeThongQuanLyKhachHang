@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Win/Loss Reasons</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/modules/pipeline.css">
+</head>
+<body>
+    <div class="app">
+        <main class="main-content">
+            <h1>Win/Loss Reasons</h1>
+            
+            <form id="reasonForm" method="POST" action="/pipeline/win-loss-reasons">
+                <input type="hidden" name="action" value="CREATE">
+                <input type="hidden" name="reasonId" value="">
+                
+                <div>
+                    <label>Loại (WIN/LOSS): 
+                        <select name="reasonType" required>
+                            <option value="WIN">WIN</option>
+                            <option value="LOSS">LOSS</option>
+                        </select>
+                    </label>
+                    <label>Tên lý do: <input type="text" name="reasonName" required></label>
+                    <label>Thứ tự: <input type="number" name="displayOrder"></label>
+                    <label>Trạng thái: 
+                        <select name="status">
+                            <option value="ACTIVE">Hoạt động</option>
+                            <option value="INACTIVE">Ngừng hoạt động</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+
+            <div>
+                <h2>Danh sách Lý do</h2>
+                <!-- Data will be loaded via GET /pipeline/win-loss-reasons?reasonType=WIN|LOSS -->
+                <ul id="reasonList"></ul>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

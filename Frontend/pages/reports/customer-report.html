@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Báo cáo khách hàng | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/customers.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container">
+            <!-- DRAFT báo cáo khách hàng (Sprint 8): chưa nối API. Chờ contract để chốt chỉ số và bộ lọc. -->
+            <div class="page-header">
+                <h1 class="page-title">Báo cáo khách hàng</h1>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="#">
+                        <div class="form-row kh-filter">
+                            <select name="status" class="form-control">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PROSPECT">Tiềm năng</option>
+                                <option value="ACTIVE_DEAL">Đang giao dịch</option>
+                                <option value="CUSTOMER">Khách hàng</option>
+                                <option value="INACTIVE">Ngừng hợp tác</option>
+                            </select>
+                            <input type="date" name="fromDate" class="form-control">
+                            <input type="date" name="toDate" class="form-control">
+                            <button type="submit" class="btn btn-primary">Xem báo cáo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="cf-table-wrap">
+                        <table class="cf-table">
+                            <thead>
+                                <tr>
+                                    <th>Trạng thái</th>
+                                    <th>Số khách hàng</th>
+                                    <th>Giá trị đã ký</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" class="cf-empty">Chưa có dữ liệu.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

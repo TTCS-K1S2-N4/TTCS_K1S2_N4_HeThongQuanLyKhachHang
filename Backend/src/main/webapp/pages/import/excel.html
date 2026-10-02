@@ -23,8 +23,8 @@
                     <form id="importForm" action="/import/excel/preview" method="POST" enctype="multipart/form-data">
                         <div class="import-area" id="dropArea">
                             <p>Kéo thả file Excel vào đây hoặc click để chọn file</p>
-                            <p class="text-secondary">Chỉ hỗ trợ .xlsx, .xls</p>
-                            <input type="file" name="file" id="fileInput" accept=".xlsx, .xls" style="display: none;" required>
+                            <p class="text-secondary">Chỉ hỗ trợ file .xlsx</p>
+                            <input type="file" name="file" id="fileInput" accept=".xlsx" style="display: none;" required>
                         </div>
                         <div id="fileInfo" style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #1976d2;"></div>
                         <div class="form-actions" style="justify-content: center;">
@@ -75,7 +75,6 @@
         const previewSection = document.getElementById('previewSection');
         const importMessage = document.getElementById('importMessage');
         let currentFile = null;
-        let validRowsData = [];
 
         dropArea.addEventListener('click', () => fileInput.click());
 
@@ -127,36 +126,52 @@
                 method: 'POST',
                 body: formData
             })
-            .then(res => {
-                if(!res.ok) throw new Error('API Error');
-                return res.json();
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(
+                        data.error || 'Lỗi xử lý file Excel.'
+                    );
+                }
+                return data;
             })
             .then(data => {
                 previewSection.style.display = 'block';
                 document.getElementById('validCount').textContent = data.validRows || 0;
                 document.getElementById('invalidCount').textContent = data.invalidRows || 0;
-                
+                document.getElementById('btnExecute').disabled = !data.validRows || data.validRows <= 0;
                 const tbody = document.querySelector('#previewTable tbody');
                 tbody.innerHTML = '';
                 
-                validRowsData = data.parsedData || []; // Store data for execute step if API expects it
-                
-                if(data.rowErrors) {
+                if (data.rowErrors && data.rowErrors.length > 0) {
                     data.rowErrors.forEach((row, idx) => {
                         const tr = document.createElement('tr');
-                        tr.className = row.isValid ? 'row-valid' : 'row-invalid';
+
+                        tr.className = 'row-invalid';
+
                         tr.innerHTML = `
                             <td>${idx + 1}</td>
-                            <td>${JSON.stringify(row.rowData || {})}</td>
-                            <td>${row.isValid ? 'Hợp lệ' : 'Lỗi'}</td>
-                            <td><span class="text-danger">${row.errors ? row.errors.join(', ') : ''}</span></td>
+
+                            <td>
+                                <strong>${row.fullName || ''}</strong><br>
+                                ${row.email || ''}<br>
+                                ${row.phone || ''}
+                            </td>
+
+                            <td>Lỗi</td>
+
+                            <td>
+                                <span class="text-danger">
+                                    ${row.error || ''}
+                                </span>
+                            </td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
             })
             .catch(err => {
-                importMessage.textContent = 'Lỗi xử lý file Excel.';
+                importMessage.textContent = err.message;
                 importMessage.className = 'toast-message error';
                 importMessage.style.display = 'block';
             });
@@ -166,23 +181,40 @@
             // Usually we might just trigger execution on backend, or send back the valid data.
             // Assuming the backend has a session or expects a post confirming execution.
             fetch('/import/excel/execute', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ confirm: true, data: validRowsData })
+                method: 'POST'
             })
-            .then(res => res.json())
+            .then(async res => {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        data.error || 'Không thể thực hiện Import.'
+                    );
+                }
+                return data;
+            })
             .then(data => {
-                importMessage.textContent = `Import thành công: ${data.successCount || 0} dòng. Lỗi: ${data.failedCount || 0}`;
+                let message =
+                    `Import hoàn tất: ${data.successCount || 0} dòng thành công, ` +
+                    `${data.failedCount || 0} dòng lỗi.`;
+
+                if (data.errors && data.errors.length > 0) {
+                    message += '\n\nChi tiết:\n' + data.errors.join('\n');
+                }
+
+                importMessage.textContent = message;
                 importMessage.className = 'toast-message success';
                 importMessage.style.display = 'block';
+
                 previewSection.style.display = 'none';
+
                 fileInput.value = '';
                 fileInfo.textContent = '';
                 btnPreview.disabled = true;
                 currentFile = null;
             })
             .catch(err => {
-                importMessage.textContent = 'Lỗi thực thi Import.';
+                importMessage.textContent = err.message;
                 importMessage.className = 'toast-message error';
                 importMessage.style.display = 'block';
             });

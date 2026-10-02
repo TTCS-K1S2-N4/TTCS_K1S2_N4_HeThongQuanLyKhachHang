@@ -1,12 +1,17 @@
 CREATE DATABASE IF NOT EXISTS crm_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE crm_db;
 
--- 1. Bảng Nhóm kinh doanh
+-- 1. Bảng Nhóm kinh doanh (Cập nhật Sprint 02)
 CREATE TABLE IF NOT EXISTS teams (
     team_id INT AUTO_INCREMENT PRIMARY KEY,
     team_name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    parent_team_id INT NULL,
+    leader_id INT NULL,
+    region VARCHAR(100) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 );
 
 -- 2. Bảng Vai trò (7 vai trò theo tài liệu)
@@ -23,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    email_signature TEXT NULL,
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     failed_attempts INT DEFAULT 0,
@@ -101,7 +107,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id INT AUTO_INCREMENT PRIMARY KEY,
-    permission_code VARCHAR(50) NOT NULL UNIQUE,
+    permission_code VARCHAR(50) NOT NULL,
     permission_name VARCHAR(100) NOT NULL,
     module VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -125,8 +131,40 @@ CREATE TABLE IF NOT EXISTS menu_items (
     icon VARCHAR(50) DEFAULT 'fa-folder',
     permission_code VARCHAR(50) NOT NULL,
     display_order INT DEFAULT 0,
-    parent_id INT DEFAULT 0
+    parent_id INT DEFAULT 0,
+    UNIQUE KEY uk_menu_url_permission (url, permission_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- 6.3. Bảng cấu hình các giai đoạn Pipeline - S2-09
+CREATE TABLE IF NOT EXISTS pipeline_stages (
+    pipeline_stage_id INT AUTO_INCREMENT PRIMARY KEY,
+    stage_name VARCHAR(100) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    default_probability DECIMAL(5,2) NOT NULL DEFAULT 0,
+    exit_condition TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 6.4. Bảng lý do thắng/thua - S2-10
+CREATE TABLE IF NOT EXISTS win_loss_reasons (
+    reason_id INT AUTO_INCREMENT PRIMARY KEY,
+    reason_type ENUM('WIN', 'LOSS') NOT NULL,
+    reason_name VARCHAR(200) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 6.5. Bảng đối thủ cạnh tranh - S2-10
+CREATE TABLE IF NOT EXISTS competitors (
+    competitor_id INT AUTO_INCREMENT PRIMARY KEY,
+    competitor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 -- 11. Bảng Danh mục Sản phẩm / Dịch vụ (S2-05)
 CREATE TABLE IF NOT EXISTS products (
@@ -142,3 +180,46 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 12. Bảng Danh mục dùng chung (S2-07)
+CREATE TABLE IF NOT EXISTS categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_type VARCHAR(50) NOT NULL,
+    category_name VARCHAR(100) NOT NULL,
+    display_order INT DEFAULT 0,
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_type_name (category_type, category_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 13. Bảng Định nghĩa Trường tùy chỉnh (Custom Field Definitions)
+CREATE TABLE IF NOT EXISTS custom_field_definitions (
+    field_id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    field_key VARCHAR(50) NOT NULL,
+    field_label VARCHAR(100) NOT NULL,
+    field_type VARCHAR(30) NOT NULL DEFAULT 'TEXT',
+    options TEXT,
+    is_required TINYINT(1) DEFAULT 0,
+    default_value VARCHAR(255),
+    display_order INT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_entity_field (entity_type, field_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 14. Bảng Giá trị Trường tùy chỉnh (Custom Field Values)
+CREATE TABLE IF NOT EXISTS custom_field_values (
+    value_id INT AUTO_INCREMENT PRIMARY KEY,
+    field_id INT NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT NOT NULL,
+    field_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (field_id) REFERENCES custom_field_definitions(field_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_field_entity (field_id, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

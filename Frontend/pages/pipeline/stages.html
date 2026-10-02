@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Pipeline Stages</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/modules/pipeline.css">
+</head>
+<body>
+    <div class="app">
+        <main class="main-content">
+            <h1>Pipeline Stages</h1>
+            
+            <form id="stageForm" method="POST" action="/pipeline/stages">
+                <input type="hidden" name="action" value="CREATE">
+                <input type="hidden" name="pipelineStageId" value="">
+                
+                <div>
+                    <label>Tên Stage: <input type="text" name="stageName" required></label>
+                    <label>Thứ tự hiển thị: <input type="number" name="displayOrder" required></label>
+                    <label>Xác suất (0-100): <input type="number" name="defaultProbability" min="0" max="100" required></label>
+                    <label>Điều kiện hoàn thành: <input type="text" name="exitCondition"></label>
+                    <label>Trạng thái: 
+                        <select name="status">
+                            <option value="ACTIVE">Hoạt động</option>
+                            <option value="INACTIVE">Ngừng hoạt động</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Lưu Stage</button>
+                </div>
+            </form>
+
+            <div class="pipeline-board" id="pipelineBoard">
+                <!-- Stages will be loaded here via GET /pipeline/stages -->
+            </div>
+        </main>
+    </div>
+</body>
+</html>
