@@ -190,3 +190,34 @@ CREATE TABLE IF NOT EXISTS categories (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_type_name (category_type, category_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 13. Bảng Định nghĩa Trường tùy chỉnh (Custom Field Definitions)
+CREATE TABLE IF NOT EXISTS custom_field_definitions (
+    field_id INT AUTO_INCREMENT PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    field_key VARCHAR(50) NOT NULL,
+    field_label VARCHAR(100) NOT NULL,
+    field_type VARCHAR(30) NOT NULL DEFAULT 'TEXT',
+    options TEXT,
+    is_required TINYINT(1) DEFAULT 0,
+    default_value VARCHAR(255),
+    display_order INT DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_entity_field (entity_type, field_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 14. Bảng Giá trị Trường tùy chỉnh (Custom Field Values)
+CREATE TABLE IF NOT EXISTS custom_field_values (
+    value_id INT AUTO_INCREMENT PRIMARY KEY,
+    field_id INT NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT NOT NULL,
+    field_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (field_id) REFERENCES custom_field_definitions(field_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_field_entity (field_id, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
