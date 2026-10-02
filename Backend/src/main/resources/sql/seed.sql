@@ -64,6 +64,13 @@ FROM roles r CROSS JOIN permissions p
 WHERE r.role_code IN ('DIRECTOR', 'ADMIN')
 ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
 
+DELETE newer
+FROM menu_items AS newer
+JOIN menu_items AS older
+  ON newer.url = older.url
+ AND newer.permission_code = older.permission_code
+ AND newer.id > older.id;
+
 INSERT INTO menu_items (id, title, url, icon, permission_code, display_order, parent_id) VALUES
 (1, 'Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
 (2, 'Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),

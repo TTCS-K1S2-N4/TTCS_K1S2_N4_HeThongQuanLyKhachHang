@@ -125,7 +125,8 @@ CREATE TABLE IF NOT EXISTS menu_items (
     icon VARCHAR(50) DEFAULT 'fa-folder',
     permission_code VARCHAR(50) NOT NULL,
     display_order INT DEFAULT 0,
-    parent_id INT DEFAULT 0
+    parent_id INT DEFAULT 0,
+    UNIQUE KEY uk_menu_url_permission (url, permission_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 11. Bảng Danh mục Sản phẩm / Dịch vụ (S2-05)
