@@ -1,45 +1,205 @@
 /* customers.css - JSP Trường tùy chỉnh khách hàng (S2-08) */
-.cf-section {
-    margin-top: 20px;
+
+/* ---- Thẻ thống kê ---- */
+.cf-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
 }
-.cf-form-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
+.cf-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
-.cf-empty {
-    text-align: center;
-    padding: 1.5rem 0.75rem;
-    color: #6b7280;
+.cf-stat-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+.cf-stat-ok .cf-stat-icon { background: var(--color-success-bg); color: var(--color-success); }
+.cf-stat-off .cf-stat-icon { background: var(--color-gray-100); color: var(--color-gray-500); }
+.cf-stat-req .cf-stat-icon { background: var(--color-warning-bg); color: var(--color-warning); }
+.cf-stat-num {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: 1.1;
+}
+.cf-stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+/* ---- Bố cục hai cột ---- */
+.cf-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: var(--space-5);
+    align-items: start;
+}
+.cf-form-card {
+    position: sticky;
+    top: calc(var(--header-height, 64px) + var(--space-4));
+}
+
+/* ---- Thanh công cụ ---- */
+.cf-toolbar {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+.cf-search {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+.cf-search i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    pointer-events: none;
+}
+.cf-search .form-control { padding-left: 36px; }
+.cf-filter { width: 190px; }
+
+/* ---- Bảng ---- */
+.cf-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+.cf-req {
+    color: var(--color-danger);
+    margin-left: 2px;
+}
+.cf-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.cf-type i { color: var(--color-primary); width: 16px; text-align: center; }
+.cf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+.cf-chip {
+    padding: 2px 10px;
+    font-size: var(--font-size-xs);
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
 }
 .cf-row-actions {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 }
-.cf-row-actions form {
-    margin: 0;
-}
-.cf-check {
-    display: inline-flex !important;
+.cf-row-actions form { margin: 0; }
+.cf-empty {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-weight: 500;
+    gap: 6px;
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+    color: var(--color-text-muted);
 }
+.cf-empty i { font-size: 28px; }
+.cf-empty strong { color: var(--color-text-secondary); }
+
+/* ---- Form ---- */
+.cf-form-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--space-4);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+}
+.cf-form-title i { color: var(--color-primary); }
 .cf-hint {
     display: block;
-    margin-top: 0.25rem;
-    color: #6b7280;
+    margin-top: 4px;
+    color: var(--color-text-muted);
 }
 .cf-form-actions {
     display: flex;
     gap: 10px;
-    margin-top: 16px;
+    margin-top: var(--space-5);
 }
 
+/* ---- Công tắc "Bắt buộc nhập" ---- */
+.cf-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+.cf-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.cf-switch-track {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--color-gray-300);
+    border-radius: var(--radius-pill);
+    transition: background var(--transition-fast, 0.15s);
+}
+.cf-switch-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--color-white);
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast, 0.15s);
+}
+.cf-switch input:checked + .cf-switch-track { background: var(--color-primary); }
+.cf-switch input:checked + .cf-switch-track::after { transform: translateX(18px); }
+.cf-switch input:focus-visible + .cf-switch-track {
+    outline: 2px solid var(--color-border-focus, var(--color-primary));
+    outline-offset: 2px;
+}
+.cf-switch-text { font-weight: var(--font-weight-medium); }
+
+/* ---- Responsive ---- */
+@media (max-width: 1100px) {
+    .cf-layout { grid-template-columns: 1fr; }
+    .cf-form-card { position: static; }
+}
+@media (max-width: 768px) {
+    .cf-stats { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 480px) {
-    .cf-row-actions .btn {
-        width: 100%;
-    }
+    .cf-filter { width: 100%; }
+    .cf-row-actions .btn { width: 100%; }
+    .cf-form-actions .btn { flex: 1; }
+}
+.cf-hidden {
+    display: none;
 }
