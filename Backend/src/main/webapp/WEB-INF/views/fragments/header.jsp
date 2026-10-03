@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ page import="com.crm.model.Account" %>
 <%
     Account currentUser = (Account) session.getAttribute("currentUser");
@@ -46,3 +46,4 @@
         </div>
     </div>
 </header>
+<jsp:include page="/WEB-INF/views/fragments/toast.jsp"/>

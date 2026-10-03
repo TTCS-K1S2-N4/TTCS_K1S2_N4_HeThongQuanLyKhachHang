@@ -227,23 +227,7 @@
         </p>
     </div>
 
-    <!-- Alert Thông báo Lỗi -->
-    <% if (errorMessage != null && !errorMessage.isEmpty()) { %>
-        <div class="alert alert-danger">
-            <i class="fa-solid fa-triangle-exclamation" style="margin-top: 2px;"></i>
-            <div><%= errorMessage %></div>
-        </div>
-    <% } %>
-
-    <!-- Alert Thông báo Thành công -->
-    <% if (successMessage != null && !successMessage.isEmpty()) { %>
-        <div class="alert alert-success">
-            <i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i>
-            <div>
-                <%= successMessage %>
-            </div>
-        </div>
-    <% } %>
+    <!-- GLOBAL MESSAGES HAVE BEEN MOVED TO TOAST -->
 
     <script>
         function togglePassword(inputId, btn) {
@@ -347,5 +331,6 @@
     </div>
 </div>
 
+<jsp:include page="/WEB-INF/views/fragments/toast.jsp"/>
 </body>
 </html>

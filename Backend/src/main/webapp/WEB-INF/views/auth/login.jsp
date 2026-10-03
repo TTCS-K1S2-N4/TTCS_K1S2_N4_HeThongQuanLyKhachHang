@@ -71,12 +71,7 @@
                     </p>
                 </div>
 
-                <!-- LOGIN ERROR -->
-                <% if (request.getAttribute("loginError") !=null) { %>
-                    <div class="login-error">
-                        <%= request.getAttribute("loginError") %>
-                    </div>
-                    <% } %>
+                <!-- LOGIN ERROR HAS BEEN MOVED TO TOAST -->
 
                         <form action="${pageContext.request.contextPath}/auth/login" method="post">
 
@@ -155,6 +150,7 @@
             }
         </script>
 
+        <jsp:include page="/WEB-INF/views/fragments/toast.jsp"/>
     </body>
 
     </html>

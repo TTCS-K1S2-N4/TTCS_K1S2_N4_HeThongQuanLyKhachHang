@@ -218,3 +218,49 @@ text-transform: uppercase;
     }
 
 }
+
+/* ==================== ACCOUNT DETAIL ROW ==================== */
+.detail-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 25%) minmax(0, 1fr);
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border);
+    width: 100%;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .detail-label {
+    margin-bottom: 0;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: none !important;
+    font-size: var(--font-size-sm);
+}
+
+.detail-row .detail-value {
+    color: var(--color-gray-900);
+    text-align: left;
+    font-weight: 500;
+}
+
+.badge-primary-light {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+}
+
+@media (max-width: 768px) {
+    .detail-row {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 12px 0;
+    }
+}}
