@@ -63,11 +63,7 @@
                 </div>
             </div>
 
-            <% if (errorMessage != null && !errorMessage.isEmpty()) { %>
-                <div class="audit-log-alert audit-log-alert-danger" role="alert">
-                    <%= errorMessage %>
-                </div>
-            <% } %>
+            <!-- GLOBAL MESSAGES HAVE BEEN MOVED TO TOAST -->
 
             <% if (auditLog == null) { %>
                 <section class="card">

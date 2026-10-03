@@ -118,16 +118,16 @@ public class AuthorizationFilter implements Filter {
 
         // Lấy thông tin session người dùng (đã được thiết lập từ AuthenticationFilter)
         HttpSession session = httpRequest.getSession(false);
-        Integer roleId = null;
+        // Integer roleId = null;
         Integer userId = null;
         java.util.List<Integer> roleIds = null;
 
         if (session != null) {
-            Object roleIdObj = session.getAttribute("roleId");
+            // Object roleIdObj = session.getAttribute("roleId");
             Object userIdObj = session.getAttribute("userId");
-            if (roleIdObj instanceof Integer) {
-                roleId = (Integer) roleIdObj;
-            }
+            // if (roleIdObj instanceof Integer) {
+            //    roleId = (Integer) roleIdObj;
+            // }
             if (userIdObj instanceof Integer) {
                 userId = (Integer) userIdObj;
             }
