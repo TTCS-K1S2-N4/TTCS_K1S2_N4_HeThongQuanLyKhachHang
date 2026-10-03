@@ -43,16 +43,16 @@ public class ProductService {
 
     /**
      * Kiểm tra quyền quản lý danh mục sản phẩm (Tạo, Sửa, Đổi trạng thái).
-     * Kiểm tra permission PRODUCT_EDIT thông qua PermissionService.
+     * Kiểm tra permission PRODUCT_MANAGE thông qua PermissionService.
      */
     public boolean canManageProducts(Account user) {
         if (user == null) return false;
         List<Integer> roleIds = user.getRoleIds();
         if (roleIds != null && !roleIds.isEmpty()) {
-            return permissionService.hasPermissionForRoles(roleIds, "PRODUCT_EDIT");
+            return permissionService.hasPermissionForRoles(roleIds, "PRODUCT_MANAGE");
         }
         if (user.getRoleId() != null && user.getRoleId() > 0) {
-            return permissionService.hasPermission(user.getRoleId(), "PRODUCT_EDIT");
+            return permissionService.hasPermission(user.getRoleId(), "PRODUCT_MANAGE");
         }
         return false;
     }

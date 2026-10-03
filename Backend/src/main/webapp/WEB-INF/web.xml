@@ -47,13 +47,27 @@
     <filter-mapping>
         <filter-name>AuthorizationFilter</filter-name>
         <url-pattern>/customers/*</url-pattern>
+        <url-pattern>/customers</url-pattern>
         <url-pattern>/accounts/*</url-pattern>
+        <url-pattern>/accounts</url-pattern>
         <url-pattern>/deals/*</url-pattern>
+        <url-pattern>/deals</url-pattern>
         <url-pattern>/activities/*</url-pattern>
+        <url-pattern>/activities</url-pattern>
         <url-pattern>/quotes/*</url-pattern>
+        <url-pattern>/quotes</url-pattern>
         <url-pattern>/audit/*</url-pattern>
         <url-pattern>/audit-log/*</url-pattern>
         <url-pattern>/audit-log</url-pattern>
+        <url-pattern>/products/*</url-pattern>
+        <url-pattern>/products</url-pattern>
+        <url-pattern>/categories/*</url-pattern>
+        <url-pattern>/categories</url-pattern>
+        <url-pattern>/organization/*</url-pattern>
+        <url-pattern>/pipeline/*</url-pattern>
+        <url-pattern>/import/*</url-pattern>
+        <url-pattern>/custom-fields</url-pattern>
+        <url-pattern>/api/custom-fields</url-pattern>
     </filter-mapping>
 
     <!-- 

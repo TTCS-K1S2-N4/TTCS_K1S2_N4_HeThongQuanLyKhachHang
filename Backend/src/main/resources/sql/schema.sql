@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id INT AUTO_INCREMENT PRIMARY KEY,
-    permission_code VARCHAR(50) NOT NULL,
+    permission_code VARCHAR(50) NOT NULL UNIQUE,
     permission_name VARCHAR(100) NOT NULL,
     module VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

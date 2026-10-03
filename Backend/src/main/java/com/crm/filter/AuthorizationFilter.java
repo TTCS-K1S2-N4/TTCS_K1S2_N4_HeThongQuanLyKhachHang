@@ -5,6 +5,7 @@ import com.crm.service.PermissionService;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -32,9 +33,25 @@ public class AuthorizationFilter implements Filter {
     // Map ánh xạ các URI path với Permission Code tương ứng
     private final Map<String, String> protectedUrlMap = new LinkedHashMap<>();
 
+    public void setPermissionService(PermissionService permissionService) {
+        if (permissionService != null) {
+            this.permissionService = permissionService;
+        }
+    }
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        this.permissionService = new PermissionService();
+        if (this.permissionService == null) {
+            this.permissionService = new PermissionService();
+        }
+
+        initProtectedUrlMap();
+
+        LOGGER.info("AuthorizationFilter (BE3) khởi tạo hoàn tất.");
+    }
+
+    public void initProtectedUrlMap() {
+        protectedUrlMap.clear();
 
         // Khai báo các URL pattern bảo vệ trong module BE3
         protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
@@ -63,6 +80,7 @@ public class AuthorizationFilter implements Filter {
 
         protectedUrlMap.put("/activities/detail", "ACTIVITY_VIEW");
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");
+
         protectedUrlMap.put("/quotes/detail", "QUOTE_VIEW");
         protectedUrlMap.put("/quotes", "QUOTE_VIEW");
 
@@ -94,8 +112,6 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/import/excel/preview", "IMPORT_DATA");
         protectedUrlMap.put("/import/excel/template", "IMPORT_DATA");
         protectedUrlMap.put("/import/excel", "IMPORT_DATA");
-
-        LOGGER.info("AuthorizationFilter (BE3) khởi tạo hoàn tất.");
     }
 
     @Override
@@ -105,14 +121,35 @@ public class AuthorizationFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        String path = httpRequest.getServletPath();
+        String rawPath = httpRequest.getServletPath();
+        String normalizedPath = normalizePath(rawPath);
 
-        // Tìm permission code bắt buộc cho URL hiện tại
-        String requiredPermission = matchRequiredPermission(path);
+        // Tìm permission code bắt buộc cho URL hiện tại (đã được chuẩn hóa)
+        String requiredPermission = matchRequiredPermission(normalizedPath);
 
-        // Nếu URI không nằm trong danh sách kiểm tra bảo vệ, cho phép tiếp tục
+        // Nếu URI không nằm trong danh sách kiểm tra bảo vệ
         if (requiredPermission == null) {
-            chain.doFilter(request, response);
+            // Cho phép đi tiếp nếu là endpoint công khai hoặc trang hồ sơ
+            if (isPublicOrProfilePath(normalizedPath)) {
+                chain.doFilter(request, response);
+                return;
+            }
+
+            // Kiểm tra session người dùng
+            HttpSession session = httpRequest.getSession(false);
+            Integer userId = (session != null && session.getAttribute("userId") instanceof Integer)
+                    ? (Integer) session.getAttribute("userId")
+                    : null;
+
+            if (userId == null) {
+                LOGGER.warning("Từ chối truy cập đường dẫn " + rawPath + ": Chưa xác thực session");
+                handleUnauthorized(httpRequest, httpResponse, "Bạn cần đăng nhập để thực hiện chức năng này.");
+                return;
+            }
+
+            // Đã đăng nhập nhưng truy cập URL không xác định / chưa được phân quyền trong protectedUrlMap -> Fail Closed (403)
+            LOGGER.warning("Từ chối truy cập đường dẫn chưa được phân quyền: " + rawPath + " (normalized: " + normalizedPath + ")");
+            handleForbidden(httpRequest, httpResponse, "Đường dẫn không hợp lệ hoặc chưa được phân quyền.");
             return;
         }
 
@@ -142,32 +179,44 @@ public class AuthorizationFilter implements Filter {
                         session.setAttribute("teamId", account.getTeamId());
                         session.setAttribute("teamName", account.getTeamName());
                     }
-                } catch (Exception e) {
-                    roleIds = null; // FAIL CLOSED
+                } catch (Exception ignored) {
+                }
+
+                if (roleIds == null || roleIds.isEmpty()) {
+                    Object sessionRoleIds = session.getAttribute("roleIds");
+                    if (sessionRoleIds instanceof java.util.List<?>) {
+                        roleIds = (java.util.List<Integer>) sessionRoleIds;
+                    } else if (roleId != null) {
+                        roleIds = java.util.Collections.singletonList(roleId);
+                    }
                 }
             }
         }
 
         // Nếu chưa đăng nhập (thiếu userId trong session) => Chưa đăng nhập
         if (userId == null) {
-            LOGGER.warning("Từ chối truy cập đường dẫn " + path + ": Chưa xác thực session");
+            LOGGER.warning("Từ chối truy cập đường dẫn " + rawPath + ": Chưa xác thực session");
             handleUnauthorized(httpRequest, httpResponse, "Bạn cần đăng nhập để thực hiện chức năng này.");
             return;
         }
 
         // Nếu đã đăng nhập nhưng chưa có vai trò (roleIds is null or empty) => Từ chối truy cập (403)
         if (roleIds == null || roleIds.isEmpty()) {
-            LOGGER.warning("Từ chối truy cập đường dẫn " + path + ": Tài khoản chưa được phân vai trò");
+            LOGGER.warning("Từ chối truy cập đường dẫn " + rawPath + ": Tài khoản chưa được phân vai trò");
             handleForbidden(httpRequest, httpResponse, "Tài khoản của bạn chưa được phân vai trò trong hệ thống.");
             return;
         }
 
-        // Kiểm tra permission của roleIds (Fresh từ DB)
+        if (permissionService == null) {
+            permissionService = new PermissionService();
+        }
+
+        // Kiểm tra permission của roleIds
         boolean isAuthorized = permissionService.hasPermissionForRoles(roleIds, requiredPermission);
 
         if (!isAuthorized) {
             LOGGER.warning(String.format("Từ chối truy cập: userId=%d không có quyền %s cho path %s",
-                    userId, requiredPermission, path));
+                    userId, requiredPermission, rawPath));
             handleForbidden(httpRequest, httpResponse, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
@@ -178,12 +227,61 @@ public class AuthorizationFilter implements Filter {
         chain.doFilter(request, response);
     }
 
-    private String matchRequiredPermission(String path) {
+    public String normalizePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        // Loại bỏ Query Parameters (?key=val)
+        int queryIndex = path.indexOf('?');
+        if (queryIndex != -1) {
+            path = path.substring(0, queryIndex);
+        }
+        // Loại bỏ Matrix Parameters (;jsessionid=...)
+        int matrixIndex = path.indexOf(';');
+        if (matrixIndex != -1) {
+            path = path.substring(0, matrixIndex);
+        }
+        // Loại bỏ dấu / ở cuối ngoại trừ dấu / gốc
+        while (path.endsWith("/") && path.length() > 1) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
+    }
+
+    public String matchRequiredPermission(String path) {
         if (path == null) return null;
+        String normalized = normalizePath(path);
         for (Map.Entry<String, String> entry : protectedUrlMap.entrySet()) {
-            if (path.equalsIgnoreCase(entry.getKey())) return entry.getValue();
+            if (normalized.equalsIgnoreCase(entry.getKey())) {
+                return entry.getValue();
+            }
         }
         return null;
+    }
+
+    private boolean isPublicOrProfilePath(String normalizedPath) {
+        if (normalizedPath == null || normalizedPath.isEmpty()) return true;
+
+        String lower = normalizedPath.toLowerCase();
+
+        // Các URL xác thực công khai
+        if (lower.startsWith("/auth/") || lower.equals("/login") || lower.equals("/logout") || lower.equals("/forgot-password") || lower.equals("/activate")) {
+            return true;
+        }
+
+        // Tài nguyên tĩnh & trang lỗi
+        if (lower.startsWith("/assets/") || lower.startsWith("/css/") || lower.startsWith("/js/") ||
+            lower.startsWith("/images/") || lower.startsWith("/icons/") || lower.startsWith("/uploads/") ||
+            lower.startsWith("/error/") || lower.startsWith("/errors/") || lower.equals("/index.jsp")) {
+            return true;
+        }
+
+        // Trang hồ sơ cá nhân
+        if (lower.startsWith("/profile") || lower.equals("/avatar")) {
+            return true;
+        }
+
+        return false;
     }
 
     private void handleUnauthorized(HttpServletRequest request, HttpServletResponse response, String message)
@@ -212,7 +310,10 @@ public class AuthorizationFilter implements Filter {
             request.setAttribute("errorMessage", message);
             request.setAttribute("exception", new AuthorizationException(message));
             // Forward sang trang 403.jsp của BE2
-            request.getRequestDispatcher("/WEB-INF/views/errors/403.jsp").forward(request, response);
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/errors/403.jsp");
+            if (dispatcher != null) {
+                dispatcher.forward(request, response);
+            }
         }
     }
 

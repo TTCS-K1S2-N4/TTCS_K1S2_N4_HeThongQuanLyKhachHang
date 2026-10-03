@@ -42,8 +42,7 @@ INSERT INTO permissions (permission_code, permission_name, module) VALUES
 ON DUPLICATE KEY UPDATE
 permission_name = VALUES(permission_name), module = VALUES(module);
 
--- Chuẩn hóa lại các vai trò hệ thống nếu database từng chạy seed theo ID cũ.
-DELETE FROM role_permissions;
+-- Khởi tạo hoặc cập nhật phân quyền theo mã vai trò (idempotent, không xóa dữ liệu)
 
 -- 1. ADMIN: Toàn quyền trên mọi module.
 INSERT INTO role_permissions (role_id, permission_id, data_scope)
@@ -55,7 +54,8 @@ ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
 -- 2. DIRECTOR: Toàn quyền nghiệp vụ, ngoại trừ User Management chỉ Read.
 INSERT INTO role_permissions (role_id, permission_id, data_scope)
 SELECT r.role_id, p.permission_id, 'ALL'
-FROM roles r CROSS JOIN permissions p
+FROM roles r JOIN permissions p
+  ON p.permission_code NOT IN ('USER_CREATE', 'USER_EDIT', 'USER_DELETE')
 WHERE r.role_code = 'DIRECTOR'
 ON DUPLICATE KEY UPDATE data_scope = VALUES(data_scope);
 
@@ -132,8 +132,11 @@ INSERT INTO menu_items (title, url, icon, permission_code, display_order, parent
 ('Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
 ('Hoạt động & Lịch hẹn', '/activities', 'fa-calendar-alt', 'ACTIVITY_VIEW', 3, 0),
 ('Báo giá', '/quotes', 'fa-file-invoice-dollar', 'QUOTE_VIEW', 4, 0),
-('Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 5, 0),
-('Nhật ký hệ thống', '/audit/list', 'fa-history', 'USER_VIEW', 6, 0)
+('Sản phẩm & Dịch vụ', '/products', 'fa-box-open', 'PRODUCT_VIEW', 5, 0),
+('Danh mục dùng chung', '/categories', 'fa-tags', 'CATEGORY_VIEW', 6, 0),
+('Cấu trúc tổ chức', '/organization/teams', 'fa-sitemap', 'ORG_VIEW', 7, 0),
+('Quản lý tài khoản', '/accounts/list', 'fa-user-cog', 'USER_VIEW', 8, 0),
+('Nhật ký hệ thống', '/audit/list', 'fa-history', 'AUDIT_VIEW', 9, 0)
 ON DUPLICATE KEY UPDATE
 title = VALUES(title), url = VALUES(url), icon = VALUES(icon),
 permission_code = VALUES(permission_code), display_order = VALUES(display_order);

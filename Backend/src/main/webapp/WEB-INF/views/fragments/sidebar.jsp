@@ -45,6 +45,12 @@
                         isActive = true;
                     } else if (itemUrl.startsWith("/audit") && relativePath.startsWith("/audit")) {
                         isActive = true;
+                    } else if (itemUrl.startsWith("/products") && relativePath.startsWith("/products")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/categories") && relativePath.startsWith("/categories")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/organization") && relativePath.startsWith("/organization")) {
+                        isActive = true;
                     } else if (itemUrl.length() > 1 && relativePath.startsWith(itemUrl)) {
                         isActive = true;
                     }
