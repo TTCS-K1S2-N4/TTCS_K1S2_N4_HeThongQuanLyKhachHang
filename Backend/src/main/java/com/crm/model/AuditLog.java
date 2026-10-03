@@ -7,6 +7,7 @@ public class AuditLog {
     private int userId; // performed_by
     private String performedByName;
     private int targetUserId; // entity_id
+    private String targetEntityName;
     private String action; // action_type
     private String entityType;
     private String details; // description
@@ -38,6 +39,9 @@ public class AuditLog {
     public int getEntityId() { return targetUserId; }
     public void setEntityId(int entityId) { this.targetUserId = entityId; }
 
+    public String getTargetEntityName() { return targetEntityName; }
+    public void setTargetEntityName(String targetEntityName) { this.targetEntityName = targetEntityName; }
+
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
 
@@ -54,6 +58,35 @@ public class AuditLog {
     }
     public void setEntityType(String entityType) { this.entityType = entityType; }
 
+    public String getEntityTypeDisplay() {
+        String type = getEntityType();
+        if (type == null) return "-";
+        switch (type.toUpperCase()) {
+            case "DISCOUNT": return "Chiết khấu";
+            case "KPI": return "KPI/Mục tiêu";
+            case "DATA_OWNERSHIP": return "Sở hữu dữ liệu";
+            case "USER_ROLE": return "Vai trò người dùng";
+            case "SYSTEM": return "Hệ thống";
+            default: return type;
+        }
+    }
+
+    public String getActionDisplay() {
+        if (action == null) return "-";
+        switch (action.toUpperCase()) {
+            case "DISCOUNT_CREATE": return "Tạo mới chiết khấu";
+            case "DISCOUNT_UPDATE": return "Cập nhật chiết khấu";
+            case "DISCOUNT_STATUS_CHANGE": return "Đổi trạng thái chiết khấu";
+            case "TARGET_UPDATE": return "Cập nhật KPI/Mục tiêu";
+            case "USER_ROLE_UPDATE": return "Cập nhật vai trò";
+            case "ASSIGN_ROLE": return "Gán vai trò";
+            case "DATA_OWNERSHIP_TRANSFER": return "Bàn giao dữ liệu";
+            case "LOGIN_TEMP_LOCK": return "Khóa đăng nhập tạm thời";
+            case "ACCOUNT_LOCK": return "Khóa tài khoản";
+            case "ACCOUNT_UNLOCK": return "Mở khóa tài khoản";
+            default: return action;
+        }
+    }
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
 

@@ -70,7 +70,14 @@
 
                             <div class="form-group">
                                 <label class="form-label" for="audit-log-entity-type">Loại đối tượng</label>
-                                <input id="audit-log-entity-type" class="form-control" type="text" name="entityType" maxlength="50" placeholder="Tất cả loại đối tượng" value="<%= entityTypeParam %>">
+                                <select id="audit-log-entity-type" class="form-control" name="entityType">
+                                    <option value="" <%= "".equals(entityTypeParam) ? "selected" : "" %>>Tất cả loại đối tượng</option>
+                                    <option value="USER_ROLE" <%= "USER_ROLE".equals(entityTypeParam) ? "selected" : "" %>>Vai trò người dùng</option>
+                                    <option value="DATA_OWNERSHIP" <%= "DATA_OWNERSHIP".equals(entityTypeParam) ? "selected" : "" %>>Sở hữu dữ liệu</option>
+                                    <option value="DISCOUNT" <%= "DISCOUNT".equals(entityTypeParam) ? "selected" : "" %>>Chiết khấu</option>
+                                    <option value="KPI" <%= "KPI".equals(entityTypeParam) ? "selected" : "" %>>KPI/Mục tiêu</option>
+                                    <option value="SYSTEM" <%= "SYSTEM".equals(entityTypeParam) ? "selected" : "" %>>Hệ thống</option>
+                                </select>
                             </div>
 
                             <div class="form-group">
@@ -121,11 +128,13 @@
                                 <td><span class="audit-log-user"><%= performer %></span></td>
                                 <td>
                                     <div class="audit-log-entity">
-                                        <span class="badge badge-neutral"><%= log.getEntityType() != null ? log.getEntityType() : "" %></span>
+                                        <span class="badge badge-neutral" style="width: max-content; max-width: 100%; white-space: normal;">
+                                            <%= log.getTargetEntityName() != null ? log.getTargetEntityName() : (log.getEntityTypeDisplay() != null ? log.getEntityTypeDisplay() : "") %>
+                                        </span>
                                         <span class="audit-log-entity-id">Mã: <%= log.getEntityId() %></span>
                                     </div>
                                 </td>
-                                <td><span class="badge badge-info audit-log-action"><%= log.getAction() != null ? log.getAction() : "" %></span></td>
+                                <td><span class="badge badge-info audit-log-action" style="width: max-content; max-width: 100%; white-space: normal;"><%= log.getActionDisplay() != null ? log.getActionDisplay() : "" %></span></td>
                                 <td>
                                     <div class="table-actions">
                                         <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/audit/detail?auditLogId=<%= log.getLogId() %>">Chi tiết</a>

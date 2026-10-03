@@ -62,8 +62,14 @@ public class AuditLogDAO {
         List<AuditLog> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
             "SELECT a.log_id, a.action_type, a.performed_by, a.target_user_id, a.description, " +
-            "a.old_value, a.new_value, a.created_at, u.full_name as performed_by_name " +
-            "FROM audit_logs a LEFT JOIN users u ON a.performed_by = u.user_id WHERE 1=1 "
+            "a.old_value, a.new_value, a.created_at, u.full_name as performed_by_name, " +
+            "COALESCE(p.product_name, o.title, tu.full_name) as target_entity_name " +
+            "FROM audit_logs a " +
+            "LEFT JOIN users u ON a.performed_by = u.user_id " +
+            "LEFT JOIN products p ON a.target_user_id = p.product_id AND a.action_type IN ('DISCOUNT_CREATE', 'DISCOUNT_UPDATE', 'DISCOUNT_STATUS_CHANGE') " +
+            "LEFT JOIN opportunities o ON a.target_user_id = o.opportunity_id AND a.action_type = 'TARGET_UPDATE' " +
+            "LEFT JOIN users tu ON a.target_user_id = tu.user_id AND a.action_type NOT IN ('DISCOUNT_CREATE', 'DISCOUNT_UPDATE', 'DISCOUNT_STATUS_CHANGE', 'TARGET_UPDATE') " +
+            "WHERE 1=1 "
         );
         List<Object> params = new ArrayList<>();
 
@@ -168,6 +174,7 @@ public class AuditLogDAO {
         log.setUserId(rs.getInt("performed_by"));
         try { log.setPerformedByName(rs.getString("performed_by_name")); } catch (SQLException ignored) {}
         log.setTargetUserId(rs.getInt("target_user_id"));
+        try { log.setTargetEntityName(rs.getString("target_entity_name")); } catch (SQLException ignored) {}
         log.setDetails(rs.getString("description"));
         try { log.setOldValue(rs.getString("old_value")); } catch (SQLException ignored) {}
         try { log.setNewValue(rs.getString("new_value")); } catch (SQLException ignored) {}
