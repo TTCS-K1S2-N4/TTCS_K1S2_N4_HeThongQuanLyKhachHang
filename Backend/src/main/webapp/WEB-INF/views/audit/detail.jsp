@@ -96,7 +96,7 @@
                             </div>
                             <div class="audit-log-meta-item">
                                 <dt class="audit-log-meta-label">Loại đối tượng</dt>
-                                <dd class="audit-log-meta-value"><%= auditLog.getEntityType() != null ? auditLog.getEntityType() : "-" %></dd>
+                                <dd class="audit-log-meta-value"><%= auditLog.getTargetEntityName() != null ? auditLog.getTargetEntityName() : (auditLog.getEntityTypeDisplay() != null ? auditLog.getEntityTypeDisplay() : "-") %></dd>
                             </div>
                             <div class="audit-log-meta-item">
                                 <dt class="audit-log-meta-label">Mã đối tượng</dt>
@@ -104,7 +104,7 @@
                             </div>
                             <div class="audit-log-meta-item">
                                 <dt class="audit-log-meta-label">Hành động</dt>
-                                <dd class="audit-log-meta-value audit-log-action"><%= auditLog.getAction() != null ? auditLog.getAction() : "-" %></dd>
+                                <dd class="audit-log-meta-value audit-log-action"><%= auditLog.getActionDisplay() != null ? auditLog.getActionDisplay() : "-" %></dd>
                             </div>
                         </dl>
 
