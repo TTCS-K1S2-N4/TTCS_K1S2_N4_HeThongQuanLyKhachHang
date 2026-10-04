@@ -61,7 +61,7 @@
                         <form action="${pageContext.request.contextPath}/organization/teams/update" method="POST">
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="teamId">Mã nhóm (ID)</label>
-                                <input type="number" id="teamId" name="teamId" class="form-control" style="width: 100%;" placeholder="Để trống nếu tạo mới">
+                                <input type="number" id="teamId" name="teamId" class="form-control" style="width: 100%;" placeholder="Để trống nếu tạo mới" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="teamName">Tên nhóm (*)</label>
@@ -69,11 +69,11 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="parentTeamId">Nhóm cha (ID)</label>
-                                <input type="number" id="parentTeamId" name="parentTeamId" class="form-control" style="width: 100%;">
+                                <input type="number" id="parentTeamId" name="parentTeamId" class="form-control" style="width: 100%;" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="leaderId">Trưởng nhóm (ID người dùng)</label>
-                                <input type="number" id="leaderId" name="leaderId" class="form-control" style="width: 100%;">
+                                <input type="number" id="leaderId" name="leaderId" class="form-control" style="width: 100%;" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="region">Khu vực địa lý</label>

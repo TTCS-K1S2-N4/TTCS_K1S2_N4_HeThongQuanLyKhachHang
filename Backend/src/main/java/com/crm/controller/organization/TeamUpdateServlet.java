@@ -60,6 +60,9 @@ public class TeamUpdateServlet extends HttpServlet {
         if (teamIdStr != null && !teamIdStr.trim().isEmpty()) {
             try {
                 teamId = Integer.parseInt(teamIdStr.trim());
+                if (teamId < 0) {
+                    errors.add("Mã nhóm (ID) phải là số không âm.");
+                }
             } catch (NumberFormatException e) {
                 errors.add("ID nhóm kinh doanh (teamId) không đúng định dạng số.");
             }
@@ -71,6 +74,9 @@ public class TeamUpdateServlet extends HttpServlet {
         if (parentTeamIdStr != null && !parentTeamIdStr.trim().isEmpty()) {
             try {
                 parentTeamId = Integer.parseInt(parentTeamIdStr.trim());
+                if (parentTeamId < 0) {
+                    errors.add("ID nhóm cha (parentTeamId) phải là số không âm.");
+                }
             } catch (NumberFormatException e) {
                 errors.add("ID nhóm cha (parentTeamId) không đúng định dạng số.");
             }
@@ -81,6 +87,9 @@ public class TeamUpdateServlet extends HttpServlet {
         if (leaderIdStr != null && !leaderIdStr.trim().isEmpty()) {
             try {
                 leaderId = Integer.parseInt(leaderIdStr.trim());
+                if (leaderId < 0) {
+                    errors.add("ID trưởng nhóm (leaderId) phải là số không âm.");
+                }
             } catch (NumberFormatException e) {
                 errors.add("ID trưởng nhóm (leaderId) không đúng định dạng số.");
             }

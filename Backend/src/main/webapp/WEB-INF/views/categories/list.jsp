@@ -39,7 +39,7 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="categoryId">Mã danh mục (ID)</label>
-                                <input type="number" id="categoryId" name="categoryId" class="form-control" style="width: 100%;" placeholder="Bắt buộc khi Cập nhật / Vô hiệu hóa">
+                                <input type="number" id="categoryId" name="categoryId" class="form-control" style="width: 100%;" placeholder="Bắt buộc khi Cập nhật / Vô hiệu hóa" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="categoryName">Tên danh mục (*)</label>
@@ -47,7 +47,7 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="displayOrder">Thứ tự hiển thị</label>
-                                <input type="number" id="displayOrder" name="displayOrder" class="form-control" style="width: 100%;">
+                                <input type="number" id="displayOrder" name="displayOrder" class="form-control" style="width: 100%;" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
                             </div>
                             <div class="form-group" style="margin-bottom: 1rem;">
                                 <label for="status">Trạng thái (status)</label>
