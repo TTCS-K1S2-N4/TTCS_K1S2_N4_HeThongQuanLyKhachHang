@@ -185,9 +185,14 @@ public class AuthorizationFilter implements Filter {
                 if (roleIds == null || roleIds.isEmpty()) {
                     Object sessionRoleIds = session.getAttribute("roleIds");
                     if (sessionRoleIds instanceof java.util.List<?>) {
-                        roleIds = (java.util.List<Integer>) sessionRoleIds;
-                    } else if (roleId != null) {
-                        roleIds = java.util.Collections.singletonList(roleId);
+                        @SuppressWarnings("unchecked")
+                        java.util.List<Integer> castedList = (java.util.List<Integer>) sessionRoleIds;
+                        roleIds = castedList;
+                    } else {
+                        Object roleIdObj = session.getAttribute("roleId");
+                        if (roleIdObj instanceof Integer) {
+                            roleIds = java.util.Collections.singletonList((Integer) roleIdObj);
+                        }
                     }
                 }
             }
