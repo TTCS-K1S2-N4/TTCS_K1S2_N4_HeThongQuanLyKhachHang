@@ -223,3 +223,26 @@ CREATE TABLE IF NOT EXISTS custom_field_values (
     UNIQUE KEY uk_field_entity (field_id, entity_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 15. Bảng Quan hệ Khách hàng (S3-05)
+CREATE TABLE IF NOT EXISTS customer_relationships (
+    relationship_id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_customer_id INT NOT NULL,
+    child_customer_id INT NOT NULL,
+    relationship_type VARCHAR(50) DEFAULT 'SUBSIDIARY', -- SUBSIDIARY, BRANCH, AFFILIATE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (child_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_parent_child (parent_customer_id, child_customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 16. Bảng Lịch sử gộp Khách hàng (S3-04)
+CREATE TABLE IF NOT EXISTS customer_merges (
+    merge_id INT AUTO_INCREMENT PRIMARY KEY,
+    primary_customer_id INT NOT NULL,
+    secondary_customer_id INT NOT NULL,
+    merged_data TEXT, -- JSON containing old data
+    merged_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (primary_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (merged_by) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
