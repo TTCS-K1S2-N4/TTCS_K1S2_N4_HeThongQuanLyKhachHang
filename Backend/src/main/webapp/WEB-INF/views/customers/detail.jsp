@@ -28,6 +28,7 @@
                     <h1 class="page-title">Chi tiết khách hàng</h1>
                 </div>
                 <div class="page-actions">
+                    <a class="btn btn-primary" href="${pageContext.request.contextPath}/customers/hierarchy?id=${customer.customerId}">Cây quan hệ</a>
                     <a class="btn btn-secondary" href="${pageContext.request.contextPath}/customers">Quay lại danh sách</a>
                 </div>
             </div>
