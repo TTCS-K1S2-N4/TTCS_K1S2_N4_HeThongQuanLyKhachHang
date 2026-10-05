@@ -9,6 +9,24 @@ import java.util.List;
 
 public class OpportunityDAO {
 
+    public OpportunityDAO() {
+        ensureSchema();
+    }
+
+    private void ensureSchema() {
+        String alterSql = "ALTER TABLE opportunities " +
+                "ADD COLUMN IF NOT EXISTS customer_id INT NULL, " +
+                "ADD COLUMN IF NOT EXISTS stage VARCHAR(100) NULL, " +
+                "ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE', " +
+                "ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;";
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            try { stmt.executeUpdate(alterSql); } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            // connection might be unavailable in static context
+        }
+    }
+
     private Opportunity mapResultSetToOpportunity(ResultSet rs) throws SQLException {
         Opportunity obj = new Opportunity();
         obj.setOpportunityid(rs.getInt("opportunity_id"));
@@ -16,6 +34,16 @@ public class OpportunityDAO {
         obj.setAmount(rs.getDouble("amount"));
         obj.setOwnerId(rs.getInt("owner_id"));
         obj.setCreatedAt(rs.getTimestamp("created_at"));
+
+        try {
+            int cid = rs.getInt("customer_id");
+            if (!rs.wasNull()) obj.setCustomerId(cid);
+        } catch (SQLException ignored) {}
+
+        try { obj.setStage(rs.getString("stage")); } catch (SQLException ignored) {}
+        try { obj.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
+        try { obj.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
+
         return obj;
     }
 
@@ -105,6 +133,69 @@ public class OpportunityDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public List<Opportunity> getOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT * FROM opportunities WHERE customer_id = ? ORDER BY opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Opportunity> getOpenOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT * FROM opportunities WHERE customer_id = ? AND (stage IS NULL OR (stage NOT LIKE '%WON%' AND stage NOT LIKE '%LOST%' AND stage NOT LIKE '%CLOSED%')) ORDER BY opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Opportunity> getClosedOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT * FROM opportunities WHERE customer_id = ? AND (stage LIKE '%WON%' OR stage LIKE '%LOST%' OR stage LIKE '%CLOSED%') ORDER BY opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public double calculateTotalOpenAmount(int customerId) {
+        String sql = "SELECT SUM(amount) FROM opportunities WHERE customer_id = ? AND (stage IS NULL OR (stage NOT LIKE '%WON%' AND stage NOT LIKE '%LOST%' AND stage NOT LIKE '%CLOSED%'))";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
     }
 
     public boolean updateTargetAmount(int opportunityId, double targetAmount, int performedBy) {
