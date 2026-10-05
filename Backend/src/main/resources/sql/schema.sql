@@ -246,3 +246,33 @@ CREATE TABLE IF NOT EXISTS customer_merges (
     FOREIGN KEY (primary_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (merged_by) REFERENCES users(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 17. Bảng Người liên hệ (S3-02)
+CREATE TABLE IF NOT EXISTS contacts (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    full_name VARCHAR(200) NOT NULL,
+    title VARCHAR(100) NULL,
+    email VARCHAR(150) NULL,
+    phone VARCHAR(20) NULL,
+    buying_role ENUM('DECISION_MAKER', 'INFLUENCER', 'END_USER', 'BLOCKER') NOT NULL DEFAULT 'DECISION_MAKER',
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 18. Bảng Lịch sử chuyển công ty của Người liên hệ (S3-02)
+CREATE TABLE IF NOT EXISTS contact_company_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    contact_id INT NOT NULL,
+    old_customer_id INT NOT NULL,
+    new_customer_id INT NOT NULL,
+    transferred_by INT NULL,
+    transferred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (contact_id) REFERENCES contacts(contact_id) ON DELETE CASCADE,
+    FOREIGN KEY (old_customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (new_customer_id) REFERENCES customers(customer_id),
+    FOREIGN KEY (transferred_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
