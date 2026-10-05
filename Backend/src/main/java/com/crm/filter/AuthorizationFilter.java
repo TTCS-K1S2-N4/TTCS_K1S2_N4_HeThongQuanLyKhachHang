@@ -58,6 +58,9 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/delete", "ACCOUNT_DELETE");
         protectedUrlMap.put("/customers/export", "ACCOUNT_EXPORT");
+        protectedUrlMap.put("/customers/duplicates", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/merge", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/hierarchy", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/detail", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers", "ACCOUNT_VIEW");
 

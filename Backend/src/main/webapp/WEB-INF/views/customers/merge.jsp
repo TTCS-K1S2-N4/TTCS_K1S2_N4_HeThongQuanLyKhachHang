@@ -38,17 +38,43 @@
                         và chuyển sang khách hàng chính (Primary). Sau đó, Khách hàng phụ sẽ bị <strong>xoá vĩnh viễn</strong>.
                     </p>
                     <form method="post" action="${pageContext.request.contextPath}/customers/merge">
-                        <div class="form-row">
-                            <div class="form-group col-md-5">
-                                <label>ID Khách hàng CHÍNH (Được giữ lại)</label>
-                                <input type="number" name="primaryId" class="form-control" value="${primaryId}" required min="0">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-success text-white">Khách hàng CHÍNH (Được giữ lại)</div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label>Nhập ID:</label>
+                                            <input type="number" name="primaryId" class="form-control" value="${primaryId}" required min="0" onchange="reloadComparison()">
+                                        </div>
+                                        <c:if test="${not empty primaryCustomer}">
+                                            <hr>
+                                            <p><strong>Tên:</strong> <c:out value="${primaryCustomer.customerName}"/></p>
+                                            <p><strong>Điện thoại:</strong> <c:out value="${primaryCustomer.phone}"/></p>
+                                            <p><strong>Ngày tạo:</strong> <fmt:formatDate value="${primaryCustomer.createdAt}" pattern="dd/MM/yyyy HH:mm"/></p>
+                                        </c:if>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-2 text-center" style="align-self: flex-end; padding-bottom: 15px;">
-                                <span class="badge badge-primary">&larr; Gộp vào</span>
+                            <div class="col-md-2 text-center" style="align-self: center;">
+                                <span class="badge badge-primary p-2" style="font-size: 1.2em;">&larr; Gộp vào</span>
                             </div>
-                            <div class="form-group col-md-5">
-                                <label>ID Khách hàng PHỤ (Bị xoá)</label>
-                                <input type="number" name="secondaryId" class="form-control" value="${secondaryId}" required min="0">
+                            <div class="col-md-5">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-danger text-white">Khách hàng PHỤ (Bị xoá)</div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label>Nhập ID:</label>
+                                            <input type="number" name="secondaryId" class="form-control" value="${secondaryId}" required min="0" onchange="reloadComparison()">
+                                        </div>
+                                        <c:if test="${not empty secondaryCustomer}">
+                                            <hr>
+                                            <p><strong>Tên:</strong> <c:out value="${secondaryCustomer.customerName}"/></p>
+                                            <p><strong>Điện thoại:</strong> <c:out value="${secondaryCustomer.phone}"/></p>
+                                            <p><strong>Ngày tạo:</strong> <fmt:formatDate value="${secondaryCustomer.createdAt}" pattern="dd/MM/yyyy HH:mm"/></p>
+                                        </c:if>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group">
@@ -61,5 +87,12 @@
         </div>
     </main>
 </div>
+<script>
+    function reloadComparison() {
+        var pId = document.querySelector('input[name="primaryId"]').value;
+        var sId = document.querySelector('input[name="secondaryId"]').value;
+        window.location.href = '${pageContext.request.contextPath}/customers/merge?primaryId=' + pId + '&secondaryId=' + sId;
+    }
+</script>
 </body>
 </html>
