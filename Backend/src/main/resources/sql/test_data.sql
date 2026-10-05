@@ -1,9 +1,57 @@
-﻿-- =========================================================================
+-- =========================================================================
 -- B盻・D盻ｮ LI盻・ M蘯ｪU D盻ｰ ﾃ¨ CRM (TEST DATA SCRIPT - CRM_DB)
 -- Ch蘯｡y an toﾃn, khﾃｴng xﾃｳa d盻ｯ li盻㎡ cﾅｩ, khﾃｴng s盻ｭa tﾃi kho蘯｣n/phﾃ｢n quy盻］ hi盻㌻ cﾃｳ
 -- =========================================================================
 
 USE crm_db;
+
+-- 0. TÀI KHOẢN MẪU KIỂM THỬ (users & user_roles)
+-- Mật khẩu mặc định của tất cả tài khoản test: TestPassword123@ (được băm bằng BCrypt từ PasswordUtil.hash())
+INSERT INTO users (user_id, email, password_hash, full_name, phone, team_id, is_active) VALUES
+(2, 'director.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Vũ Văn Director', '0906789012', NULL, 1),
+(3, 'teamlead.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Hoàng Văn Lead', '0905678901', 1, 1),
+(4, 'salesrep.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Nguyễn Văn Sales', '0901234567', 1, 1),
+(5, 'salesrep2.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Lê Văn Sales Nam', '0901234568', 2, 1),
+(6, 'marketing.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Trần Thị Marketing', '0902345678', NULL, 1),
+(7, 'customersuccess.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Lê Văn CSKH', '0903456789', NULL, 1),
+(8, 'accountant.test@example.com', '$2a$12$mr0RRBInQq8M8FKJSKQxcObtfir/V6QiaCjdP1uQUdmjhKyYWJy3i', 'Phạm Thị Kế Toán', '0904567890', NULL, 1)
+ON DUPLICATE KEY UPDATE
+email = VALUES(email),
+full_name = VALUES(full_name),
+phone = VALUES(phone),
+team_id = VALUES(team_id),
+is_active = VALUES(is_active);
+
+-- Gán vai trò tương ứng cho từng tài khoản test
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'DIRECTOR'
+WHERE u.email = 'director.test@example.com';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'TEAM_LEAD'
+WHERE u.email = 'teamlead.test@example.com';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'SALES_REP'
+WHERE u.email IN ('salesrep.test@example.com', 'salesrep2.test@example.com');
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'MARKETING'
+WHERE u.email = 'marketing.test@example.com';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'CUST_SUCCESS'
+WHERE u.email = 'customersuccess.test@example.com';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u JOIN roles r ON r.role_code = 'ACCOUNTANT'
+WHERE u.email = 'accountant.test@example.com';
 
 -- 1. DANH M盻､C Dﾃ儂G CHUNG (categories)
 INSERT INTO categories (category_type, category_name, display_order, status) VALUES
