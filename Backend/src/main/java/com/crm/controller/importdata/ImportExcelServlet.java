@@ -39,7 +39,7 @@ public class ImportExcelServlet extends HttpServlet {
         String path = request.getServletPath();
 
         if ("/import/excel".equals(path)) {
-            request.getRequestDispatcher("/pages/import/excel.html").forward(request, response);
+            request.getRequestDispatcher("/WEB-INF/views/import/excel.jsp").forward(request, response);
         } else if ("/import/excel/template".equals(path)) {
             response.setContentType(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -54,18 +54,27 @@ public class ImportExcelServlet extends HttpServlet {
                 Sheet sheet = workbook.createSheet("Users");
 
                 Row header = sheet.createRow(0);
-                header.createCell(0).setCellValue("Họ và tên");
-                header.createCell(1).setCellValue("Email");
-                header.createCell(2).setCellValue("Số điện thoại");
+                header.createCell(0).setCellValue("STT");
+                header.createCell(1).setCellValue("Họ và tên");
+                header.createCell(2).setCellValue("Email");
+                header.createCell(3).setCellValue("Số điện thoại");
 
-                Row example = sheet.createRow(1);
-                example.createCell(0).setCellValue("Nguyễn Văn A");
-                example.createCell(1).setCellValue("nguyenvana@example.com");
-                example.createCell(2).setCellValue("0912345678");
+                Row example1 = sheet.createRow(1);
+                example1.createCell(0).setCellValue(1);
+                example1.createCell(1).setCellValue("Nguyễn Văn An");
+                example1.createCell(2).setCellValue("an.nguyen@example.com");
+                example1.createCell(3).setCellValue("0912345678");
+
+                Row example2 = sheet.createRow(2);
+                example2.createCell(0).setCellValue(2);
+                example2.createCell(1).setCellValue("Trần Thị Bình");
+                example2.createCell(2).setCellValue("binh.tran@example.com");
+                example2.createCell(3).setCellValue("0987654321");
 
                 sheet.autoSizeColumn(0);
                 sheet.autoSizeColumn(1);
                 sheet.autoSizeColumn(2);
+                sheet.autoSizeColumn(3);
 
                 workbook.write(out);
             }
@@ -170,6 +179,8 @@ public class ImportExcelServlet extends HttpServlet {
         prepareJsonResponse(response);
 
         @SuppressWarnings("unchecked")
+        List<ImportExcelRequest> allRows = (List<ImportExcelRequest>) result.get("allRows");
+        @SuppressWarnings("unchecked")
         List<ImportExcelRequest> rowErrors = (List<ImportExcelRequest>) result.get("rowErrors");
 
         StringBuilder json = new StringBuilder();
@@ -184,35 +195,40 @@ public class ImportExcelServlet extends HttpServlet {
                 .append(result.get("invalidRows"))
                 .append(",");
 
+        json.append("\"allRows\":[");
+
+        if (allRows != null) {
+            for (int i = 0; i < allRows.size(); i++) {
+                ImportExcelRequest row = allRows.get(i);
+                if (i > 0) json.append(",");
+
+                json.append("{");
+                json.append("\"rowIndex\":").append(row.getRowIndex()).append(",");
+                json.append("\"fullName\":\"").append(escapeJson(row.getFullName())).append("\",");
+                json.append("\"email\":\"").append(escapeJson(row.getEmail())).append("\",");
+                json.append("\"phone\":\"").append(escapeJson(row.getPhone())).append("\",");
+                json.append("\"isValid\":").append(row.isValid()).append(",");
+                json.append("\"error\":\"").append(escapeJson(row.getError())).append("\"");
+                json.append("}");
+            }
+        }
+
+        json.append("],");
+
         json.append("\"rowErrors\":[");
 
         if (rowErrors != null) {
             for (int i = 0; i < rowErrors.size(); i++) {
-
                 ImportExcelRequest row = rowErrors.get(i);
-
-                if (i > 0) {
-                    json.append(",");
-                }
+                if (i > 0) json.append(",");
 
                 json.append("{");
-
-                json.append("\"fullName\":\"")
-                        .append(escapeJson(row.getFullName()))
-                        .append("\",");
-
-                json.append("\"email\":\"")
-                        .append(escapeJson(row.getEmail()))
-                        .append("\",");
-
-                json.append("\"phone\":\"")
-                        .append(escapeJson(row.getPhone()))
-                        .append("\",");
-
-                json.append("\"error\":\"")
-                        .append(escapeJson(row.getError()))
-                        .append("\"");
-
+                json.append("\"rowIndex\":").append(row.getRowIndex()).append(",");
+                json.append("\"fullName\":\"").append(escapeJson(row.getFullName())).append("\",");
+                json.append("\"email\":\"").append(escapeJson(row.getEmail())).append("\",");
+                json.append("\"phone\":\"").append(escapeJson(row.getPhone())).append("\",");
+                json.append("\"isValid\":").append(row.isValid()).append(",");
+                json.append("\"error\":\"").append(escapeJson(row.getError())).append("\"");
                 json.append("}");
             }
         }

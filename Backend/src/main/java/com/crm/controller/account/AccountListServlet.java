@@ -23,18 +23,29 @@ public class AccountListServlet extends HttpServlet {
         String roleIdStr = req.getParameter("roleId");
         String status = req.getParameter("status");
         String pageStr = req.getParameter("page");
+        String pageSizeStr = req.getParameter("pageSize");
 
         Integer teamId = parseOptionalInt(teamIdStr);
         Integer roleId = parseOptionalInt(roleIdStr);
         Integer requestedPage = parseOptionalInt(pageStr);
+        Integer requestedPageSize = parseOptionalInt(pageSizeStr);
+
+        int pageSize = (requestedPageSize != null && (requestedPageSize == 10 || requestedPageSize == 20 || requestedPageSize == 50))
+                ? requestedPageSize : 10;
         int page = requestedPage != null && requestedPage > 0 ? requestedPage : 1;
 
-        List<Account> list = accountService.getAccountList(keyword, teamId, roleId, status, page);
         int totalAccounts = accountService.countTotalAccounts(keyword, teamId, roleId, status);
-        int totalPages = (int) Math.ceil((double) totalAccounts / 20);
+        int totalPages = totalAccounts > 0 ? (int) Math.ceil((double) totalAccounts / pageSize) : 1;
+
+        if (page > totalPages) {
+            page = totalPages;
+        }
+
+        List<Account> list = accountService.getAccountList(keyword, teamId, roleId, status, page, pageSize);
 
         req.setAttribute("accountList", list);
         req.setAttribute("currentPage", page);
+        req.setAttribute("pageSize", pageSize);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("totalAccounts", totalAccounts);
 
