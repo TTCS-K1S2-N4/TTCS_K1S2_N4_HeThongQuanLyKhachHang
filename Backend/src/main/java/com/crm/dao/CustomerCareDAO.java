@@ -87,13 +87,18 @@ public class CustomerCareDAO {
     }
 
     public boolean updateInactiveThreshold(int days) {
-        String sql = "INSERT INTO customer_care (customer_id, inactive_threshold_days) " +
-                     "VALUES (0, ?) " +
-                     "ON DUPLICATE KEY UPDATE inactive_threshold_days = VALUES(inactive_threshold_days)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, days);
-            return ps.executeUpdate() > 0;
+        String updateSql = "UPDATE customer_care SET inactive_threshold_days = ? WHERE customer_id IS NULL";
+        String insertSql = "INSERT INTO customer_care (customer_id, inactive_threshold_days) VALUES (NULL, ?)";
+        try (Connection conn = DBConnection.getConnection()) {
+            try (PreparedStatement ups = conn.prepareStatement(updateSql)) {
+                ups.setInt(1, days);
+                int rows = ups.executeUpdate();
+                if (rows > 0) return true;
+            }
+            try (PreparedStatement ips = conn.prepareStatement(insertSql)) {
+                ips.setInt(1, days);
+                return ips.executeUpdate() > 0;
+            }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi cập nhật cấu hình threshold ngày định kỳ: " + days, e);
             return false;
