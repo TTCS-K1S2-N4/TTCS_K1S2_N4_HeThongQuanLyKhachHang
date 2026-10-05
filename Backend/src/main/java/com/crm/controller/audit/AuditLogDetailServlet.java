@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-@WebServlet(urlPatterns = {"/audit-log/detail", "/audit/detail"})
+@WebServlet("/audit-log/detail")
 public class AuditLogDetailServlet extends HttpServlet {
 
     private AuditLogService auditLogService;

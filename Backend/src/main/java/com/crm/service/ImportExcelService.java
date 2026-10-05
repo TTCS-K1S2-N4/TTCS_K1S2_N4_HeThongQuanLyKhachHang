@@ -142,45 +142,41 @@ public class ImportExcelService {
             }
 
             try {
-                AccountCreateRequest accountRequest =
-        new AccountCreateRequest(
-                row.getEmail(),
-                null,
-                row.getFullName(),
-                row.getPhone(),
-                Collections.singletonList(defaultRole.getId()),
-                row.getTeamId());
+                AccountCreateRequest accountRequest = new AccountCreateRequest(
+                        row.getEmail(),
+                        null,
+                        row.getFullName(),
+                        row.getPhone(),
+                        Collections.singletonList(defaultRole.getId()),
+                        row.getTeamId());
 
-AccountService.CreateAccountResult createResult =
-        accountService.createAccountResult(accountRequest);
+                AccountService.CreateAccountResult createResult = accountService.createAccountResult(accountRequest);
 
-if (createResult.getStatus()
-        == AccountService.CreateAccountStatus.SUCCESS_EMAIL_SENT) {
+                if (createResult.getStatus() == AccountService.CreateAccountStatus.SUCCESS_EMAIL_SENT) {
 
-    successCount++;
+                    successCount++;
 
-} else if (createResult.getStatus()
-        == AccountService.CreateAccountStatus.SUCCESS_EMAIL_FAILED) {
+                } else if (createResult.getStatus() == AccountService.CreateAccountStatus.SUCCESS_EMAIL_FAILED) {
 
-    successCount++;
+                    successCount++;
 
-    errors.add(
-            "Đã tạo tài khoản nhưng gửi email mật khẩu tạm thất bại: "
-                    + row.getEmail()
-                    + (createResult.getErrorMessage() != null
-                            ? " - " + createResult.getErrorMessage()
-                            : ""));
+                    errors.add(
+                            "Đã tạo tài khoản nhưng gửi email mật khẩu tạm thất bại: "
+                                    + row.getEmail()
+                                    + (createResult.getErrorMessage() != null
+                                            ? " - " + createResult.getErrorMessage()
+                                            : ""));
 
-} else {
+                } else {
 
-    failedCount++;
+                    failedCount++;
 
-    errors.add(
-            "Không thể tạo tài khoản cho email: "
-                    + row.getEmail()
-                    + (createResult.getErrorMessage() != null
-                            ? " - " + createResult.getErrorMessage()
-                            : ""));
+                    errors.add(
+                            "Không thể tạo tài khoản cho email: "
+                                    + row.getEmail()
+                                    + (createResult.getErrorMessage() != null
+                                            ? " - " + createResult.getErrorMessage()
+                                            : ""));
                 }
             } catch (Exception e) {
                 failedCount++;

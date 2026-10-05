@@ -89,8 +89,17 @@ public class AccountUpdateServlet extends HttpServlet {
             throw new ServletException("Không thể kiểm tra vai trò/nhóm.", e);
         }
 
+        Integer adminId = (Integer) req.getSession().getAttribute("userId");
+        com.crm.model.AuditLog auditLog = new com.crm.model.AuditLog();
+        auditLog.setAction("USER_ROLE_UPDATE");
+        auditLog.setUserId(adminId != null ? adminId : 0);
+        auditLog.setTargetUserId(accountId);
+        auditLog.setDetails("Cập nhật thông tin và vai trò người dùng ID " + accountId);
+        auditLog.setOldValue("Account ID: " + accountId);
+        auditLog.setNewValue("Roles: " + roleIds.toString() + ", Team: " + teamId);
+
         AccountUpdateRequest updateReq = new AccountUpdateRequest(accountId, fullName, phone, teamId, roleIds);
-        boolean success = accountService.updateAccount(updateReq);
+        boolean success = accountService.updateAccount(updateReq, auditLog);
         if (success) {
             resp.sendRedirect(req.getContextPath() + "/accounts/detail?accountId=" + accountId + "&msg=updated");
         } else {

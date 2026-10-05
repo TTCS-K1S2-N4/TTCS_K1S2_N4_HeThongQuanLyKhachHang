@@ -39,17 +39,7 @@
                 <p class="auth-description">Vui lòng nhập mật khẩu hiện tại và mật khẩu mới của bạn.</p>
             </div>
 
-            <% if (request.getAttribute("errorMessage") != null) { %>
-                <div class="auth-message auth-message-error" role="alert">
-                    <%= request.getAttribute("errorMessage") %>
-                </div>
-            <% } %>
-
-            <% if (request.getAttribute("successMessage") != null) { %>
-                <div class="auth-message auth-message-success" role="status">
-                    <%= request.getAttribute("successMessage") %>
-                </div>
-            <% } %>
+            <!-- GLOBAL MESSAGES HAVE BEEN MOVED TO TOAST -->
 
             <script>
                 function togglePassword(inputId, btn) {
@@ -114,5 +104,6 @@
             </div>
         </div>
     </div>
+    <jsp:include page="/WEB-INF/views/fragments/toast.jsp"/>
 </body>
 </html>

@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
     reset_token_expiry TIMESTAMP NULL,
     activation_token VARCHAR(255) NULL,
     activation_token_expiry TIMESTAMP NULL,
+    avatar_url VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
@@ -106,7 +107,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id INT AUTO_INCREMENT PRIMARY KEY,
-    permission_code VARCHAR(50) NOT NULL,
+    permission_code VARCHAR(50) NOT NULL UNIQUE,
     permission_name VARCHAR(100) NOT NULL,
     module VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -128,7 +129,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
     title VARCHAR(100) NOT NULL,
     url VARCHAR(255) NOT NULL,
     icon VARCHAR(50) DEFAULT 'fa-folder',
-    permission_code VARCHAR(50) NOT NULL UNIQUE,
+    permission_code VARCHAR(50) NOT NULL,
     display_order INT DEFAULT 0,
     parent_id INT DEFAULT 0,
     UNIQUE KEY uk_menu_url_permission (url, permission_code)
@@ -222,3 +223,26 @@ CREATE TABLE IF NOT EXISTS custom_field_values (
     UNIQUE KEY uk_field_entity (field_id, entity_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 15. Bảng Quan hệ Khách hàng (S3-05)
+CREATE TABLE IF NOT EXISTS customer_relationships (
+    relationship_id INT AUTO_INCREMENT PRIMARY KEY,
+    parent_customer_id INT NOT NULL,
+    child_customer_id INT NOT NULL,
+    relationship_type VARCHAR(50) DEFAULT 'SUBSIDIARY', -- SUBSIDIARY, BRANCH, AFFILIATE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (child_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_parent_child (parent_customer_id, child_customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 16. Bảng Lịch sử gộp Khách hàng (S3-04)
+CREATE TABLE IF NOT EXISTS customer_merges (
+    merge_id INT AUTO_INCREMENT PRIMARY KEY,
+    primary_customer_id INT NOT NULL,
+    secondary_customer_id INT NOT NULL,
+    merged_data TEXT, -- JSON containing old data
+    merged_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (primary_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (merged_by) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

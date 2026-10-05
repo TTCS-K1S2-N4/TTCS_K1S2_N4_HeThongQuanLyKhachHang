@@ -1,6 +1,8 @@
 package com.crm.controller.profile;
 
+import com.crm.dao.AccountDAO;
 import com.crm.dto.ProfileUpdateRequest;
+import com.crm.model.Account;
 import com.crm.model.UserProfile;
 import com.crm.service.ProfileService;
 
@@ -10,15 +12,19 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 
 @WebServlet({ "/profile", "/profile/update" })
 public class ProfileServlet extends HttpServlet {
+
     private ProfileService profileService;
+    private AccountDAO accountDAO;
 
     @Override
     public void init() throws ServletException {
         this.profileService = new ProfileService();
+        this.accountDAO = new AccountDAO();
     }
 
     @Override
@@ -55,7 +61,7 @@ public class ProfileServlet extends HttpServlet {
             writeErrorJson(
                     response,
                     HttpServletResponse.SC_UNAUTHORIZED,
-                    "Vui lòng đăng nhập.");
+                    "Phiên đăng nhập đã hết hạn hoặc chưa đăng nhập.");
             return;
         }
 
@@ -65,11 +71,20 @@ public class ProfileServlet extends HttpServlet {
             writeErrorJson(
                     response,
                     HttpServletResponse.SC_NOT_FOUND,
-                    "Không tìm thấy hồ sơ.");
+                    "Không tìm thấy thông tin tài khoản.");
             return;
         }
 
-        writeProfileJson(response, profile);
+        String avatarUrl = null;
+        Account account = accountDAO.getAccountById(userId);
+        if (account != null) {
+            avatarUrl = account.getAvatarUrl();
+        }
+        if (avatarUrl == null) {
+            avatarUrl = profile.getAvatar();
+        }
+
+        writeProfileJson(response, profile, avatarUrl);
     }
 
     private void handleUpdateProfile(
@@ -82,7 +97,7 @@ public class ProfileServlet extends HttpServlet {
             writeErrorJson(
                     response,
                     HttpServletResponse.SC_UNAUTHORIZED,
-                    "Vui lòng đăng nhập.");
+                    "Phiên đăng nhập đã hết hạn hoặc chưa đăng nhập.");
             return;
         }
 
@@ -103,6 +118,14 @@ public class ProfileServlet extends HttpServlet {
                     HttpServletResponse.SC_BAD_REQUEST,
                     errorMessage);
             return;
+        }
+
+        Account account = accountDAO.getAccountById(userId);
+        if (account != null) {
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.setAttribute("currentUser", account);
+            }
         }
 
         writeUpdateSuccessJson(response);
@@ -126,9 +149,17 @@ public class ProfileServlet extends HttpServlet {
                 .replace("\t", "\\t");
     }
 
+    private String toJsonString(String val) {
+        if (val == null) {
+            return "null";
+        }
+        return "\"" + escapeJson(val) + "\"";
+    }
+
     private void writeProfileJson(
             HttpServletResponse response,
-            UserProfile profile) throws IOException {
+            UserProfile profile,
+            String avatarUrl) throws IOException {
 
         prepareJsonResponse(response);
 
@@ -137,41 +168,30 @@ public class ProfileServlet extends HttpServlet {
         json.append("{");
         json.append("\"profile\":{");
 
-        json.append("\"fullName\":\"")
-                .append(escapeJson(profile.getFullName()))
-                .append("\",");
-
-        json.append("\"email\":\"")
-                .append(escapeJson(profile.getEmail()))
-                .append("\",");
-
-        json.append("\"phone\":\"")
-                .append(escapeJson(profile.getPhone()))
-                .append("\",");
-
-        json.append("\"emailSignature\":\"")
-                .append(escapeJson(profile.getEmailSignature()))
-                .append("\",");
-
-        json.append("\"team\":\"")
-                .append(escapeJson(profile.getTeam()))
-                .append("\",");
+        json.append("\"fullName\":").append(toJsonString(profile.getFullName())).append(",");
+        json.append("\"email\":").append(toJsonString(profile.getEmail())).append(",");
+        json.append("\"phone\":").append(toJsonString(profile.getPhone())).append(",");
+        json.append("\"emailSignature\":").append(toJsonString(profile.getEmailSignature())).append(",");
+        json.append("\"department\":").append(toJsonString(profile.getTeam())).append(",");
+        json.append("\"team\":").append(toJsonString(profile.getTeam())).append(",");
+        json.append("\"avatarUrl\":").append(toJsonString(avatarUrl)).append(",");
 
         json.append("\"roles\":[");
-
         if (profile.getRoles() != null) {
             for (int i = 0; i < profile.getRoles().size(); i++) {
                 if (i > 0) {
                     json.append(",");
                 }
-
-                json.append("\"")
-                        .append(escapeJson(profile.getRoles().get(i)))
-                        .append("\"");
+                json.append(toJsonString(profile.getRoles().get(i)));
             }
         }
+        json.append("],");
 
-        json.append("]");
+        String mainRole = (profile.getRoles() != null && !profile.getRoles().isEmpty())
+                ? profile.getRoles().get(0)
+                : "";
+        json.append("\"role\":").append(toJsonString(mainRole));
+
         json.append("}");
         json.append("}");
 
@@ -195,7 +215,9 @@ public class ProfileServlet extends HttpServlet {
         prepareJsonResponse(response);
         response.setStatus(status);
 
-        String json = "{\"success\":false,\"error\":\""
+        String json = "{\"success\":false,\"message\":\""
+                + escapeJson(message)
+                + "\",\"error\":\""
                 + escapeJson(message)
                 + "\"}";
 
@@ -213,6 +235,12 @@ public class ProfileServlet extends HttpServlet {
 
         if (userId instanceof Integer) {
             return (Integer) userId;
+        }
+
+        Object currentUser = session.getAttribute("currentUser");
+
+        if (currentUser instanceof Account) {
+            return ((Account) currentUser).getAccountId();
         }
 
         return null;

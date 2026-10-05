@@ -106,4 +106,29 @@ public class OpportunityDAO {
         }
         return null;
     }
+
+    public boolean updateTargetAmount(int opportunityId, double targetAmount, int performedBy) {
+        Opportunity oldObj = findById(opportunityId);
+        String sql = "UPDATE opportunities SET amount = ? WHERE opportunity_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, targetAmount);
+            ps.setInt(2, opportunityId);
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) {
+                com.crm.model.AuditLog log = new com.crm.model.AuditLog();
+                log.setAction("TARGET_UPDATE");
+                log.setUserId(performedBy);
+                log.setTargetUserId(opportunityId);
+                log.setDetails("Cập nhật chỉ tiêu / doanh số cơ hội ID " + opportunityId);
+                log.setOldValue("Amount: " + (oldObj != null ? oldObj.getAmount() : 0));
+                log.setNewValue("Amount: " + targetAmount);
+                new com.crm.dao.AuditLogDAO().insertLog(log);
+            }
+            return ok;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

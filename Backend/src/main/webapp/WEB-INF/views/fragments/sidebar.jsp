@@ -10,17 +10,51 @@
             ? sessionRoleIds
             : java.util.Collections.singletonList(sessionRoleId != null ? sessionRoleId : 0);
     List<MenuItem> menuItems = permissionService.getMenuByRoles(effectiveRoleIds);
-    String currentUri = request.getRequestURI();
+    String forwardUri = (String) request.getAttribute("jakarta.servlet.forward.request_uri");
+    if (forwardUri == null) {
+        forwardUri = (String) request.getAttribute("javax.servlet.forward.request_uri");
+    }
+    String currentUri = (forwardUri != null) ? forwardUri : request.getRequestURI();
+    String contextPath = request.getContextPath();
+    String relativePath = (contextPath != null && !contextPath.isEmpty() && currentUri.startsWith(contextPath))
+            ? currentUri.substring(contextPath.length())
+            : currentUri;
+
+    boolean isDashboardActive = relativePath.equals("/") || relativePath.equals("") || relativePath.equals("/dashboard") || relativePath.startsWith("/dashboard/");
 %>
 <aside class="sidebar" id="app-sidebar">
     <nav aria-label="Điều hướng chính">
         <div class="sidebar-section">
-            <a class="nav-item" href="${pageContext.request.contextPath}/">
+            <a class="nav-item <%= isDashboardActive ? "active" : "" %>" href="${pageContext.request.contextPath}/">
                 <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
                 <span>Dashboard</span>
             </a>
             <% for (MenuItem item : menuItems) { 
-                boolean isActive = currentUri.startsWith(request.getContextPath() + item.getUrl());
+                String itemUrl = item.getUrl();
+                boolean isActive = false;
+                if (!isDashboardActive && itemUrl != null) {
+                    if (itemUrl.startsWith("/customers") && relativePath.startsWith("/customers")) {
+                        isActive = true;
+                    } else if ((itemUrl.startsWith("/deals") || itemUrl.startsWith("/opportunities")) && (relativePath.startsWith("/deals") || relativePath.startsWith("/opportunities"))) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/activities") && relativePath.startsWith("/activities")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/quotes") && relativePath.startsWith("/quotes")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/accounts") && relativePath.startsWith("/accounts")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/audit") && relativePath.startsWith("/audit")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/products") && relativePath.startsWith("/products")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/categories") && relativePath.startsWith("/categories")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/organization") && relativePath.startsWith("/organization")) {
+                        isActive = true;
+                    } else if (itemUrl.length() > 1 && relativePath.startsWith(itemUrl)) {
+                        isActive = true;
+                    }
+                }
             %>
                 <a class="nav-item <%= isActive ? "active" : "" %>" href="${pageContext.request.contextPath}<%= item.getUrl() %>">
                     <span class="nav-icon" aria-hidden="true"><i class="fa-solid <%= item.getIcon() %>"></i></span>
@@ -32,7 +66,7 @@
             <% 
                boolean isAccountManager = permissionService.hasPermissionForRoles(effectiveRoleIds, "USER_VIEW");
                if (isAccountManager && menuItems.stream().noneMatch(m -> m.getUrl().contains("/accounts"))) { 
-                   boolean isAccActive = currentUri.startsWith(request.getContextPath() + "/accounts");
+                   boolean isAccActive = !isDashboardActive && relativePath.startsWith("/accounts");
             %>
                 <a class="nav-item <%= isAccActive ? "active" : "" %>" href="${pageContext.request.contextPath}/accounts/list">
                     <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-user-cog"></i></span>

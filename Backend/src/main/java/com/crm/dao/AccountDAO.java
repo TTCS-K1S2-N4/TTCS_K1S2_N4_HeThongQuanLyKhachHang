@@ -86,7 +86,37 @@ public class AccountDAO {
         try {
             acc.setCreatedAt(rs.getTimestamp("created_at"));
         } catch (SQLException ignored) {}
+        try {
+            acc.setAvatarUrl(rs.getString("avatar_url"));
+        } catch (SQLException ignored) {}
         return acc;
+    }
+
+    public boolean updateAvatarUrl(int accountId, String avatarUrl) {
+        String sql = "UPDATE users SET avatar_url = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, avatarUrl);
+            ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateAccountInfo(int accountId, String fullName, String phone) {
+        String sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, fullName);
+            ps.setString(2, phone);
+            ps.setInt(3, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean isEmailExists(String email, int excludeAccountId) {
@@ -145,6 +175,10 @@ public class AccountDAO {
     }
 
     public boolean updateAccount(int accountId, String fullName, String phone, Integer teamId, java.util.List<Integer> roleIds) {
+        return updateAccount(accountId, fullName, phone, teamId, roleIds, null);
+    }
+
+    public boolean updateAccount(int accountId, String fullName, String phone, Integer teamId, java.util.List<Integer> roleIds, com.crm.model.AuditLog auditLog) {
         String sql = "UPDATE users SET full_name = ?, phone = ?, team_id = ? WHERE user_id = ?";
         Connection conn = null;
         try {
@@ -171,6 +205,9 @@ public class AccountDAO {
                     }
                     ips.executeBatch();
                 }
+            }
+            if (affectedRows > 0 && auditLog != null) {
+                new AuditLogDAO().insertLog(conn, auditLog);
             }
             conn.commit();
             return affectedRows > 0;
@@ -389,6 +426,10 @@ public class AccountDAO {
     }
 
     public boolean updateRoleAndTeam(int accountId, List<Integer> roleIds, Integer teamId) {
+        return updateRoleAndTeam(accountId, roleIds, teamId, null);
+    }
+
+    public boolean updateRoleAndTeam(int accountId, List<Integer> roleIds, Integer teamId, com.crm.model.AuditLog auditLog) {
         if (roleIds == null || roleIds.isEmpty()) return false;
         String updateTeamSql = "UPDATE users SET team_id = ? WHERE user_id = ?";
         String deleteRoleSql = "DELETE FROM user_roles WHERE user_id = ?";
@@ -419,6 +460,10 @@ public class AccountDAO {
                     ps3.addBatch();
                 }
                 ps3.executeBatch();
+            }
+
+            if (auditLog != null) {
+                new AuditLogDAO().insertLog(conn, auditLog);
             }
 
             conn.commit();
@@ -599,12 +644,14 @@ public class AccountDAO {
                 }
             }
 
-            String logSql = "INSERT INTO audit_logs (action_type, performed_by, target_user_id, description) VALUES (?, ?, ?, ?)";
+            String logSql = "INSERT INTO audit_logs (action_type, performed_by, target_user_id, description, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(logSql)) {
-                ps.setString(1, "ACCOUNT_LOCK");
+                ps.setString(1, "DATA_OWNERSHIP_TRANSFER");
                 ps.setInt(2, performedByAdminId);
                 ps.setInt(3, lockedAccountId);
                 ps.setString(4, "Khóa tài khoản " + lockedAccountId + ", bàn giao dữ liệu cho " + receiverAccountId + ". Lý do: " + reason);
+                ps.setString(5, "Owner: User #" + lockedAccountId);
+                ps.setString(6, "Owner: User #" + receiverAccountId);
                 ps.executeUpdate();
             }
 

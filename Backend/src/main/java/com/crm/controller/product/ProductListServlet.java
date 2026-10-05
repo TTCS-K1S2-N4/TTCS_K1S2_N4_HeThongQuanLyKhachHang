@@ -3,6 +3,7 @@ package com.crm.controller.product;
 import com.crm.model.Account;
 import com.crm.model.Product;
 import com.crm.service.ProductService;
+import com.crm.service.PermissionService;
 import com.crm.util.Constants;
 
 import jakarta.servlet.ServletException;
@@ -75,12 +76,31 @@ public class ProductListServlet extends HttpServlet {
             } catch (NumberFormatException ignored) {}
         }
 
+        PermissionService permissionService = new PermissionService();
+        java.util.List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
+        if (roleIds == null || roleIds.isEmpty()) {
+            Integer roleId = session != null ? (Integer) session.getAttribute("roleId") : null;
+            if (roleId == null && currentUser != null) {
+                roleId = currentUser.getRoleId();
+            }
+            if (roleId != null) {
+                roleIds = java.util.Collections.singletonList(roleId);
+            }
+        }
+        boolean canViewCost = permissionService.canViewProductCost(roleIds);
+
         List<Product> products = productService.getProducts(keyword, productType, status, page, pageSize, currentUser);
+        if (products != null && !canViewCost) {
+            for (Product p : products) {
+                p.setCostPrice(null);
+            }
+        }
         int totalItems = productService.getTotalCount(keyword, productType, status);
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
         if (totalPages < 1) totalPages = 1;
 
         req.setAttribute("products", products);
+        req.setAttribute("canAccessCostPrice", canViewCost);
         req.setAttribute("totalItems", totalItems);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("currentPage", page);
@@ -109,7 +129,7 @@ public class ProductListServlet extends HttpServlet {
                 json.append("\"unit\":\"").append(escapeJson(p.getUnit())).append("\",");
                 json.append("\"listPrice\":").append(p.getListPrice() != null ? p.getListPrice() : 0).append(",");
                 json.append("\"floorPrice\":").append(p.getFloorPrice() != null ? p.getFloorPrice() : 0).append(",");
-                if (p.getCostPrice() != null) {
+                if (canViewCost && p.getCostPrice() != null) {
                     json.append("\"costPrice\":").append(p.getCostPrice()).append(",");
                 }
                 json.append("\"status\":\"").append(escapeJson(p.getStatus())).append("\"");
