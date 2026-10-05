@@ -29,8 +29,13 @@
                 <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
                 <span>Dashboard</span>
             </a>
-            <% for (MenuItem item : menuItems) { 
+            <% 
+               java.util.Set<String> seenUrls = new java.util.HashSet<>();
+               for (MenuItem item : menuItems) { 
                 String itemUrl = item.getUrl();
+                if (itemUrl != null && !seenUrls.add(itemUrl)) {
+                    continue;
+                }
                 boolean isActive = false;
                 if (!isDashboardActive && itemUrl != null) {
                     if (itemUrl.startsWith("/customers") && relativePath.startsWith("/customers")) {
