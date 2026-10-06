@@ -55,6 +55,10 @@ public class AuthorizationFilter implements Filter {
 
         // Khai báo các URL pattern bảo vệ trong module BE3
         protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import/execute", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import/preview", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import/template", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/delete", "ACCOUNT_DELETE");
         protectedUrlMap.put("/customers/export", "ACCOUNT_EXPORT");

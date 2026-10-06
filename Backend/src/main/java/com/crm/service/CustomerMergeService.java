@@ -14,13 +14,14 @@ public class CustomerMergeService {
         List<Customer> duplicates = new ArrayList<>();
         // Basic rule: find by same phone or exact name
         String sql = "SELECT * FROM customers WHERE phone IN " +
-                     "(SELECT phone FROM customers WHERE phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) " +
-                     "OR customer_name IN " +
-                     "(SELECT customer_name FROM customers GROUP BY customer_name HAVING COUNT(*) > 1) " +
-                     "ORDER BY customer_name, phone";
-                     
+                "(SELECT phone FROM customers WHERE phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) "
+                +
+                "OR customer_name IN " +
+                "(SELECT customer_name FROM customers GROUP BY customer_name HAVING COUNT(*) > 1) " +
+                "ORDER BY customer_name, phone";
+
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Customer c = new Customer();
@@ -38,7 +39,8 @@ public class CustomerMergeService {
     }
 
     public boolean mergeCustomers(int primaryId, int secondaryId, int mergedBy) {
-        if (primaryId == secondaryId) return false;
+        if (primaryId == secondaryId)
+            return false;
 
         Connection conn = null;
         try {
@@ -91,7 +93,11 @@ public class CustomerMergeService {
         } catch (SQLException e) {
             e.printStackTrace();
             if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
             return false;
         } finally {
@@ -99,7 +105,9 @@ public class CustomerMergeService {
                 try {
                     conn.setAutoCommit(true);
                     conn.close();
-                } catch (SQLException ex) { ex.printStackTrace(); }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
             }
         }
     }
