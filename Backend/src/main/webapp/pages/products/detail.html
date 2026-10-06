@@ -31,7 +31,7 @@
                             <tr><th>Đơn vị tính:</th><td id="d-unit"></td></tr>
                             <tr><th>Giá niêm yết:</th><td id="d-listPrice"></td></tr>
                             <tr><th>Giá sàn:</th><td id="d-floorPrice"></td></tr>
-                            <tr><th>Giá vốn:</th><td id="d-costPrice"></td></tr>
+                            <tr id="costPriceRow"><th>Giá vốn:</th><td id="d-costPrice"></td></tr>
                             <tr><th>Trạng thái:</th><td id="d-status"></td></tr>
                         </tbody>
                     </table>
@@ -48,28 +48,39 @@
         if(productId) {
             document.getElementById('editLink').href = `edit.html?productId=${productId}`;
             
-            fetch(`/products/detail?productId=${productId}`)
+            fetch(`../../products/detail?productId=${productId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
                 .then(res => {
-                    if(!res.ok) throw new Error('API Error');
+                    if(!res.ok) throw new Error('API Error ' + res.status);
                     return res.json();
                 })
                 .then(data => {
                     if(data.product) {
-                        document.getElementById('d-productCode').textContent = data.product.productCode || '';
-                        document.getElementById('d-productName').textContent = data.product.productName || '';
-                        document.getElementById('d-productType').textContent = data.product.productType || '';
-                        document.getElementById('d-unit').textContent = data.product.unit || '';
-                        document.getElementById('d-listPrice').textContent = data.product.listPrice || '';
-                        document.getElementById('d-floorPrice').textContent = data.product.floorPrice || '';
-                        document.getElementById('d-costPrice').textContent = data.product.costPrice || '';
-                        document.getElementById('d-status').textContent = data.product.status || '';
+                        const p = data.product;
+                        document.getElementById('d-productCode').textContent = p.productCode || '';
+                        document.getElementById('d-productName').textContent = p.productName || '';
+                        document.getElementById('d-productType').textContent = p.productType === 'SUBSCRIPTION' ? 'Dịch vụ (Subscription)' : 'Sản phẩm (One-time)';
+                        document.getElementById('d-unit').textContent = p.unit || '';
+                        document.getElementById('d-listPrice').textContent = p.listPrice != null ? Number(p.listPrice).toLocaleString('vi-VN') + ' VNĐ' : '0 VNĐ';
+                        document.getElementById('d-floorPrice').textContent = p.floorPrice != null ? Number(p.floorPrice).toLocaleString('vi-VN') + ' VNĐ' : '0 VNĐ';
+                        
+                        const costRow = document.getElementById('costPriceRow');
+                        if(data.canAccessCostPrice && p.costPrice != null) {
+                            document.getElementById('d-costPrice').textContent = Number(p.costPrice).toLocaleString('vi-VN') + ' VNĐ';
+                            costRow.style.display = '';
+                        } else {
+                            costRow.style.display = 'none';
+                        }
+                        
+                        document.getElementById('d-status').textContent = p.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động';
                     } else {
                         throw new Error('Data format incorrect');
                     }
                 })
                 .catch(err => {
                     const msg = document.getElementById('detailMessage');
-                    msg.textContent = 'Không thể tải chi tiết sản phẩm.';
+                    msg.textContent = 'Không thể tải chi tiết sản phẩm: ' + err.message;
                     msg.style.display = 'block';
                 });
         }
