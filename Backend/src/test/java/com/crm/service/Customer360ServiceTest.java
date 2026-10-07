@@ -10,9 +10,7 @@ import com.crm.model.Customer;
 import com.crm.model.Opportunity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -79,7 +77,7 @@ public class Customer360ServiceTest {
 
         when(customerDAO.findById(101)).thenReturn(c);
         doThrow(new AuthorizationException("Bạn không có quyền xem dữ liệu này."))
-                .when(permissionService).validateDataAccessForRoles(eq(4), (List<Integer>) anyList(), eq("ACCOUNT"), eq(5));
+                .when(permissionService).validateDataAccessForRoles(eq(4), org.mockito.ArgumentMatchers.<List<Integer>>any(), eq("ACCOUNT"), eq(5));
 
         assertThrows(AuthorizationException.class, () -> {
             customer360Service.getCustomer360(101, 4, Collections.singletonList(1));
