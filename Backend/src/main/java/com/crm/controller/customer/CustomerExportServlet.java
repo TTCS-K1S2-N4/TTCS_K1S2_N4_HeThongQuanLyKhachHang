@@ -49,7 +49,7 @@ public class CustomerExportServlet extends HttpServlet {
         PrintWriter writer = resp.getWriter();
         writer.write("\uFEFF"); // UTF-8 BOM
 
-        StringBuilder headerSb = new StringBuilder("ID,Tên khách hàng,Số điện thoại,ID Người sở hữu,Ngày tạo");
+        StringBuilder headerSb = new StringBuilder("ID,Tên khách hàng,Mã số thuế,Số điện thoại,Ngành nghề,Quy mô,Website,Địa chỉ,Trạng thái,ID Người sở hữu,Ngày tạo");
         for (com.crm.model.CustomFieldDefinition def : customFieldDefs) {
             headerSb.append(",").append(escapeCsvField(def.getFieldLabel()));
         }
@@ -59,7 +59,13 @@ public class CustomerExportServlet extends HttpServlet {
             StringBuilder sb = new StringBuilder();
             sb.append(escapeCsvField(c.getCustomerid())).append(",");
             sb.append(escapeCsvField(c.getCustomername())).append(",");
+            sb.append(escapeCsvField(c.getTaxCode())).append(",");
             sb.append(escapeCsvField(c.getPhone())).append(",");
+            sb.append(escapeCsvField(c.getIndustry())).append(",");
+            sb.append(escapeCsvField(c.getSize())).append(",");
+            sb.append(escapeCsvField(c.getWebsite())).append(",");
+            sb.append(escapeCsvField(c.getAddress())).append(",");
+            sb.append(escapeCsvField(c.getStatus())).append(",");
             sb.append(escapeCsvField(c.getOwnerId())).append(",");
             sb.append(escapeCsvField(c.getCreatedAt()));
 

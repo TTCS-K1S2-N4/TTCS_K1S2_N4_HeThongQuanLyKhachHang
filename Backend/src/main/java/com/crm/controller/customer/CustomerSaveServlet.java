@@ -46,14 +46,62 @@ public class CustomerSaveServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         String idStr = req.getParameter("customerId");
+        if (idStr == null || idStr.trim().isEmpty()) {
+            idStr = req.getParameter("id");
+        }
+
         String customerName = req.getParameter("customerName");
         String phone = req.getParameter("phone");
+        String taxCode = req.getParameter("taxCode");
+        if (taxCode == null || taxCode.trim().isEmpty()) {
+            taxCode = req.getParameter("tax_code");
+        }
+        String industry = req.getParameter("industry");
+        String size = req.getParameter("size");
+        String website = req.getParameter("website");
+        String address = req.getParameter("address");
+        String status = req.getParameter("status");
         String ownerIdStr = req.getParameter("ownerId");
 
         if (customerName == null || customerName.trim().isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"error\":\"Tên khách hàng không được để trống\"}");
             return;
+        }
+
+        Integer customerId = null;
+        boolean isEdit = (idStr != null && !idStr.trim().isEmpty());
+        if (isEdit) {
+            try {
+                customerId = Integer.parseInt(idStr.trim());
+            } catch (NumberFormatException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.print("{\"error\":\"ID khách hàng không hợp lệ\"}");
+                return;
+            }
+        }
+
+        // Validate taxCode (UNIQUE)
+        if (taxCode != null && !taxCode.trim().isEmpty()) {
+            taxCode = taxCode.trim();
+            if (customerDAO.isTaxCodeExists(taxCode, customerId)) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.print("{\"error\":\"Mã số thuế đã tồn tại trong hệ thống\"}");
+                return;
+            }
+        }
+
+        // Validate status (4 valid statuses: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác)
+        List<String> validStatuses = List.of("Tiềm năng", "Đang giao dịch", "Khách hàng", "Ngừng hợp tác");
+        if (status == null || status.trim().isEmpty()) {
+            status = "Tiềm năng";
+        } else {
+            status = status.trim();
+            if (!validStatuses.contains(status)) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.print("{\"error\":\"Trạng thái khách hàng không hợp lệ. Các trạng thái hợp lệ: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác\"}");
+                return;
+            }
         }
 
         Integer ownerId = (Integer) req.getSession().getAttribute("userId");
@@ -89,13 +137,16 @@ public class CustomerSaveServlet extends HttpServlet {
         Customer customer = new Customer();
         customer.setCustomerName(customerName.trim());
         customer.setPhone(phone != null ? phone.trim() : "");
+        customer.setTaxCode(taxCode != null && !taxCode.trim().isEmpty() ? taxCode.trim() : null);
+        customer.setIndustry(industry != null ? industry.trim() : "");
+        customer.setSize(size != null ? size.trim() : "");
+        customer.setWebsite(website != null ? website.trim() : "");
+        customer.setAddress(address != null ? address.trim() : "");
+        customer.setStatus(status);
         customer.setOwnerId(ownerId != null ? ownerId : 1);
 
-        boolean isEdit = (idStr != null && !idStr.trim().isEmpty());
         boolean success;
-
         if (isEdit) {
-            int customerId = Integer.parseInt(idStr.trim());
             customer.setCustomerId(customerId);
             success = customerDAO.update(customer);
         } else {

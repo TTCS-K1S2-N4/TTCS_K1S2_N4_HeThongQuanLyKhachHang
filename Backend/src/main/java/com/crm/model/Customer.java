@@ -11,6 +11,8 @@ public class Customer {
     private String status;
     private String industry;
     private String companySize;
+    private String website;
+    private String address;
     private String region;
     private int ownerId;
     private Timestamp createdAt;
@@ -28,6 +30,8 @@ public class Customer {
 
     public String getTaxCode() { return taxCode; }
     public void setTaxCode(String taxCode) { this.taxCode = taxCode; }
+    public String getTaxcode() { return taxCode; }
+    public void setTaxcode(String taxCode) { this.taxCode = taxCode; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
@@ -46,6 +50,12 @@ public class Customer {
     public String getSize() { return companySize; }
     public void setSize(String size) { this.companySize = size; }
 
+    public String getWebsite() { return website; }
+    public void setWebsite(String website) { this.website = website; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
 
@@ -58,4 +68,3 @@ public class Customer {
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
 }
-

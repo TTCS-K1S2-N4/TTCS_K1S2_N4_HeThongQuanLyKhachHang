@@ -23,6 +23,9 @@ public class CustomerDAO {
                 "ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE', " +
                 "ADD COLUMN IF NOT EXISTS industry VARCHAR(100), " +
                 "ADD COLUMN IF NOT EXISTS company_size VARCHAR(50), " +
+                "ADD COLUMN IF NOT EXISTS size VARCHAR(50), " +
+                "ADD COLUMN IF NOT EXISTS website VARCHAR(255), " +
+                "ADD COLUMN IF NOT EXISTS address TEXT, " +
                 "ADD COLUMN IF NOT EXISTS region VARCHAR(100), " +
                 "ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;";
 
@@ -63,15 +66,21 @@ public class CustomerDAO {
         obj.setCustomerid(rs.getInt("customer_id"));
         obj.setCustomername(rs.getString("customer_name"));
         obj.setPhone(rs.getString("phone"));
-        obj.setOwnerId(rs.getInt("owner_id"));
-        obj.setCreatedAt(rs.getTimestamp("created_at"));
 
         try { obj.setTaxCode(rs.getString("tax_code")); } catch (SQLException ignored) {}
         try { obj.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
         try { obj.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
         try { obj.setIndustry(rs.getString("industry")); } catch (SQLException ignored) {}
         try { obj.setCompanySize(rs.getString("company_size")); } catch (SQLException ignored) {}
+        try {
+            String sz = rs.getString("size");
+            if (sz != null && !sz.isEmpty()) obj.setSize(sz);
+        } catch (SQLException ignored) {}
+        try { obj.setWebsite(rs.getString("website")); } catch (SQLException ignored) {}
+        try { obj.setAddress(rs.getString("address")); } catch (SQLException ignored) {}
         try { obj.setRegion(rs.getString("region")); } catch (SQLException ignored) {}
+        obj.setOwnerId(rs.getInt("owner_id"));
+        obj.setCreatedAt(rs.getTimestamp("created_at"));
         try { obj.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
 
         return obj;
@@ -306,10 +315,38 @@ public class CustomerDAO {
         return list;
     }
 
+    public boolean isTaxCodeExists(String taxCode, Integer excludeCustomerId) {
+        if (taxCode == null || taxCode.trim().isEmpty()) {
+            return false;
+        }
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM customers WHERE LOWER(TRIM(tax_code)) = LOWER(TRIM(?))");
+        if (excludeCustomerId != null && excludeCustomerId > 0) {
+            sql.append(" AND customer_id != ?");
+        }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            ps.setString(1, taxCode.trim());
+            if (excludeCustomerId != null && excludeCustomerId > 0) {
+                ps.setInt(2, excludeCustomerId);
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public Customer findDuplicateCustomer(String taxCode, String phone, String customerName) {
         List<String> conditions = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
+        if (taxCode != null && !taxCode.trim().isEmpty()) {
+            conditions.add("tax_code = ?");
+            params.add(taxCode.trim());
+        }
         if (phone != null && !phone.trim().isEmpty()) {
             conditions.add("phone = ?");
             params.add(phone.trim());
@@ -340,12 +377,18 @@ public class CustomerDAO {
     }
 
     public boolean insert(Customer customer) {
-        String sql = "INSERT INTO customers (customer_name, phone, owner_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO customers (customer_name, phone, tax_code, industry, size, website, address, status, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
-            ps.setInt(3, customer.getOwnerId());
+            ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
+            ps.setString(4, customer.getIndustry());
+            ps.setString(5, customer.getSize());
+            ps.setString(6, customer.getWebsite());
+            ps.setString(7, customer.getAddress());
+            ps.setString(8, (customer.getStatus() != null && !customer.getStatus().trim().isEmpty()) ? customer.getStatus().trim() : "ACTIVE");
+            ps.setInt(9, customer.getOwnerId());
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -366,13 +409,19 @@ public class CustomerDAO {
     }
 
     public boolean update(Customer customer) {
-        String sql = "UPDATE customers SET customer_name = ?, phone = ?, owner_id = ? WHERE customer_id = ?";
+        String sql = "UPDATE customers SET customer_name = ?, phone = ?, tax_code = ?, industry = ?, size = ?, website = ?, address = ?, status = ?, owner_id = ? WHERE customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
-            ps.setInt(3, customer.getOwnerId());
-            ps.setInt(4, customer.getCustomerId());
+            ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
+            ps.setString(4, customer.getIndustry());
+            ps.setString(5, customer.getSize());
+            ps.setString(6, customer.getWebsite());
+            ps.setString(7, customer.getAddress());
+            ps.setString(8, (customer.getStatus() != null && !customer.getStatus().trim().isEmpty()) ? customer.getStatus().trim() : "ACTIVE");
+            ps.setInt(9, customer.getOwnerId());
+            ps.setInt(10, customer.getCustomerId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
