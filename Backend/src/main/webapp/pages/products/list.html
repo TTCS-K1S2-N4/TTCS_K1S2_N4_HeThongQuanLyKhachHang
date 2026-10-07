@@ -72,28 +72,32 @@
             const params = new URLSearchParams(formData).toString();
             const messageDiv = document.getElementById('listMessage');
             
-            fetch('/products?' + params)
+            fetch('../../products?' + params, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
                 .then(res => {
-                    if(!res.ok) throw new Error('API Error');
+                    if(!res.ok) throw new Error('API Error ' + res.status);
                     return res.json();
                 })
                 .then(data => {
                     const tbody = document.querySelector('#productTable tbody');
                     tbody.innerHTML = '';
-                    if(data && data.products) {
+                    if(data && data.products && data.products.length > 0) {
                         data.products.forEach(p => {
                             const tr = document.createElement('tr');
+                            const statusLabel = p.status === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động';
+                            const formattedPrice = p.listPrice != null ? Number(p.listPrice).toLocaleString('vi-VN') + ' VNĐ' : '0 VNĐ';
                             tr.innerHTML = `
                                 <td>${p.productCode}</td>
-                                <td>${p.productName}</td>
-                                <td>${p.productType}</td>
+                                <td><strong>${p.productName}</strong></td>
+                                <td>${p.productType === 'SUBSCRIPTION' ? 'Dịch vụ' : 'Sản phẩm'}</td>
                                 <td>${p.unit}</td>
-                                <td>${p.listPrice}</td>
+                                <td>${formattedPrice}</td>
                                 <td>
-                                    <button class="toggle-status badge ${p.status === 'ACTIVE' ? 'badge-success' : 'badge-warning'}" 
+                                    <button type="button" class="toggle-status badge ${p.status === 'ACTIVE' ? 'badge-success' : 'badge-warning'}" 
                                             data-id="${p.productId}" 
                                             data-status="${p.status}">
-                                        ${p.status}
+                                        ${statusLabel}
                                     </button>
                                 </td>
                                 <td>
@@ -115,27 +119,66 @@
                                 bodyData.append('productId', id);
                                 bodyData.append('status', newStatus);
                                 
-                                fetch('/products/status', {
+                                fetch('../../products/status', {
                                     method: 'POST',
-                                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
                                     body: bodyData.toString()
                                 })
                                 .then(res => res.json())
                                 .then(resData => {
                                     if(resData.success) {
                                         this.setAttribute('data-status', newStatus);
-                                        this.textContent = newStatus;
+                                        this.textContent = newStatus === 'ACTIVE' ? 'Hoạt động' : 'Ngừng hoạt động';
                                         this.className = `toggle-status badge ${newStatus === 'ACTIVE' ? 'badge-success' : 'badge-warning'}`;
                                     } else {
-                                        alert('Lỗi cập nhật trạng thái');
+                                        alert('Lỗi cập nhật trạng thái: ' + (resData.message || resData.errors));
                                     }
-                                }).catch(() => alert('Lỗi hệ thống'));
+                                }).catch(() => alert('Lỗi hệ thống khi cập nhật trạng thái'));
                             });
                         });
+
+                        // Delete handler
+                        document.querySelectorAll('.delete-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const id = this.getAttribute('data-id');
+                                const name = this.getAttribute('data-name');
+                                if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${name}"?`)) return;
+
+                                const bodyData = new URLSearchParams();
+                                bodyData.append('productId', id);
+
+                                fetch('../../products/delete', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: bodyData.toString()
+                                })
+                                .then(res => res.json())
+                                .then(resData => {
+                                    if(resData.success) {
+                                        alert('Xóa sản phẩm thành công!');
+                                        loadProducts();
+                                    } else {
+                                        alert('Không thể xóa sản phẩm: ' + (resData.message || resData.errors));
+                                    }
+                                })
+                                .catch(err => alert('Lỗi hệ thống khi xóa sản phẩm'));
+                            });
+                        });
+                    } else {
+                        const tbody = document.querySelector('#productTable tbody');
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Chưa có sản phẩm nào.</td></tr>';
                     }
                 })
                 .catch(err => {
-                    messageDiv.textContent = 'Không thể tải danh sách sản phẩm.';
+                    messageDiv.textContent = 'Không thể tải danh sách sản phẩm: ' + err.message;
                     messageDiv.className = 'toast-message error';
                     messageDiv.style.display = 'block';
                 });
@@ -147,8 +190,7 @@
             loadProducts();
         });
         
-        // Initial load simulation (if API was real)
-        // loadProducts();
+        document.addEventListener('DOMContentLoaded', loadProducts);
     </script>
 </body>
 </html>

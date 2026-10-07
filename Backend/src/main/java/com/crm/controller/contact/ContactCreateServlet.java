@@ -1,9 +1,9 @@
 package com.crm.controller.contact;
 
-import com.crm.dao.CustomerDAO;
 import com.crm.dto.ContactRequest;
 import com.crm.exception.AuthorizationException;
-import com.crm.model.Customer;
+import com.crm.exception.ValidationException;
+import com.crm.model.Contact;
 import com.crm.service.ContactService;
 import com.crm.util.ValidationUtil;
 
@@ -14,110 +14,203 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+/**
+ * Controller xử lý tạo mới Người liên hệ (Contact).
+ * Endpoints: GET /contacts/create?customerId={id}, POST /contacts/create
+ * Task S30-03 / S3-02.
+ */
 @WebServlet("/contacts/create")
 public class ContactCreateServlet extends HttpServlet {
-    private final ContactService contactService = new ContactService();
-    private final CustomerDAO customerDAO = new CustomerDAO();
+
+    private ContactService contactService = new ContactService();
+
+    public void setContactService(ContactService contactService) {
+        if (contactService != null) {
+            this.contactService = contactService;
+        }
+    }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(false);
-        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
-
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
         if (userId == null) {
-            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            handleUnauthorized(req, resp, "Bạn cần đăng nhập để thực hiện chức năng này.");
             return;
         }
 
         String customerIdStr = req.getParameter("customerId");
         if (customerIdStr == null || customerIdStr.trim().isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/customers");
-            return;
+            customerIdStr = req.getParameter("id");
         }
 
-        try {
-            int customerId = Integer.parseInt(customerIdStr.trim());
-            Customer customer = customerDAO.findById(customerId);
-            if (customer == null) {
-                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Khách hàng không tồn tại.");
-                return;
-            }
-
-            req.setAttribute("customer", customer);
-            req.setAttribute("customerId", customerId);
-            req.getRequestDispatcher("/WEB-INF/views/contacts/create.jsp").forward(req, resp);
-        } catch (NumberFormatException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Mã khách hàng không hợp lệ.");
-        } catch (Exception e) {
-            throw new ServletException("Không thể mở màn hình tạo người liên hệ.", e);
-        }
+        req.setAttribute("customerId", customerIdStr);
+        req.setAttribute("buyingRoles", ContactService.BUYING_ROLES);
+        req.getRequestDispatcher("/WEB-INF/views/contacts/create.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
-        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
-        Integer roleId = session != null ? (Integer) session.getAttribute("roleId") : null;
-        List<Integer> roleIds = ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
-        if (roleIds == null || roleIds.isEmpty()) {
-            roleIds = session != null ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
-        }
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        List<Integer> roleIds = (session != null) ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
+        Integer roleId = (session != null) ? (Integer) session.getAttribute("roleId") : null;
 
         if (userId == null) {
-            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            handleUnauthorized(req, resp, "Bạn cần đăng nhập để thực hiện chức năng này.");
             return;
         }
 
-        String customerIdStr = req.getParameter("customerId");
-        String fullName = req.getParameter("fullName");
-        String title = req.getParameter("title");
-        String email = req.getParameter("email");
-        String phone = req.getParameter("phone");
-        String buyingRole = req.getParameter("buyingRole");
-        String isPrimaryStr = req.getParameter("isPrimary");
+        List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty())
+                ? roleIds
+                : (roleId != null ? Collections.singletonList(roleId) : Collections.emptyList());
 
-        ContactRequest requestDTO = new ContactRequest();
-        try {
-            if (customerIdStr != null && !customerIdStr.trim().isEmpty()) {
-                requestDTO.setCustomerId(Integer.parseInt(customerIdStr.trim()));
-            }
-        } catch (NumberFormatException ignored) {}
-
-        requestDTO.setFullName(fullName);
-        requestDTO.setTitle(title);
-        requestDTO.setEmail(email);
-        requestDTO.setPhone(phone);
-        requestDTO.setBuyingRole(buyingRole);
-        requestDTO.setPrimary("true".equalsIgnoreCase(isPrimaryStr) || "1".equals(isPrimaryStr) || "on".equalsIgnoreCase(isPrimaryStr));
-
-        Map<String, String> errors = new HashMap<>();
+        ContactRequest requestDto = parseContactRequest(req);
 
         try {
-            boolean success = contactService.createContact(requestDTO, userId, roleId != null ? roleId : 0, roleIds, errors);
+            Contact created = contactService.createContact(requestDto, userId, effectiveRoles);
 
-            if (success) {
-                req.getSession().setAttribute("message", "Tạo mới người liên hệ thành công.");
-                resp.sendRedirect(req.getContextPath() + "/contacts?customerId=" + requestDTO.getCustomerId());
+            if (isJsonRequest(req)) {
+                resp.setStatus(HttpServletResponse.SC_CREATED);
+                resp.setContentType("application/json;charset=UTF-8");
+                PrintWriter out = resp.getWriter();
+                out.print("{" +
+                        "\"success\": true," +
+                        "\"message\": \"Tạo người liên hệ thành công.\"," +
+                        "\"contactId\": " + created.getContactId() + "," +
+                        "\"customerId\": " + created.getCustomerId() + "," +
+                        "\"fullName\": \"" + escapeJson(created.getFullName()) + "\"," +
+                        "\"title\": " + (created.getTitle() != null ? "\"" + escapeJson(created.getTitle()) + "\"" : "null") + "," +
+                        "\"email\": " + (created.getEmail() != null ? "\"" + escapeJson(created.getEmail()) + "\"" : "null") + "," +
+                        "\"phone\": " + (created.getPhone() != null ? "\"" + escapeJson(created.getPhone()) + "\"" : "null") + "," +
+                        "\"buyingRole\": \"" + escapeJson(created.getBuyingRole()) + "\"," +
+                        "\"isPrimary\": " + created.isPrimary() +
+                        "}");
+                out.flush();
             } else {
-                req.setAttribute("errors", errors);
-                req.setAttribute("contactRequest", requestDTO);
-                req.setAttribute("customerId", requestDTO.getCustomerId());
-                if (requestDTO.getCustomerId() != null) {
-                    req.setAttribute("customer", customerDAO.findById(requestDTO.getCustomerId()));
-                }
-                req.getRequestDispatcher("/WEB-INF/views/contacts/create.jsp").forward(req, resp);
+                resp.sendRedirect(req.getContextPath() + "/contacts/detail?id=" + created.getContactId());
             }
+        } catch (ValidationException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (AuthorizationException e) {
-            req.setAttribute("errorMessage", e.getMessage());
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+            sendErrorResponse(req, resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         } catch (Exception e) {
-            throw new ServletException("Lỗi khi xử lý tạo người liên hệ.", e);
+            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi máy chủ nội bộ: " + e.getMessage());
         }
+    }
+
+    private ContactRequest parseContactRequest(HttpServletRequest req) throws IOException {
+        ContactRequest dto = new ContactRequest();
+
+        if (req.getContentType() != null && req.getContentType().contains("application/json")) {
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = req.getReader()) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+            }
+            String body = sb.toString();
+            dto.setCustomerId(extractJsonInt(body, "customerId"));
+            dto.setFullName(extractJsonString(body, "fullName"));
+            dto.setTitle(extractJsonString(body, "title"));
+            dto.setEmail(extractJsonString(body, "email"));
+            dto.setPhone(extractJsonString(body, "phone"));
+            dto.setBuyingRole(extractJsonString(body, "buyingRole"));
+            dto.setIsPrimary(extractJsonBoolean(body, "isPrimary"));
+        } else {
+            String cId = req.getParameter("customerId");
+            if (cId != null && !cId.trim().isEmpty()) {
+                try { dto.setCustomerId(Integer.parseInt(cId.trim())); } catch (NumberFormatException ignored) {}
+            }
+            dto.setFullName(req.getParameter("fullName"));
+            dto.setTitle(req.getParameter("title"));
+            dto.setEmail(req.getParameter("email"));
+            dto.setPhone(req.getParameter("phone"));
+            dto.setBuyingRole(req.getParameter("buyingRole"));
+            String primaryStr = req.getParameter("isPrimary");
+            dto.setIsPrimary("true".equalsIgnoreCase(primaryStr) || "1".equals(primaryStr) || "on".equalsIgnoreCase(primaryStr));
+        }
+
+        return dto;
+    }
+
+    private Integer extractJsonInt(String json, String key) {
+        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*(\\d+)");
+        Matcher m = p.matcher(json);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        return null;
+    }
+
+    private String extractJsonString(String json, String key) {
+        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*)\"");
+        Matcher m = p.matcher(json);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    private Boolean extractJsonBoolean(String json, String key) {
+        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(json);
+        if (m.find()) {
+            return Boolean.parseBoolean(m.group(1));
+        }
+        return false;
+    }
+
+    private boolean isJsonRequest(HttpServletRequest req) {
+        String accept = req.getHeader("Accept");
+        String requestedWith = req.getHeader("X-Requested-With");
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith) || (accept != null && accept.contains("application/json"));
+    }
+
+    private void handleUnauthorized(HttpServletRequest req, HttpServletResponse resp, String message) throws IOException {
+        if (isJsonRequest(req)) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            out.print("{\"status\": 401, \"message\": \"" + escapeJson(message) + "\"}");
+            out.flush();
+        } else {
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
+        }
+    }
+
+    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message)
+            throws ServletException, IOException {
+        if (isJsonRequest(req)) {
+            resp.setStatus(statusCode);
+            resp.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            out.print("{\"status\": " + statusCode + ", \"message\": \"" + escapeJson(message) + "\"}");
+            out.flush();
+        } else {
+            if (statusCode == HttpServletResponse.SC_FORBIDDEN) {
+                req.setAttribute("errorMessage", message);
+                req.getRequestDispatcher("/WEB-INF/views/errors/403.jsp").forward(req, resp);
+            } else {
+                resp.sendError(statusCode, message);
+            }
+        }
+    }
+
+    private String escapeJson(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r");
     }
 }

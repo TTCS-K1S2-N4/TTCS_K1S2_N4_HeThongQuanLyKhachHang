@@ -1,41 +1,724 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Pipeline Stages</title>
+
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/layout.css">
     <link rel="stylesheet" href="../../assets/css/modules/pipeline.css">
 </head>
+
 <body>
+
     <div class="app">
+
         <main class="main-content">
+
             <h1>Pipeline Stages</h1>
-            
-            <form id="stageForm" method="POST" action="/pipeline/stages">
-                <input type="hidden" name="action" value="CREATE">
-                <input type="hidden" name="pipelineStageId" value="">
-                
+
+            <form id="stageForm" method="POST">
+
+                <input type="hidden" id="action" name="action" value="CREATE">
+
+                <input type="hidden" id="pipelineStageId" name="pipelineStageId" value="">
+
                 <div>
-                    <label>Tên Stage: <input type="text" name="stageName" required></label>
-                    <label>Thứ tự hiển thị: <input type="number" name="displayOrder" required></label>
-                    <label>Xác suất (0-100): <input type="number" name="defaultProbability" min="0" max="100" required></label>
-                    <label>Điều kiện hoàn thành: <input type="text" name="exitCondition"></label>
-                    <label>Trạng thái: 
-                        <select name="status">
-                            <option value="ACTIVE">Hoạt động</option>
-                            <option value="INACTIVE">Ngừng hoạt động</option>
-                        </select>
+
+                    <label>
+                        Tên Stage:
+
+                        <input type="text" id="stageName" name="stageName" required>
                     </label>
-                    <button type="submit" class="btn btn-primary">Lưu Stage</button>
+
+
+                    <label>
+                        Thứ tự hiển thị:
+
+                        <input type="number" id="displayOrder" name="displayOrder" required>
+                    </label>
+
+
+                    <label>
+                        Xác suất (0-100):
+
+                        <input type="number" id="defaultProbability" name="defaultProbability" min="0" max="100"
+                            step="0.01" required>
+                    </label>
+
+
+                    <label>
+                        Điều kiện hoàn thành:
+
+                        <input type="text" id="exitCondition" name="exitCondition">
+                    </label>
+
+
+                    <label>
+                        Trạng thái:
+
+                        <select id="status" name="status">
+
+                            <option value="ACTIVE">
+                                Hoạt động
+                            </option>
+
+                            <option value="INACTIVE">
+                                Ngừng hoạt động
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <button type="submit" class="btn btn-primary">
+
+                        Lưu Stage
+
+                    </button>
+
+
+                    <button type="button" id="cancelEdit" class="btn btn-secondary" style="display:none;">
+
+                        Hủy sửa
+
+                    </button>
+
                 </div>
+
             </form>
 
+
+            <hr>
+
+
             <div class="pipeline-board" id="pipelineBoard">
-                <!-- Stages will be loaded here via GET /pipeline/stages -->
+
+                Đang tải dữ liệu...
+
             </div>
+
         </main>
+
     </div>
+
+
+    <script>
+
+        /*
+         * Lấy context path từ URL.
+         *
+         * Ví dụ:
+         * /CRM/pages/pipeline/stages.html
+         *
+         * contextPath = /CRM
+         */
+        function getContextPath() {
+
+            const path =
+                window.location.pathname;
+
+            const marker =
+                "/pages/";
+
+            const index =
+                path.indexOf(marker);
+
+            if (index === -1) {
+                return "";
+            }
+
+            return path.substring(
+                0,
+                index
+            );
+        }
+
+
+        const contextPath =
+            getContextPath();
+
+
+        const API_URL =
+            contextPath +
+            "/pipeline/stages";
+
+
+        const form =
+            document.getElementById(
+                "stageForm"
+            );
+
+        const board =
+            document.getElementById(
+                "pipelineBoard"
+            );
+
+        const actionInput =
+            document.getElementById(
+                "action"
+            );
+
+        const idInput =
+            document.getElementById(
+                "pipelineStageId"
+            );
+
+        const stageNameInput =
+            document.getElementById(
+                "stageName"
+            );
+
+        const displayOrderInput =
+            document.getElementById(
+                "displayOrder"
+            );
+
+        const probabilityInput =
+            document.getElementById(
+                "defaultProbability"
+            );
+
+        const exitConditionInput =
+            document.getElementById(
+                "exitCondition"
+            );
+
+        const statusInput =
+            document.getElementById(
+                "status"
+            );
+
+        const cancelEditButton =
+            document.getElementById(
+                "cancelEdit"
+            );
+
+
+        let stagesCache = [];
+
+
+        function escapeHtml(value) {
+
+            return String(
+                value == null
+                    ? ""
+                    : value
+            ).replace(
+                /[&<>"']/g,
+                function (character) {
+
+                    const map = {
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;"
+                    };
+
+                    return map[character];
+
+                }
+            );
+
+        }
+
+
+        async function loadStages() {
+
+            try {
+
+                board.innerHTML =
+                    "<p>Đang tải dữ liệu...</p>";
+
+
+                const response =
+                    await fetch(
+                        API_URL,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                "Accept":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "GET /pipeline/stages:",
+                    data
+                );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.errors ||
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                stagesCache =
+                    data.pipelineStages || [];
+
+
+                renderStages(
+                    stagesCache
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Lỗi tải Pipeline:",
+                    error
+                );
+
+
+                board.innerHTML =
+                    "<p>Không thể tải Pipeline Stages.</p>";
+
+            }
+
+        }
+
+
+        function renderStages(stages) {
+
+            if (!stages.length) {
+
+                board.innerHTML =
+                    "<p>Chưa có Pipeline Stage.</p>";
+
+                return;
+
+            }
+
+
+            board.innerHTML =
+                stages.map(
+                    function (stage) {
+
+                        return `
+
+                        <div class="pipeline-stage">
+
+                            <div class="stage-header">
+
+                                <strong>
+                                    ${escapeHtml(
+                            stage.stageName
+                        )}
+                                </strong>
+
+                                <span>
+                                    ${stage.defaultProbability}%
+                                </span>
+
+                            </div>
+
+
+                            <p>
+                                Thứ tự:
+                                ${stage.displayOrder}
+                            </p>
+
+
+                            <p>
+                                Điều kiện:
+                                ${escapeHtml(
+                            stage.exitCondition || ""
+                        )}
+                            </p>
+
+
+                            <p>
+                                Trạng thái:
+                                ${escapeHtml(
+                            stage.status
+                        )}
+                            </p>
+
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary edit-stage"
+                                data-id="${stage.pipelineStageId}">
+
+                                Sửa
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary deactivate-stage"
+                                data-id="${stage.pipelineStageId}">
+
+                                Vô hiệu hóa
+
+                            </button>
+
+                        </div>
+
+                    `;
+
+                    }
+                ).join("");
+
+        }
+
+
+        form.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const formData =
+                    new URLSearchParams();
+
+
+                formData.append(
+                    "action",
+                    actionInput.value
+                );
+
+                formData.append(
+                    "pipelineStageId",
+                    idInput.value
+                );
+
+                formData.append(
+                    "stageName",
+                    stageNameInput.value.trim()
+                );
+
+                formData.append(
+                    "displayOrder",
+                    displayOrderInput.value
+                );
+
+                formData.append(
+                    "defaultProbability",
+                    probabilityInput.value
+                );
+
+                formData.append(
+                    "exitCondition",
+                    exitConditionInput.value.trim()
+                );
+
+                formData.append(
+                    "status",
+                    statusInput.value
+                );
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            API_URL,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/x-www-form-urlencoded",
+
+                                    "Accept":
+                                        "application/json"
+                                },
+
+                                body:
+                                    formData.toString()
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    console.log(
+                        "POST /pipeline/stages:",
+                        data
+                    );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.errors ||
+                            "HTTP " +
+                            response.status
+                        );
+
+                    }
+
+
+                    if (!data.success) {
+
+                        throw new Error(
+                            data.errors ||
+                            "Không thể lưu Stage."
+                        );
+
+                    }
+
+
+                    alert(
+                        "Lưu Pipeline Stage thành công."
+                    );
+
+
+                    resetForm();
+
+                    await loadStages();
+
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+
+                    alert(
+                        error.message ||
+                        "Lỗi kết nối API Pipeline."
+                    );
+
+                }
+
+            }
+        );
+
+
+        board.addEventListener(
+            "click",
+            function (event) {
+
+                const editButton =
+                    event.target.closest(
+                        ".edit-stage"
+                    );
+
+
+                if (editButton) {
+
+                    const id =
+                        editButton.dataset.id;
+
+                    startEditStage(id);
+
+                    return;
+
+                }
+
+
+                const deactivateButton =
+                    event.target.closest(
+                        ".deactivate-stage"
+                    );
+
+
+                if (deactivateButton) {
+
+                    const id =
+                        deactivateButton.dataset.id;
+
+                    deactivateStage(id);
+
+                }
+
+            }
+        );
+
+
+        function startEditStage(id) {
+
+            const stage =
+                stagesCache.find(
+                    function (item) {
+
+                        return String(
+                            item.pipelineStageId
+                        ) === String(id);
+
+                    }
+                );
+
+
+            if (!stage) {
+
+                return;
+
+            }
+
+
+            actionInput.value =
+                "UPDATE";
+
+            idInput.value =
+                stage.pipelineStageId;
+
+            stageNameInput.value =
+                stage.stageName || "";
+
+            displayOrderInput.value =
+                stage.displayOrder;
+
+            probabilityInput.value =
+                stage.defaultProbability;
+
+            exitConditionInput.value =
+                stage.exitCondition || "";
+
+            statusInput.value =
+                stage.status || "ACTIVE";
+
+
+            cancelEditButton.style.display =
+                "inline-block";
+
+        }
+
+
+        async function deactivateStage(id) {
+
+            if (
+                !confirm(
+                    "Bạn có chắc muốn vô hiệu hóa Stage này?"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const formData =
+                new URLSearchParams();
+
+
+            formData.append(
+                "action",
+                "DEACTIVATE"
+            );
+
+            formData.append(
+                "pipelineStageId",
+                id
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded",
+
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            body:
+                                formData.toString()
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.errors ||
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                if (!data.success) {
+
+                    throw new Error(
+                        data.errors ||
+                        "Không thể vô hiệu hóa Stage."
+                    );
+
+                }
+
+
+                await loadStages();
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    error.message ||
+                    "Lỗi API."
+                );
+
+            }
+
+        }
+
+
+        function resetForm() {
+
+            form.reset();
+
+            actionInput.value =
+                "CREATE";
+
+            idInput.value =
+                "";
+
+            cancelEditButton.style.display =
+                "none";
+
+        }
+
+
+        cancelEditButton.addEventListener(
+            "click",
+            resetForm
+        );
+
+
+        loadStages();
+
+    </script>
+
 </body>
+
 </html>

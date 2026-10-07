@@ -29,8 +29,13 @@
                 <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-house"></i></span>
                 <span>Dashboard</span>
             </a>
-            <% for (MenuItem item : menuItems) { 
+            <% 
+               java.util.Set<String> seenUrls = new java.util.HashSet<>();
+               for (MenuItem item : menuItems) { 
                 String itemUrl = item.getUrl();
+                if (itemUrl != null && !seenUrls.add(itemUrl)) {
+                    continue;
+                }
                 boolean isActive = false;
                 if (!isDashboardActive && itemUrl != null) {
                     if (itemUrl.startsWith("/customers") && relativePath.startsWith("/customers")) {
@@ -73,6 +78,26 @@
                     <span>Quản lý tài khoản</span>
                 </a>
             <% } %>
+
+            <%-- Static fallbacks for Pipeline Configuration (S2-09 & S2-10) --%>
+            <% 
+               boolean isCategoryManager = permissionService.hasPermissionForRoles(effectiveRoleIds, "CATEGORY_MANAGE");
+               if (isCategoryManager) {
+            %>
+                <a class="nav-item <%= relativePath.startsWith("/pipeline/stages") ? "active" : "" %>" href="${pageContext.request.contextPath}/pipeline/stages">
+                    <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-stream"></i></span>
+                    <span>Giai đoạn Pipeline</span>
+                </a>
+                <a class="nav-item <%= relativePath.startsWith("/pipeline/win-loss-reasons") ? "active" : "" %>" href="${pageContext.request.contextPath}/pipeline/win-loss-reasons">
+                    <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-trophy"></i></span>
+                    <span>Lý do Thắng/Thua</span>
+                </a>
+                <a class="nav-item <%= relativePath.startsWith("/pipeline/competitors") ? "active" : "" %>" href="${pageContext.request.contextPath}/pipeline/competitors">
+                    <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-user-ninja"></i></span>
+                    <span>Đối thủ cạnh tranh</span>
+                </a>
+            <% } %>
+
         </div>
     </nav>
 </aside>

@@ -9,92 +9,97 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * DAO lưu vết lịch sử chuyển đổi công ty của Người liên hệ.
+ * Task S30-03 / S3-02.
+ */
 public class ContactCompanyHistoryDAO {
+
     private static final Logger LOGGER = Logger.getLogger(ContactCompanyHistoryDAO.class.getName());
 
-    private ContactCompanyHistory mapResultSetToHistory(ResultSet rs) throws SQLException {
-        ContactCompanyHistory history = new ContactCompanyHistory();
-        history.setHistoryId(rs.getInt("history_id"));
-        history.setContactId(rs.getInt("contact_id"));
-        history.setOldCustomerId(rs.getInt("old_customer_id"));
-        history.setNewCustomerId(rs.getInt("new_customer_id"));
-
-        int tb = rs.getInt("transferred_by");
-        history.setTransferredBy(rs.wasNull() ? null : tb);
-        history.setTransferredAt(rs.getTimestamp("transferred_at"));
-
-        try {
-            history.setOldCustomerName(rs.getString("old_customer_name"));
-        } catch (SQLException ignored) {}
-
-        try {
-            history.setNewCustomerName(rs.getString("new_customer_name"));
-        } catch (SQLException ignored) {}
-
-        try {
-            history.setTransferredByName(rs.getString("transferred_by_name"));
-        } catch (SQLException ignored) {}
-
-        return history;
+    private ContactCompanyHistory mapResultSet(ResultSet rs) throws SQLException {
+        ContactCompanyHistory h = new ContactCompanyHistory();
+        h.setHistoryId(rs.getInt("history_id"));
+        h.setContactId(rs.getInt("contact_id"));
+        h.setFromCustomerId(rs.getInt("from_customer_id"));
+        h.setToCustomerId(rs.getInt("to_customer_id"));
+        h.setTransferredAt(rs.getTimestamp("transferred_at"));
+        h.setReason(rs.getString("reason"));
+        int transferredBy = rs.getInt("transferred_by");
+        if (!rs.wasNull()) {
+            h.setTransferredBy(transferredBy);
+        }
+        return h;
     }
 
-    public boolean insert(ContactCompanyHistory history, Connection externalConn) throws SQLException {
-        String sql = "INSERT INTO contact_company_history (contact_id, old_customer_id, new_customer_id, transferred_by) " +
-                     "VALUES (?, ?, ?, ?)";
+    public boolean insert(ContactCompanyHistory history) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return insert(history, conn);
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi kết nối khi insert ContactCompanyHistory", e);
+            return false;
+        }
+    }
 
-        Connection conn = externalConn != null ? externalConn : DBConnection.getConnection();
-        boolean autoClose = externalConn == null;
-
+    public boolean insert(ContactCompanyHistory history, Connection conn) throws SQLException {
+        String sql = "INSERT INTO contact_company_history (contact_id, from_customer_id, to_customer_id, reason, transferred_by) " +
+                     "VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, history.getContactId());
-            ps.setInt(2, history.getOldCustomerId());
-            ps.setInt(3, history.getNewCustomerId());
+            ps.setInt(2, history.getFromCustomerId());
+            ps.setInt(3, history.getToCustomerId());
+            ps.setString(4, history.getReason());
             if (history.getTransferredBy() != null) {
-                ps.setInt(4, history.getTransferredBy());
+                ps.setInt(5, history.getTransferredBy());
             } else {
-                ps.setNull(4, Types.INTEGER);
+                ps.setNull(5, Types.INTEGER);
             }
 
-            int affectedRows = ps.executeUpdate();
-            if (affectedRows > 0) {
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    if (keys.next()) {
-                        history.setHistoryId(keys.getInt(1));
+            int affected = ps.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        history.setHistoryId(rs.getInt(1));
                     }
                 }
                 return true;
             }
-            return false;
-        } finally {
-            if (autoClose && conn != null) {
-                conn.close();
-            }
         }
+        return false;
     }
 
-    public List<ContactCompanyHistory> getByContactId(int contactId) {
+    public List<ContactCompanyHistory> findByContactId(int contactId) {
         List<ContactCompanyHistory> list = new ArrayList<>();
-        String sql = "SELECT h.*, " +
-                     "c_old.customer_name AS old_customer_name, " +
-                     "c_new.customer_name AS new_customer_name, " +
-                     "u.full_name AS transferred_by_name " +
-                     "FROM contact_company_history h " +
-                     "LEFT JOIN customers c_old ON h.old_customer_id = c_old.customer_id " +
-                     "LEFT JOIN customers c_new ON h.new_customer_id = c_new.customer_id " +
-                     "LEFT JOIN users u ON h.transferred_by = u.user_id " +
-                     "WHERE h.contact_id = ? " +
-                     "ORDER BY h.transferred_at DESC, h.history_id DESC";
-
+        String sql = "SELECT * FROM contact_company_history WHERE contact_id = ? ORDER BY transferred_at DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, contactId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(mapResultSetToHistory(rs));
+                    list.add(mapResultSet(rs));
                 }
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Lỗi khi truy vấn lịch sử chuyển công ty cho contactId=" + contactId, e);
+            LOGGER.log(Level.SEVERE, "Lỗi truy vấn lịch sử Contact theo contactId: " + contactId, e);
+        }
+        return list;
+    }
+
+    public List<ContactCompanyHistory> findByCustomerId(int customerId) {
+        List<ContactCompanyHistory> list = new ArrayList<>();
+        String sql = "SELECT * FROM contact_company_history WHERE from_customer_id = ? OR to_customer_id = ? " +
+                     "ORDER BY transferred_at DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ps.setInt(2, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi truy vấn lịch sử Contact theo customerId: " + customerId, e);
         }
         return list;
     }

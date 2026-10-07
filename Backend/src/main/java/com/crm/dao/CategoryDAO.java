@@ -135,6 +135,69 @@ public class CategoryDAO {
         }
     }
 
+    public boolean delete(int categoryId) throws SQLException {
+        String sql = "DELETE FROM categories WHERE category_id = ?";
+
+        try (
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)
+        ) {
+            ps.setInt(1, categoryId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public int countUsage(String categoryType, String categoryName) {
+        if (categoryName == null || categoryName.trim().isEmpty()) return 0;
+        int count = 0;
+        String val = categoryName.trim();
+
+        // 1. Check custom_field_values
+        String sqlCf = "SELECT COUNT(*) FROM custom_field_values WHERE field_value = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlCf)) {
+            ps.setString(1, val);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) count += rs.getInt(1);
+            }
+        } catch (SQLException ignored) {}
+
+        // 2. Check customers (if columns industry, company_size, lead_source exist)
+        String[] customerCols = {"industry", "company_size", "lead_source"};
+        for (String col : customerCols) {
+            String sql = "SELECT COUNT(*) FROM customers WHERE " + col + " = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, val);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) count += rs.getInt(1);
+                }
+            } catch (SQLException ignored) {}
+        }
+
+        // 3. Check opportunities (lead_source)
+        String sqlOpp = "SELECT COUNT(*) FROM opportunities WHERE lead_source = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlOpp)) {
+            ps.setString(1, val);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) count += rs.getInt(1);
+            }
+        } catch (SQLException ignored) {}
+
+        // 4. Check activities (activity_type)
+        String sqlAct = "SELECT COUNT(*) FROM activities WHERE activity_type = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlAct)) {
+            ps.setString(1, val);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) count += rs.getInt(1);
+            }
+        } catch (SQLException ignored) {}
+
+        return count;
+    }
+
     private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
         Category category = new Category();
         category.setCategoryId(rs.getInt("category_id"));

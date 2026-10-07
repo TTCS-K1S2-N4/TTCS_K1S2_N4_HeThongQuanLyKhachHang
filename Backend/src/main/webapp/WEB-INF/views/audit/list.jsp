@@ -120,7 +120,7 @@
                                 if (auditLogs != null && !auditLogs.isEmpty()) {
                                     for (AuditLog log : auditLogs) {
                                         String performer = log.getPerformedByName() != null ? log.getPerformedByName() : (log.getUserId() > 0 ? "Mã " + log.getUserId() : "N/A");
-                                        String timeStr = log.getCreatedAt() != null ? log.getCreatedAt().toString() : "";
+                                        String timeStr = log.getFormattedCreatedAt();
                             %>
                             <tr>
                                 <td><span class="audit-log-id"><%= log.getLogId() %></span></td>

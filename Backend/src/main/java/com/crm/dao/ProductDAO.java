@@ -349,6 +349,59 @@ public class ProductDAO {
         return false;
     }
 
+    public boolean isProductUsedInQuotes(int productId) {
+        if (productId <= 0) return false;
+        String[] tablesToCheck = {"quote_details", "quote_items", "quote_products", "opportunity_products"};
+        try (Connection conn = DBConnection.getConnection()) {
+            for (String tableName : tablesToCheck) {
+                try {
+                    String sql = "SELECT 1 FROM " + tableName + " WHERE product_id = ? LIMIT 1";
+                    try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                        stmt.setInt(1, productId);
+                        try (ResultSet rs = stmt.executeQuery()) {
+                            if (rs.next()) {
+                                return true;
+                            }
+                        }
+                    }
+                } catch (SQLException ignored) {
+                    // Table might not exist in database, continue to next table
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi kiểm tra sản phẩm xuất hiện trong báo giá ID: " + productId, e);
+        }
+        return false;
+    }
+
+    public boolean delete(int productId, com.crm.model.AuditLog auditLog) {
+        String sql = "DELETE FROM products WHERE product_id = ?";
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, productId);
+                if (stmt.executeUpdate() > 0) {
+                    if (auditLog != null) {
+                        auditLog.setTargetUserId(productId);
+                        new AuditLogDAO().insertLog(conn, auditLog);
+                    }
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
+            }
+        } catch (SQLException e) {
+            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
+            LOGGER.log(Level.SEVERE, "Lỗi xóa sản phẩm ID: " + productId, e);
+        } finally {
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
+        }
+        return false;
+    }
+
     private Product mapResultSetToProduct(ResultSet rs, boolean includeCostPrice) throws SQLException {
         Product product = new Product();
         product.setProductId(rs.getInt("product_id"));

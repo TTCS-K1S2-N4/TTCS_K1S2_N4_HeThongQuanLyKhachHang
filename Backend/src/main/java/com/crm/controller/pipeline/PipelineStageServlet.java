@@ -20,40 +20,48 @@ public class PipelineStageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json;charset=UTF-8");
         List<PipelineStage> stages = pipelineService.getAllStages();
         
-        StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < stages.size(); i++) {
-            PipelineStage s = stages.get(i);
-            json.append("{")
-                .append("\"pipelineStageId\":").append(s.getPipelineStageId()).append(",")
-                .append("\"stageName\":\"").append(escapeJson(s.getStageName())).append("\",")
-                .append("\"displayOrder\":").append(s.getDisplayOrder()).append(",")
-                .append("\"defaultProbability\":").append(s.getDefaultProbability()).append(",")
-                .append("\"exitCondition\":").append(s.getExitCondition() != null ? "\"" + escapeJson(s.getExitCondition()) + "\"" : "null").append(",")
-                .append("\"status\":\"").append(escapeJson(s.getStatus())).append("\"")
-                .append("}");
-            if (i < stages.size() - 1) {
-                json.append(",");
+        if (isAjaxRequest(req) || "json".equalsIgnoreCase(req.getParameter("format"))) {
+            resp.setContentType("application/json;charset=UTF-8");
+            StringBuilder json = new StringBuilder("[");
+            for (int i = 0; i < stages.size(); i++) {
+                PipelineStage s = stages.get(i);
+                json.append("{")
+                    .append("\"pipelineStageId\":").append(s.getPipelineStageId()).append(",")
+                    .append("\"stageName\":\"").append(escapeJson(s.getStageName())).append("\",")
+                    .append("\"displayOrder\":").append(s.getDisplayOrder()).append(",")
+                    .append("\"defaultProbability\":").append(s.getDefaultProbability()).append(",")
+                    .append("\"exitCondition\":").append(s.getExitCondition() != null ? "\"" + escapeJson(s.getExitCondition()) + "\"" : "null").append(",")
+                    .append("\"status\":\"").append(escapeJson(s.getStatus())).append("\"")
+                    .append("}");
+                if (i < stages.size() - 1) {
+                    json.append(",");
+                }
             }
-        }
-        json.append("]");
+            json.append("]");
 
-        PrintWriter out = resp.getWriter();
-        out.print("{\"pipelineStages\":" + json.toString() + "}");
-        out.flush();
+            PrintWriter out = resp.getWriter();
+            out.print("{\"pipelineStages\":" + json.toString() + "}");
+            out.flush();
+        } else {
+            req.setAttribute("pipelineStages", stages);
+            req.getRequestDispatcher("/WEB-INF/views/pipeline/stages.jsp").forward(req, resp);
+        }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = resp.getWriter();
-        
         String action = req.getParameter("action");
+        boolean isAjax = isAjaxRequest(req);
+
         if (action == null || action.trim().isEmpty()) {
-            out.print("{\"errors\":\"Missing action\"}");
-            out.flush();
+            if (isAjax) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().print("{\"errors\":\"Missing action\"}");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/pipeline/stages");
+            }
             return;
         }
 
@@ -66,7 +74,6 @@ public class PipelineStageServlet extends HttpServlet {
                     String exitCondition = req.getParameter("exitCondition");
                     String status = req.getParameter("status");
                     pipelineService.createStage(stageName, displayOrder, defaultProbability, exitCondition, status);
-                    out.print("{\"success\":true}");
                     break;
                 }
                 case "UPDATE": {
@@ -77,34 +84,61 @@ public class PipelineStageServlet extends HttpServlet {
                     String exitCondition = req.getParameter("exitCondition");
                     String status = req.getParameter("status");
                     pipelineService.updateStage(pipelineStageId, stageName, displayOrder, defaultProbability, exitCondition, status);
-                    out.print("{\"success\":true}");
                     break;
                 }
                 case "REORDER": {
                     int pipelineStageId = parseInt(req.getParameter("pipelineStageId"), -1);
                     int displayOrder = parseInt(req.getParameter("displayOrder"), 0);
                     pipelineService.updateOrder(pipelineStageId, displayOrder);
-                    out.print("{\"success\":true}");
                     break;
                 }
                 case "DEACTIVATE": {
                     int pipelineStageId = parseInt(req.getParameter("pipelineStageId"), -1);
                     pipelineService.deactivateStage(pipelineStageId);
-                    out.print("{\"success\":true}");
                     break;
                 }
                 default:
-                    out.print("{\"errors\":\"Invalid action\"}");
+                    if (isAjax) {
+                        resp.setContentType("application/json;charset=UTF-8");
+                        resp.getWriter().print("{\"errors\":\"Invalid action\"}");
+                        return;
+                    }
+            }
+
+            if (isAjax) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().print("{\"success\":true}");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/pipeline/stages");
             }
         } catch (ValidationException e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"errors\":\"" + escapeJson(e.getMessage()) + "\"}");
+            if (isAjax) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().print("{\"errors\":\"" + escapeJson(e.getMessage()) + "\"}");
+            } else {
+                req.setAttribute("errorMessage", e.getMessage());
+                doGet(req, resp);
+            }
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"errors\":\"Internal server error\"}");
+            if (isAjax) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.getWriter().print("{\"errors\":\"Internal server error\"}");
+            } else {
+                req.setAttribute("errorMessage", "Có lỗi xảy ra trên hệ thống.");
+                doGet(req, resp);
+            }
         }
-        out.flush();
     }
+
+    private boolean isAjaxRequest(HttpServletRequest request) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        String acceptHeader = request.getHeader("Accept");
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith) ||
+                (acceptHeader != null && acceptHeader.contains("application/json"));
+    }
+
 
     private int parseInt(String str, int def) {
         if (str == null || str.trim().isEmpty()) return def;

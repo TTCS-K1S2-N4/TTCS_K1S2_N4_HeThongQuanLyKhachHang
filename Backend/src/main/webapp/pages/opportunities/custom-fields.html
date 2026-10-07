@@ -1,55 +1,870 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>Quản lý Custom Fields Cơ Hội</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Quản lý Custom Fields Cơ hội</title>
+
     <link rel="stylesheet" href="../../assets/css/variables.css">
+
     <link rel="stylesheet" href="../../assets/css/common.css">
+
     <link rel="stylesheet" href="../../assets/css/layout.css">
+
     <link rel="stylesheet" href="../../assets/css/modules/opportunities.css">
+
 </head>
+
 <body>
+
     <div class="app">
+
         <main class="main-content">
-            <h1>Quản lý Custom Fields (Cơ hội)</h1>
-            
-            <form id="customFieldForm" method="POST" action="/custom-fields">
+
+            <h1>
+                Quản lý Custom Fields (Cơ hội)
+            </h1>
+
+
+            <form id="customFieldForm" method="POST">
+
                 <input type="hidden" name="action" value="CREATE">
+
                 <input type="hidden" name="entityType" value="OPPORTUNITY">
+
                 <input type="hidden" name="customFieldId" value="">
-                
+
+
                 <div class="custom-field-form">
-                    <label>Tên trường: <input type="text" name="fieldName" required></label>
-                    <label>Loại: 
-                        <select name="fieldType" required>
-                            <option value="TEXT">TEXT</option>
-                            <option value="NUMBER">NUMBER</option>
-                            <option value="DATE">DATE</option>
-                            <option value="SELECT">SELECT</option>
-                        </select>
+
+                    <label>
+                        Tên trường:
+
+                        <input type="text" name="fieldName" required maxlength="100">
+
                     </label>
-                    <label>Bắt buộc: <input type="checkbox" name="required" value="true"></label>
-                    <label>Options (cho SELECT, cách nhau bằng phẩy): <input type="text" name="options"></label>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
+
+
+                    <label>
+                        Loại:
+
+                        <select name="fieldType" id="fieldType" required>
+
+                            <option value="TEXT">
+                                TEXT
+                            </option>
+
+                            <option value="NUMBER">
+                                NUMBER
+                            </option>
+
+                            <option value="DATE">
+                                DATE
+                            </option>
+
+                            <option value="SELECT">
+                                SELECT
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+                        Bắt buộc:
+
+                        <input type="checkbox" id="required" name="required" value="true">
+
+                    </label>
+
+
+                    <label id="optionsGroup" style="display:none;">
+
+                        Options:
+
+                        <input type="text" id="options" name="options" placeholder="A, B, C">
+
+                    </label>
+
+
+                    <button type="submit" class="btn btn-primary">
+
+                        Lưu
+
+                    </button>
+
+
+                    <button type="button" id="cancelEdit" class="btn btn-secondary" style="display:none;">
+
+                        Hủy sửa
+
+                    </button>
+
                 </div>
+
             </form>
 
+
+            <hr>
+
+
             <table class="opportunity-table">
+
                 <thead>
+
                     <tr>
+
                         <th>Tên trường</th>
+
                         <th>Loại</th>
+
                         <th>Bắt buộc</th>
+
                         <th>Options</th>
+
                         <th>Trạng thái</th>
+
                         <th>Thao tác</th>
+
                     </tr>
+
                 </thead>
+
+
                 <tbody id="customFieldsTableBody">
-                    <!-- Data will be loaded here via GET /custom-fields?entityType=OPPORTUNITY -->
+
+                    <tr>
+
+                        <td colspan="6">
+                            Đang tải dữ liệu...
+                        </td>
+
+                    </tr>
+
                 </tbody>
+
             </table>
+
+
+            <p id="message"></p>
+
         </main>
+
     </div>
+
+
+    <script>
+
+        function getContextPath() {
+
+            const path =
+                window.location.pathname;
+
+            const marker =
+                "/pages/";
+
+            const index =
+                path.indexOf(marker);
+
+            if (index === -1) {
+
+                return "";
+
+            }
+
+            return path.substring(
+                0,
+                index
+            );
+
+        }
+
+
+        const contextPath =
+            getContextPath();
+
+
+        const API_URL =
+            contextPath +
+            "/custom-fields";
+
+
+        const ENTITY_TYPE =
+            "OPPORTUNITY";
+
+
+        const form =
+            document.getElementById(
+                "customFieldForm"
+            );
+
+        const tbody =
+            document.getElementById(
+                "customFieldsTableBody"
+            );
+
+        const message =
+            document.getElementById(
+                "message"
+            );
+
+        const fieldType =
+            document.getElementById(
+                "fieldType"
+            );
+
+        const optionsGroup =
+            document.getElementById(
+                "optionsGroup"
+            );
+
+        const optionsInput =
+            document.getElementById(
+                "options"
+            );
+
+        const cancelEdit =
+            document.getElementById(
+                "cancelEdit"
+            );
+
+
+        let fieldsCache = [];
+
+
+        function escapeHtml(value) {
+
+            return String(
+                value == null
+                    ? ""
+                    : value
+            ).replace(
+                /[&<>"']/g,
+                function (character) {
+
+                    const map = {
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;"
+                    };
+
+                    return map[character];
+
+                }
+            );
+
+        }
+
+
+        function showMessage(
+            text,
+            success
+        ) {
+
+            message.textContent =
+                text;
+
+            message.style.display =
+                "block";
+
+            message.style.marginTop =
+                "10px";
+
+            message.style.fontWeight =
+                "bold";
+
+        }
+
+
+        function toggleOptions() {
+
+            const isSelect =
+                fieldType.value === "SELECT";
+
+
+            optionsGroup.style.display =
+                isSelect
+                    ? "block"
+                    : "none";
+
+
+            optionsInput.required =
+                isSelect;
+
+
+            if (!isSelect) {
+
+                optionsInput.value =
+                    "";
+
+            }
+
+        }
+
+
+        fieldType.addEventListener(
+            "change",
+            toggleOptions
+        );
+
+
+        async function loadFields() {
+
+            try {
+
+                tbody.innerHTML =
+                    `
+                    <tr>
+                        <td colspan="6">
+                            Đang tải dữ liệu...
+                        </td>
+                    </tr>
+                `;
+
+
+                const url =
+                    API_URL +
+                    "?entityType=" +
+                    encodeURIComponent(
+                        ENTITY_TYPE
+                    );
+
+
+                const response =
+                    await fetch(
+                        url,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                "Accept":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "GET Custom Fields:",
+                    data
+                );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.errors ||
+                        data.error ||
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                fieldsCache =
+                    data.customFields || [];
+
+
+                renderFields(
+                    fieldsCache
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                tbody.innerHTML =
+                    `
+                    <tr>
+                        <td colspan="6">
+                            Không thể tải Custom Fields.
+                        </td>
+                    </tr>
+                `;
+
+            }
+
+        }
+
+
+        function renderFields(fields) {
+
+            if (!fields.length) {
+
+                tbody.innerHTML =
+                    `
+                    <tr>
+                        <td colspan="6">
+                            Chưa có Custom Field.
+                        </td>
+                    </tr>
+                `;
+
+                return;
+
+            }
+
+
+            tbody.innerHTML =
+                fields.map(
+                    function (field) {
+
+                        const active =
+                            field.status !==
+                            "INACTIVE";
+
+
+                        return `
+
+                        <tr>
+
+                            <td>
+                                ${escapeHtml(
+                            field.fieldName
+                        )}
+                            </td>
+
+                            <td>
+                                ${escapeHtml(
+                            field.fieldType
+                        )}
+                            </td>
+
+                            <td>
+                                ${field.required
+                                ? "Có"
+                                : "Không"
+                            }
+                            </td>
+
+                            <td>
+                                ${escapeHtml(
+                                field.options || ""
+                            )}
+                            </td>
+
+                            <td>
+                                ${active
+                                ? "ACTIVE"
+                                : "INACTIVE"
+                            }
+                            </td>
+
+                            <td>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary edit-field"
+                                    data-id="${field.customFieldId}">
+
+                                    Sửa
+
+                                </button>
+
+
+                                ${active
+                                ? `
+                                            <button
+                                                type="button"
+                                                class="btn btn-secondary deactivate-field"
+                                                data-id="${field.customFieldId}">
+
+                                                Vô hiệu hóa
+
+                                            </button>
+                                        `
+                                : ""
+                            }
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                    }
+                ).join("");
+
+        }
+
+
+        form.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const formData =
+                    new URLSearchParams();
+
+
+                formData.append(
+                    "action",
+                    form.elements["action"].value
+                );
+
+                formData.append(
+                    "customFieldId",
+                    form.elements["customFieldId"].value
+                );
+
+                formData.append(
+                    "entityType",
+                    ENTITY_TYPE
+                );
+
+                formData.append(
+                    "fieldName",
+                    form.elements["fieldName"].value.trim()
+                );
+
+                formData.append(
+                    "fieldType",
+                    fieldType.value
+                );
+
+                formData.append(
+                    "required",
+                    document.getElementById(
+                        "required"
+                    ).checked
+                        ? "true"
+                        : "false"
+                );
+
+                formData.append(
+                    "options",
+                    optionsInput.value.trim()
+                );
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            API_URL,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/x-www-form-urlencoded",
+
+                                    "Accept":
+                                        "application/json"
+                                },
+
+                                body:
+                                    formData.toString()
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    console.log(
+                        "POST Custom Fields:",
+                        data
+                    );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.errors ||
+                            data.error ||
+                            "HTTP " +
+                            response.status
+                        );
+
+                    }
+
+
+                    if (!data.success) {
+
+                        throw new Error(
+                            data.errors ||
+                            data.error ||
+                            "Thao tác thất bại."
+                        );
+
+                    }
+
+
+                    showMessage(
+                        "Lưu Custom Field thành công.",
+                        true
+                    );
+
+
+                    resetForm();
+
+                    await loadFields();
+
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+
+                    showMessage(
+                        error.message ||
+                        "Lỗi kết nối API.",
+                        false
+                    );
+
+                }
+
+            }
+        );
+
+
+        tbody.addEventListener(
+            "click",
+            function (event) {
+
+                const editButton =
+                    event.target.closest(
+                        ".edit-field"
+                    );
+
+
+                if (editButton) {
+
+                    editField(
+                        editButton.dataset.id
+                    );
+
+                    return;
+
+                }
+
+
+                const deactivateButton =
+                    event.target.closest(
+                        ".deactivate-field"
+                    );
+
+
+                if (deactivateButton) {
+
+                    deactivateField(
+                        deactivateButton.dataset.id
+                    );
+
+                }
+
+            }
+        );
+
+
+        function editField(id) {
+
+            const field =
+                fieldsCache.find(
+                    function (item) {
+
+                        return String(
+                            item.customFieldId
+                        ) === String(id);
+
+                    }
+                );
+
+
+            if (!field) {
+
+                return;
+
+            }
+
+
+            form.elements["action"].value =
+                "UPDATE";
+
+            form.elements["customFieldId"].value =
+                field.customFieldId;
+
+            form.elements["fieldName"].value =
+                field.fieldName || "";
+
+            fieldType.value =
+                field.fieldType || "TEXT";
+
+            document.getElementById(
+                "required"
+            ).checked =
+                !!field.required;
+
+            toggleOptions();
+
+
+            if (field.fieldType === "SELECT") {
+
+                optionsInput.value =
+                    field.options || "";
+
+            }
+
+
+            cancelEdit.style.display =
+                "inline-block";
+
+        }
+
+
+        async function deactivateField(id) {
+
+            if (
+                !confirm(
+                    "Bạn có chắc muốn vô hiệu hóa Custom Field này?"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const formData =
+                new URLSearchParams();
+
+
+            formData.append(
+                "action",
+                "DEACTIVATE"
+            );
+
+            formData.append(
+                "customFieldId",
+                id
+            );
+
+            formData.append(
+                "entityType",
+                ENTITY_TYPE
+            );
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        API_URL,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded",
+
+                                "Accept":
+                                    "application/json"
+                            },
+
+                            body:
+                                formData.toString()
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.errors ||
+                        data.error ||
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                if (!data.success) {
+
+                    throw new Error(
+                        data.errors ||
+                        data.error ||
+                        "Không thể vô hiệu hóa."
+                    );
+
+                }
+
+
+                await loadFields();
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                showMessage(
+                    error.message ||
+                    "Lỗi API.",
+                    false
+                );
+
+            }
+
+        }
+
+
+        function resetForm() {
+
+            form.reset();
+
+            form.elements["action"].value =
+                "CREATE";
+
+            form.elements["customFieldId"].value =
+                "";
+
+            cancelEdit.style.display =
+                "none";
+
+            toggleOptions();
+
+        }
+
+
+        cancelEdit.addEventListener(
+            "click",
+            resetForm
+        );
+
+
+        toggleOptions();
+
+        loadFields();
+
+    </script>
+
 </body>
+
 </html>

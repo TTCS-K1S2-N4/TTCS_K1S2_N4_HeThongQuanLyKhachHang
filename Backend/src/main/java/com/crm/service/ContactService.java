@@ -4,103 +4,88 @@ import com.crm.dao.ContactCompanyHistoryDAO;
 import com.crm.dao.ContactDAO;
 import com.crm.dao.CustomerDAO;
 import com.crm.dto.ContactRequest;
+import com.crm.dto.ContactResponse;
 import com.crm.dto.ContactTransferRequest;
 import com.crm.exception.AuthorizationException;
+import com.crm.exception.ValidationException;
 import com.crm.model.Contact;
 import com.crm.model.ContactCompanyHistory;
 import com.crm.model.Customer;
 import com.crm.util.DBConnection;
+import com.crm.util.ValidationUtil;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Service xử lý nghiệp vụ Quản lý người liên hệ (Contact).
+ * Quản lý vai trò mua, Primary Contact (Transaction), và Chuyển công ty (Transaction).
+ * Task S30-03 / S3-02.
+ */
 public class ContactService {
+
     private static final Logger LOGGER = Logger.getLogger(ContactService.class.getName());
+    public static final List<String> BUYING_ROLES = Arrays.asList("DECIDER", "INFLUENCER", "END_USER", "BLOCKER");
 
-    private final ContactDAO contactDAO;
-    private final ContactCompanyHistoryDAO historyDAO;
-    private final CustomerDAO customerDAO;
-    private final PermissionService permissionService;
+    private ContactDAO contactDAO = new ContactDAO();
+    private ContactCompanyHistoryDAO contactCompanyHistoryDAO = new ContactCompanyHistoryDAO();
+    private CustomerDAO customerDAO = new CustomerDAO();
+    private PermissionService permissionService = new PermissionService();
 
-    public ContactService() {
-        this.contactDAO = new ContactDAO();
-        this.historyDAO = new ContactCompanyHistoryDAO();
-        this.customerDAO = new CustomerDAO();
-        this.permissionService = new PermissionService();
-    }
+    public void setContactDAO(ContactDAO dao) { this.contactDAO = dao; }
+    public void setContactCompanyHistoryDAO(ContactCompanyHistoryDAO dao) { this.contactCompanyHistoryDAO = dao; }
+    public void setCustomerDAO(CustomerDAO dao) { this.customerDAO = dao; }
+    public void setPermissionService(PermissionService ps) { this.permissionService = ps; }
 
-    public ContactService(ContactDAO contactDAO, ContactCompanyHistoryDAO historyDAO, CustomerDAO customerDAO, PermissionService permissionService) {
-        this.contactDAO = contactDAO;
-        this.historyDAO = historyDAO;
-        this.customerDAO = customerDAO;
-        this.permissionService = permissionService;
-    }
-
-    private List<Integer> resolveRoleIds(int roleId, List<Integer> roleIds) {
-        if (roleIds != null && !roleIds.isEmpty()) {
-            return roleIds;
-        }
-        if (roleId > 0) {
-            return Collections.singletonList(roleId);
-        }
-        return Collections.emptyList();
-    }
-
-    private Customer validateAndFetchCustomerAccess(int customerId, int userId, List<Integer> roleIds) throws AuthorizationException {
+    public List<ContactResponse> getContactsByCustomerId(int customerId, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
         Customer customer = customerDAO.findById(customerId);
         if (customer == null) {
-            throw new IllegalArgumentException("Khách hàng không tồn tại trên hệ thống.");
+            throw new ValidationException("Khách hàng không tồn tại (ID: " + customerId + ").");
         }
+
         permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
-        return customer;
+
+        List<Contact> contacts = contactDAO.findByCustomerId(customerId);
+        List<ContactResponse> result = new ArrayList<>();
+        for (Contact c : contacts) {
+            result.add(mapToResponse(c));
+        }
+        return result;
     }
 
-    public List<Contact> getContactsByCustomer(int customerId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
-        validateAndFetchCustomerAccess(customerId, userId, effectiveRoles);
-        return contactDAO.getByCustomerId(customerId);
-    }
-
-    public Contact getContactById(int contactId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
+    public ContactResponse getContactById(int contactId, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
         Contact contact = contactDAO.findById(contactId);
         if (contact == null) {
-            throw new IllegalArgumentException("Người liên hệ không tồn tại.");
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + contactId + ").");
         }
-        validateAndFetchCustomerAccess(contact.getCustomerId(), userId, effectiveRoles);
-        return contact;
+
+        Customer customer = customerDAO.findById(contact.getCustomerId());
+        if (customer == null) {
+            throw new ValidationException("Khách hàng của người liên hệ không tồn tại.");
+        }
+
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
+
+        return mapToResponse(contact);
     }
 
-    public List<ContactCompanyHistory> getContactHistory(int contactId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
-        Contact contact = contactDAO.findById(contactId);
-        if (contact == null) {
-            throw new IllegalArgumentException("Người liên hệ không tồn tại.");
-        }
-        validateAndFetchCustomerAccess(contact.getCustomerId(), userId, effectiveRoles);
-        return historyDAO.getByContactId(contactId);
-    }
+    public Contact createContact(ContactRequest request, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
+        validateContactRequest(request, false);
 
-    public boolean createContact(ContactRequest request, int userId, int roleId, List<Integer> roleIds, Map<String, String> errors) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
-        
-        Map<String, String> valErrors = request.validate();
-        if (!valErrors.isEmpty()) {
-            errors.putAll(valErrors);
-            return false;
+        Customer customer = customerDAO.findById(request.getCustomerId());
+        if (customer == null) {
+            throw new ValidationException("Khách hàng không tồn tại (ID: " + request.getCustomerId() + ").");
         }
 
-        if (request.getCustomerId() == null || request.getCustomerId() <= 0) {
-            errors.put("customerId", "Vui lòng chọn khách hàng hợp lệ.");
-            return false;
-        }
-
-        validateAndFetchCustomerAccess(request.getCustomerId(), userId, effectiveRoles);
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
 
         Contact contact = new Contact();
         contact.setCustomerId(request.getCustomerId());
@@ -108,205 +93,289 @@ public class ContactService {
         contact.setTitle(request.getTitle() != null ? request.getTitle().trim() : null);
         contact.setEmail(request.getEmail() != null ? request.getEmail().trim() : null);
         contact.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
-        contact.setBuyingRole(request.getBuyingRole().trim().toUpperCase());
-        contact.setPrimary(request.isPrimary());
+        contact.setBuyingRole(request.getBuyingRole().toUpperCase().trim());
+        contact.setPrimary(request.getIsPrimary() != null && request.getIsPrimary());
 
-        Connection conn = null;
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
+        if (contact.isPrimary()) {
+            // Transaction: reset primary cũ -> insert mới thành primary
+            Connection conn = null;
+            try {
+                conn = DBConnection.getConnection();
+                conn.setAutoCommit(false);
 
-            if (request.isPrimary()) {
-                contactDAO.resetPrimaryForCustomer(request.getCustomerId(), conn);
-            }
+                contactDAO.resetPrimaryForCustomer(contact.getCustomerId(), conn);
+                int generatedId = contactDAO.insert(contact, conn);
+                if (generatedId <= 0) {
+                    throw new SQLException("Không thể tạo mới Contact.");
+                }
 
-            int contactId = contactDAO.insert(contact, conn);
-            if (contactId <= 0) {
-                conn.rollback();
-                errors.put("system", "Không thể lưu thông tin người liên hệ.");
-                return false;
+                conn.commit();
+                contact.setContactId(generatedId);
+                return contact;
+            } catch (SQLException e) {
+                if (conn != null) {
+                    try { conn.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Rollback failed", ex); }
+                }
+                LOGGER.log(Level.SEVERE, "Lỗi transaction tạo Primary Contact", e);
+                throw new ValidationException("Không thể tạo người liên hệ chính: " + e.getMessage());
+            } finally {
+                closeConnection(conn);
             }
-
-            conn.commit();
-            return true;
-        } catch (SQLException e) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
+        } else {
+            int generatedId = contactDAO.insert(contact);
+            if (generatedId <= 0) {
+                throw new ValidationException("Không thể lưu người liên hệ vào CSDL.");
             }
-            LOGGER.log(Level.SEVERE, "Lỗi khi tạo người liên hệ", e);
-            errors.put("system", "Lỗi cơ sở dữ liệu: " + e.getMessage());
-            return false;
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
-            }
+            contact.setContactId(generatedId);
+            return contact;
         }
     }
 
-    public boolean updateContact(ContactRequest request, int userId, int roleId, List<Integer> roleIds, Map<String, String> errors) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
-
-        Map<String, String> valErrors = request.validate();
-        if (!valErrors.isEmpty()) {
-            errors.putAll(valErrors);
-            return false;
-        }
-
+    public Contact updateContact(ContactRequest request, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
         if (request.getContactId() == null || request.getContactId() <= 0) {
-            errors.put("contactId", "ID người liên hệ không hợp lệ.");
-            return false;
+            throw new ValidationException("ID người liên hệ không hợp lệ.");
         }
 
-        Contact existingContact = contactDAO.findById(request.getContactId());
-        if (existingContact == null) {
-            errors.put("contactId", "Người liên hệ không tồn tại.");
-            return false;
+        validateContactRequest(request, true);
+
+        Contact existing = contactDAO.findById(request.getContactId());
+        if (existing == null) {
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + request.getContactId() + ").");
         }
 
-        validateAndFetchCustomerAccess(existingContact.getCustomerId(), userId, effectiveRoles);
+        Customer customer = customerDAO.findById(existing.getCustomerId());
+        if (customer == null) {
+            throw new ValidationException("Khách hàng của người liên hệ không tồn tại.");
+        }
 
-        existingContact.setFullName(request.getFullName().trim());
-        existingContact.setTitle(request.getTitle() != null ? request.getTitle().trim() : null);
-        existingContact.setEmail(request.getEmail() != null ? request.getEmail().trim() : null);
-        existingContact.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
-        existingContact.setBuyingRole(request.getBuyingRole().trim().toUpperCase());
-        existingContact.setPrimary(request.isPrimary());
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
 
-        Connection conn = null;
-        try {
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
+        existing.setFullName(request.getFullName().trim());
+        existing.setTitle(request.getTitle() != null ? request.getTitle().trim() : null);
+        existing.setEmail(request.getEmail() != null ? request.getEmail().trim() : null);
+        existing.setPhone(request.getPhone() != null ? request.getPhone().trim() : null);
+        existing.setBuyingRole(request.getBuyingRole().toUpperCase().trim());
+        boolean makePrimary = request.getIsPrimary() != null && request.getIsPrimary();
 
-            if (request.isPrimary()) {
-                contactDAO.resetPrimaryForCustomer(existingContact.getCustomerId(), conn);
+        if (makePrimary && !existing.isPrimary()) {
+            // Transaction: reset primary cũ -> update contact thành primary
+            Connection conn = null;
+            try {
+                conn = DBConnection.getConnection();
+                conn.setAutoCommit(false);
+
+                contactDAO.resetPrimaryForCustomer(existing.getCustomerId(), conn);
+                existing.setPrimary(true);
+                contactDAO.update(existing, conn);
+
+                conn.commit();
+                return existing;
+            } catch (SQLException e) {
+                if (conn != null) {
+                    try { conn.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Rollback failed", ex); }
+                }
+                LOGGER.log(Level.SEVERE, "Lỗi transaction cập nhật Primary Contact", e);
+                throw new ValidationException("Không thể cập nhật người liên hệ chính: " + e.getMessage());
+            } finally {
+                closeConnection(conn);
             }
-
-            boolean updated = contactDAO.update(existingContact, conn);
+        } else {
+            existing.setPrimary(makePrimary);
+            boolean updated = contactDAO.update(existing);
             if (!updated) {
-                conn.rollback();
-                errors.put("system", "Không thể cập nhật người liên hệ.");
-                return false;
+                throw new ValidationException("Không thể cập nhật thông tin người liên hệ.");
             }
-
-            conn.commit();
-            return true;
-        } catch (SQLException e) {
-            if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
-            }
-            LOGGER.log(Level.SEVERE, "Lỗi khi cập nhật người liên hệ contactId=" + request.getContactId(), e);
-            errors.put("system", "Lỗi cơ sở dữ liệu: " + e.getMessage());
-            return false;
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
-            }
+            return existing;
         }
     }
 
-    public boolean setPrimaryContact(int contactId, int userId, int roleId, List<Integer> roleIds, Map<String, String> errors) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
+    public boolean setPrimaryContact(int contactId, int customerId, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
+        if (contactId <= 0 || customerId <= 0) {
+            throw new ValidationException("ID người liên hệ hoặc ID khách hàng không hợp lệ.");
+        }
 
         Contact contact = contactDAO.findById(contactId);
         if (contact == null) {
-            errors.put("contactId", "Người liên hệ không tồn tại.");
-            return false;
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + contactId + ").");
+        }
+        if (contact.getCustomerId() != customerId) {
+            throw new ValidationException("Người liên hệ không thuộc khách hàng đã chỉ định.");
         }
 
-        validateAndFetchCustomerAccess(contact.getCustomerId(), userId, effectiveRoles);
+        Customer customer = customerDAO.findById(customerId);
+        if (customer == null) {
+            throw new ValidationException("Khách hàng không tồn tại (ID: " + customerId + ").");
+        }
 
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
+
+        // BẮT BUỘC TRANSACTION: reset primary cũ -> set primary mới trên cùng Connection
         Connection conn = null;
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            contactDAO.resetPrimaryForCustomer(contact.getCustomerId(), conn);
-            boolean updated = contactDAO.setPrimary(contactId, contact.getCustomerId(), conn);
-
-            if (!updated) {
-                conn.rollback();
-                errors.put("system", "Không thể thiết lập đầu mối chính.");
-                return false;
+            contactDAO.resetPrimaryForCustomer(customerId, conn);
+            boolean success = contactDAO.setPrimary(contactId, customerId, conn);
+            if (!success) {
+                throw new SQLException("Không thể thiết lập Primary Contact.");
             }
 
             conn.commit();
             return true;
         } catch (SQLException e) {
             if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
+                try { conn.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Rollback failed", ex); }
             }
-            LOGGER.log(Level.SEVERE, "Lỗi khi thiết lập đầu mối chính contactId=" + contactId, e);
-            errors.put("system", "Lỗi cơ sở dữ liệu: " + e.getMessage());
-            return false;
+            LOGGER.log(Level.SEVERE, "Lỗi transaction thiết lập Primary Contact", e);
+            throw new ValidationException("Lỗi thiết lập người liên hệ chính: " + e.getMessage());
         } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
-            }
+            closeConnection(conn);
         }
     }
 
-    public boolean transferContact(ContactTransferRequest request, int userId, int roleId, List<Integer> roleIds, Map<String, String> errors) throws AuthorizationException {
-        List<Integer> effectiveRoles = resolveRoleIds(roleId, roleIds);
-
-        Map<String, String> valErrors = request.validate();
-        if (!valErrors.isEmpty()) {
-            errors.putAll(valErrors);
-            return false;
+    public boolean transferContact(ContactTransferRequest request, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
+        if (request == null) {
+            throw new ValidationException("Dữ liệu chuyển đổi không được để trống.");
+        }
+        if (request.getContactId() == null || request.getContactId() <= 0) {
+            throw new ValidationException("ID người liên hệ không hợp lệ.");
+        }
+        if (request.getNewCustomerId() == null || request.getNewCustomerId() <= 0) {
+            throw new ValidationException("ID khách hàng mới không hợp lệ.");
+        }
+        if (request.getReason() == null || request.getReason().trim().isEmpty()) {
+            throw new ValidationException("Lý do chuyển đổi công ty không được để trống.");
         }
 
         Contact contact = contactDAO.findById(request.getContactId());
         if (contact == null) {
-            errors.put("contactId", "Người liên hệ không tồn tại.");
-            return false;
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + request.getContactId() + ").");
         }
 
-        int oldCustomerId = contact.getCustomerId();
-        int newCustomerId = request.getNewCustomerId();
+        int fromCustomerId = contact.getCustomerId();
+        int toCustomerId = request.getNewCustomerId();
 
-        if (oldCustomerId == newCustomerId) {
-            errors.put("newCustomerId", "Người liên hệ hiện tại đã thuộc công ty này.");
-            return false;
+        if (fromCustomerId == toCustomerId) {
+            throw new ValidationException("Khách hàng đích phải khác khách hàng hiện tại.");
         }
 
-        // Validate permissions on BOTH old and new customer
-        validateAndFetchCustomerAccess(oldCustomerId, userId, effectiveRoles);
-        validateAndFetchCustomerAccess(newCustomerId, userId, effectiveRoles);
+        Customer fromCustomer = customerDAO.findById(fromCustomerId);
+        if (fromCustomer == null) {
+            throw new ValidationException("Khách hàng nguồn không tồn tại.");
+        }
+        Customer toCustomer = customerDAO.findById(toCustomerId);
+        if (toCustomer == null) {
+            throw new ValidationException("Khách hàng đích không tồn tại.");
+        }
 
+        // Kiểm tra Data Scope cả customer cũ và customer mới
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", fromCustomer.getOwnerId());
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", toCustomer.getOwnerId());
+
+        // BẮT BUỘC TRANSACTION: update customer_id -> insert history trên cùng Connection
         Connection conn = null;
         try {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // Update customer link on contact record (set isPrimary=false to preserve invariant of new customer)
-            boolean updated = contactDAO.updateCustomerId(request.getContactId(), newCustomerId, false, conn);
+            boolean updated = contactDAO.updateCustomerId(contact.getContactId(), toCustomerId, conn);
             if (!updated) {
-                conn.rollback();
-                errors.put("system", "Không thể chuyển công ty cho người liên hệ.");
-                return false;
+                throw new SQLException("Không thể cập nhật thông tin khách hàng của Contact.");
             }
 
-            // Record history entry
-            ContactCompanyHistory history = new ContactCompanyHistory(request.getContactId(), oldCustomerId, newCustomerId, userId);
-            boolean historyRecorded = historyDAO.insert(history, conn);
+            ContactCompanyHistory history = new ContactCompanyHistory();
+            history.setContactId(contact.getContactId());
+            history.setFromCustomerId(fromCustomerId);
+            history.setToCustomerId(toCustomerId);
+            history.setReason(request.getReason().trim());
+            history.setTransferredBy(userId);
 
-            if (!historyRecorded) {
-                conn.rollback();
-                errors.put("system", "Không thể ghi nhận lịch sử chuyển công ty.");
-                return false;
+            boolean insertedHistory = contactCompanyHistoryDAO.insert(history, conn);
+            if (!insertedHistory) {
+                throw new SQLException("Không thể lưu lịch sử chuyển đổi công ty.");
             }
 
             conn.commit();
             return true;
         } catch (SQLException e) {
             if (conn != null) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
+                try { conn.rollback(); } catch (SQLException ex) { LOGGER.log(Level.SEVERE, "Rollback failed", ex); }
             }
-            LOGGER.log(Level.SEVERE, "Lỗi khi chuyển công ty cho contactId=" + request.getContactId(), e);
-            errors.put("system", "Lỗi cơ sở dữ liệu: " + e.getMessage());
-            return false;
+            LOGGER.log(Level.SEVERE, "Lỗi transaction chuyển đổi công ty cho Contact", e);
+            throw new ValidationException("Lỗi chuyển đổi công ty cho người liên hệ: " + e.getMessage());
         } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
+            closeConnection(conn);
+        }
+    }
+
+    public boolean deleteContact(int contactId, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
+        Contact contact = contactDAO.findById(contactId);
+        if (contact == null) {
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + contactId + ").");
+        }
+
+        Customer customer = customerDAO.findById(contact.getCustomerId());
+        if (customer != null) {
+            permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
+        }
+
+        return contactDAO.delete(contactId);
+    }
+
+    private void validateContactRequest(ContactRequest request, boolean isUpdate) throws ValidationException {
+        if (request == null) {
+            throw new ValidationException("Dữ liệu người liên hệ không được để trống.");
+        }
+        if (!isUpdate && (request.getCustomerId() == null || request.getCustomerId() <= 0)) {
+            throw new ValidationException("ID khách hàng không hợp lệ.");
+        }
+        if (!ValidationUtil.isNotEmpty(request.getFullName())) {
+            throw new ValidationException("Họ và tên người liên hệ không được để trống.");
+        }
+        if (ValidationUtil.isNotEmpty(request.getEmail()) && !ValidationUtil.isValidEmail(request.getEmail())) {
+            throw new ValidationException("Định dạng email không hợp lệ: " + request.getEmail());
+        }
+        if (ValidationUtil.isNotEmpty(request.getPhone()) && !ValidationUtil.isValidPhone(request.getPhone())) {
+            throw new ValidationException("Số điện thoại không hợp lệ (phải từ 10-11 chữ số): " + request.getPhone());
+        }
+        if (request.getBuyingRole() == null || request.getBuyingRole().trim().isEmpty()) {
+            request.setBuyingRole("END_USER");
+        } else {
+            String roleUpper = request.getBuyingRole().toUpperCase().trim();
+            if (!BUYING_ROLES.contains(roleUpper)) {
+                throw new ValidationException("Vai trò quyết định mua không hợp lệ (" + request.getBuyingRole() +
+                        "). Cho phép: " + String.join(", ", BUYING_ROLES));
+            }
+            request.setBuyingRole(roleUpper);
+        }
+    }
+
+    private ContactResponse mapToResponse(Contact c) {
+        return new ContactResponse(
+                c.getContactId(),
+                c.getCustomerId(),
+                c.getFullName(),
+                c.getTitle(),
+                c.getEmail(),
+                c.getPhone(),
+                c.getBuyingRole(),
+                c.isPrimary(),
+                c.getCreatedAt()
+        );
+    }
+
+    private void closeConnection(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.setAutoCommit(true);
+                conn.close();
+            } catch (SQLException ex) {
+                LOGGER.log(Level.WARNING, "Không thể đóng kết nối", ex);
             }
         }
     }

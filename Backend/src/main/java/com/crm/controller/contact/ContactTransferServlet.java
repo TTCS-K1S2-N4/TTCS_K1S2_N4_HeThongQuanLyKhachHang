@@ -1,12 +1,9 @@
 package com.crm.controller.contact;
 
-import com.crm.dao.CustomerDAO;
 import com.crm.dto.ContactTransferRequest;
 import com.crm.exception.AuthorizationException;
-import com.crm.model.Contact;
-import com.crm.model.Customer;
+import com.crm.exception.ValidationException;
 import com.crm.service.ContactService;
-import com.crm.service.PermissionService;
 import com.crm.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
@@ -16,84 +13,37 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-@WebServlet(urlPatterns = {"/contacts/transfer", "/contacts/transfer-company"})
+/**
+ * Controller chuyển đổi công ty cho Người liên hệ (Transfer Contact).
+ * Thực thi bảo toàn dữ liệu và ghi vết lịch sử trong Transaction.
+ * Endpoint: POST /contacts/transfer
+ * Task S30-03 / S3-02.
+ */
+@WebServlet(urlPatterns = {"/contacts/transfer", "/contacts/transfer/*"})
 public class ContactTransferServlet extends HttpServlet {
-    private final ContactService contactService = new ContactService();
-    private final CustomerDAO customerDAO = new CustomerDAO();
-    private final PermissionService permissionService = new PermissionService();
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
-        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
-        Integer roleId = session != null ? (Integer) session.getAttribute("roleId") : null;
-        List<Integer> roleIds = ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
-        if (roleIds == null || roleIds.isEmpty()) {
-            roleIds = session != null ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
-        }
+    private ContactService contactService = new ContactService();
 
-        if (userId == null) {
-            resp.sendRedirect(req.getContextPath() + "/auth/login");
-            return;
-        }
-
-        String idStr = req.getParameter("id");
-        if (idStr == null || idStr.trim().isEmpty()) {
-            idStr = req.getParameter("contactId");
-        }
-
-        if (idStr == null || idStr.trim().isEmpty()) {
-            resp.sendRedirect(req.getContextPath() + "/customers");
-            return;
-        }
-
-        try {
-            int contactId = Integer.parseInt(idStr.trim());
-            Contact contact = contactService.getContactById(contactId, userId, roleId != null ? roleId : 0, roleIds);
-            Customer currentCustomer = customerDAO.findById(contact.getCustomerId());
-
-            List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(
-                    userId,
-                    (roleIds != null && !roleIds.isEmpty()) ? roleIds : java.util.Collections.singletonList(roleId != null ? roleId : 0),
-                    "ACCOUNT"
-            );
-            List<Customer> accessibleCustomers = customerDAO.getListForExport(null, ownerIds);
-
-            req.setAttribute("contact", contact);
-            req.setAttribute("currentCustomer", currentCustomer);
-            req.setAttribute("customers", accessibleCustomers);
-
-            req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
-        } catch (NumberFormatException e) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Mã người liên hệ không hợp lệ.");
-        } catch (IllegalArgumentException e) {
-            resp.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
-        } catch (AuthorizationException e) {
-            req.setAttribute("errorMessage", e.getMessage());
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-        } catch (Exception e) {
-            throw new ServletException("Lỗi khi mở giao diện chuyển công ty cho người liên hệ.", e);
+    public void setContactService(ContactService contactService) {
+        if (contactService != null) {
+            this.contactService = contactService;
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8");
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(false);
-        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
-        Integer roleId = session != null ? (Integer) session.getAttribute("roleId") : null;
-        List<Integer> roleIds = ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
-        if (roleIds == null || roleIds.isEmpty()) {
-            roleIds = session != null ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
-        }
-
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
         if (userId == null) {
-            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            handleUnauthorized(req, resp, "Bạn cần đăng nhập để thực hiện chức năng này.");
             return;
         }
 
@@ -101,52 +51,144 @@ public class ContactTransferServlet extends HttpServlet {
         if (contactIdStr == null || contactIdStr.trim().isEmpty()) {
             contactIdStr = req.getParameter("id");
         }
+        req.setAttribute("contactId", contactIdStr);
+        req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
+    }
 
-        String newCustomerIdStr = req.getParameter("newCustomerId");
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession(false);
+        Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        List<Integer> roleIds = (session != null) ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
+        Integer roleId = (session != null) ? (Integer) session.getAttribute("roleId") : null;
 
-        ContactTransferRequest transferRequest = new ContactTransferRequest();
-        try {
-            if (contactIdStr != null && !contactIdStr.trim().isEmpty()) {
-                transferRequest.setContactId(Integer.parseInt(contactIdStr.trim()));
-            }
-            if (newCustomerIdStr != null && !newCustomerIdStr.trim().isEmpty()) {
-                transferRequest.setNewCustomerId(Integer.parseInt(newCustomerIdStr.trim()));
-            }
-        } catch (NumberFormatException ignored) {}
-
-        transferRequest.setTransferredBy(userId);
-
-        Map<String, String> errors = new HashMap<>();
-
-        try {
-            boolean success = contactService.transferContact(transferRequest, userId, roleId != null ? roleId : 0, roleIds, errors);
-
-            if (success) {
-                req.getSession().setAttribute("message", "Chuyển người liên hệ sang công ty mới thành công.");
-                resp.sendRedirect(req.getContextPath() + "/contacts/detail?id=" + transferRequest.getContactId());
-            } else {
-                req.setAttribute("errors", errors);
-                if (transferRequest.getContactId() != null) {
-                    Contact contact = contactService.getContactById(transferRequest.getContactId(), userId, roleId != null ? roleId : 0, roleIds);
-                    req.setAttribute("contact", contact);
-                    req.setAttribute("currentCustomer", customerDAO.findById(contact.getCustomerId()));
-                }
-
-                List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(
-                        userId,
-                        (roleIds != null && !roleIds.isEmpty()) ? roleIds : java.util.Collections.singletonList(roleId != null ? roleId : 0),
-                        "ACCOUNT"
-                );
-                List<Customer> accessibleCustomers = customerDAO.getListForExport(null, ownerIds);
-                req.setAttribute("customers", accessibleCustomers);
-
-                req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
-            }
-        } catch (AuthorizationException e) {
-            req.setAttribute("errorMessage", e.getMessage());
-            resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-        } catch (Exception e) {
-            throw new ServletException("Lỗi khi xử lý chuyển công ty cho người liên hệ.", e);
+        if (userId == null) {
+            handleUnauthorized(req, resp, "Bạn cần đăng nhập để thực hiện chức năng này.");
+            return;
         }
+
+        List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty())
+                ? roleIds
+                : (roleId != null ? Collections.singletonList(roleId) : Collections.emptyList());
+
+        ContactTransferRequest transferRequest = parseTransferRequest(req);
+
+        try {
+            boolean success = contactService.transferContact(transferRequest, userId, effectiveRoles);
+
+            if (isJsonRequest(req)) {
+                resp.setContentType("application/json;charset=UTF-8");
+                PrintWriter out = resp.getWriter();
+                out.print("{" +
+                        "\"success\": " + success + "," +
+                        "\"message\": \"Chuyển người liên hệ sang khách hàng mới thành công.\"," +
+                        "\"contactId\": " + transferRequest.getContactId() + "," +
+                        "\"newCustomerId\": " + transferRequest.getNewCustomerId() +
+                        "}");
+                out.flush();
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/contacts/detail?id=" + transferRequest.getContactId() + "&success=transferred");
+            }
+        } catch (ValidationException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (AuthorizationException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+        } catch (Exception e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi máy chủ nội bộ: " + e.getMessage());
+        }
+    }
+
+    private ContactTransferRequest parseTransferRequest(HttpServletRequest req) throws IOException {
+        ContactTransferRequest dto = new ContactTransferRequest();
+
+        if (req.getContentType() != null && req.getContentType().contains("application/json")) {
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = req.getReader()) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+            }
+            String body = sb.toString();
+            dto.setContactId(extractJsonInt(body, "contactId"));
+            dto.setNewCustomerId(extractJsonInt(body, "newCustomerId"));
+            dto.setReason(extractJsonString(body, "reason"));
+        } else {
+            String cIdStr = req.getParameter("contactId");
+            if (cIdStr != null && !cIdStr.trim().isEmpty()) {
+                try { dto.setContactId(Integer.parseInt(cIdStr.trim())); } catch (NumberFormatException ignored) {}
+            }
+
+            String newCIdStr = req.getParameter("newCustomerId");
+            if (newCIdStr != null && !newCIdStr.trim().isEmpty()) {
+                try { dto.setNewCustomerId(Integer.parseInt(newCIdStr.trim())); } catch (NumberFormatException ignored) {}
+            }
+
+            dto.setReason(req.getParameter("reason"));
+        }
+
+        return dto;
+    }
+
+    private Integer extractJsonInt(String json, String key) {
+        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*(\\d+)");
+        Matcher m = p.matcher(json);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        return null;
+    }
+
+    private String extractJsonString(String json, String key) {
+        Pattern p = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*)\"");
+        Matcher m = p.matcher(json);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    private boolean isJsonRequest(HttpServletRequest req) {
+        String accept = req.getHeader("Accept");
+        String requestedWith = req.getHeader("X-Requested-With");
+        return "XMLHttpRequest".equalsIgnoreCase(requestedWith) || (accept != null && accept.contains("application/json"));
+    }
+
+    private void handleUnauthorized(HttpServletRequest req, HttpServletResponse resp, String message) throws IOException {
+        if (isJsonRequest(req)) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            out.print("{\"status\": 401, \"message\": \"" + escapeJson(message) + "\"}");
+            out.flush();
+        } else {
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
+        }
+    }
+
+    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message)
+            throws ServletException, IOException {
+        if (isJsonRequest(req)) {
+            resp.setStatus(statusCode);
+            resp.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            out.print("{\"status\": " + statusCode + ", \"message\": \"" + escapeJson(message) + "\"}");
+            out.flush();
+        } else {
+            if (statusCode == HttpServletResponse.SC_FORBIDDEN) {
+                req.setAttribute("errorMessage", message);
+                req.getRequestDispatcher("/WEB-INF/views/errors/403.jsp").forward(req, resp);
+            } else {
+                resp.sendError(statusCode, message);
+            }
+        }
+    }
+
+    private String escapeJson(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "\\r");
     }
 }

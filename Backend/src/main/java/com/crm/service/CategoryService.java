@@ -55,7 +55,7 @@ public class CategoryService {
 
     public boolean processCategoryUpdate(Category.Action action, Category category, List<String> errors) {
         if (action == null) {
-            errors.add("Thao tác (action) không hợp lệ. Chấp nhận: CREATE, UPDATE, DEACTIVATE.");
+            errors.add("Thao tác (action) không hợp lệ. Chấp nhận: CREATE, UPDATE, DEACTIVATE, DELETE.");
             return false;
         }
 
@@ -72,6 +72,8 @@ public class CategoryService {
                     return handleUpdateCategory(category, errors);
                 case DEACTIVATE:
                     return handleDeactivateCategory(category.getCategoryId(), errors);
+                case DELETE:
+                    return handleDeleteCategory(category.getCategoryId(), errors);
                 default:
                     errors.add("Thao tác không hỗ trợ: " + action);
                     return false;
@@ -158,7 +160,34 @@ public class CategoryService {
             return false;
         }
 
+        int usageCount = categoryDAO.countUsage(existing.getCategoryType(), existing.getCategoryName());
+        if (usageCount > 0) {
+            errors.add("Danh mục '" + existing.getCategoryName() + "' đang được sử dụng trong hệ thống (" + usageCount + " bản ghi tham chiếu). Không thể vô hiệu hóa.");
+            return false;
+        }
+
         return categoryDAO.updateStatus(categoryId, "INACTIVE");
+    }
+
+    private boolean handleDeleteCategory(int categoryId, List<String> errors) throws SQLException {
+        if (categoryId <= 0) {
+            errors.add("ID danh mục không hợp lệ.");
+            return false;
+        }
+
+        Category existing = categoryDAO.findById(categoryId);
+        if (existing == null) {
+            errors.add("Không tìm thấy danh mục với ID: " + categoryId);
+            return false;
+        }
+
+        int usageCount = categoryDAO.countUsage(existing.getCategoryType(), existing.getCategoryName());
+        if (usageCount > 0) {
+            errors.add("Danh mục '" + existing.getCategoryName() + "' đang được sử dụng trong hệ thống (" + usageCount + " bản ghi tham chiếu). Không thể xóa.");
+            return false;
+        }
+
+        return categoryDAO.delete(categoryId);
     }
 
     private void validateTypeAndName(String type, String name, List<String> errors) {

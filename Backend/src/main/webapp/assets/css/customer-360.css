@@ -1,0 +1,237 @@
+/* Customer 360 Specific CSS */
+
+.customer-360-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.c360-section {
+    margin-bottom: 24px;
+}
+
+.c360-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.c360-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.c360-label {
+    font-size: 0.85rem;
+    color: var(--color-gray-500, #666);
+    margin-bottom: 4px;
+}
+
+.c360-value {
+    font-weight: 500;
+    color: var(--color-gray-900, #111);
+}
+
+.c360-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--color-gray-500, #666);
+}
+
+.c360-empty-state i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    color: var(--color-gray-300, #ccc);
+}
+
+.c360-loading-state,
+.c360-error-state {
+    text-align: center;
+    padding: 24px;
+    color: var(--color-gray-600, #555);
+}
+
+.c360-error-state {
+    color: var(--color-danger, #dc3545);
+}
+
+.c360-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.c360-list-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-border, #eee);
+}
+
+.c360-list-item:last-child {
+    border-bottom: none;
+}
+
+.c360-contact-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.c360-contact-contact {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--color-gray-600, #555);
+}
+
+.c360-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--color-border, #eee);
+    margin-bottom: 16px;
+}
+
+.c360-tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-gray-600, #555);
+    border-bottom: 2px solid transparent;
+}
+
+.c360-tab-btn.active {
+    color: var(--color-primary, #0d6efd);
+    border-bottom-color: var(--color-primary, #0d6efd);
+}
+
+.c360-value-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.c360-value-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--color-gray-50, #f8f9fa);
+    border-radius: var(--radius-sm, 4px);
+}
+
+.c360-value-amount {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.text-success { color: var(--color-success, #198754); }
+.text-warning { color: var(--color-warning, #ffc107); }
+.text-gray { color: var(--color-gray-500, #666); }
+.text-sm { font-size: 0.85rem; }
+
+/* Timeline Styles */
+.c360-timeline {
+    position: relative;
+    padding-left: 24px;
+    list-style: none;
+    margin: 0;
+}
+
+.c360-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7px;
+    width: 2px;
+    background-color: var(--color-border, #e9ecef);
+}
+
+.c360-timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.c360-timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.c360-timeline-marker {
+    position: absolute;
+    left: -24px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--color-primary, #0d6efd);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px var(--color-border, #e9ecef);
+}
+
+.c360-timeline-content {
+    background-color: var(--color-gray-50, #f8f9fa);
+    padding: 12px;
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--color-border, #e9ecef);
+}
+
+.c360-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+}
+
+.c360-timeline-title {
+    font-weight: bold;
+    color: var(--color-gray-900, #111);
+}
+
+.c360-timeline-date {
+    color: var(--color-gray-500, #666);
+}
+
+.c360-timeline-body {
+    font-size: 0.9rem;
+    color: var(--color-gray-700, #333);
+}
+
+.c360-timeline-actions {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.c360-attachment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.c360-attachment-list li {
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.c360-attachment-list a {
+    color: var(--color-primary, #0d6efd);
+    text-decoration: none;
+}
+
+.c360-attachment-list a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 992px) {
+    .customer-360-container {
+        grid-template-columns: 1fr;
+    }
+}

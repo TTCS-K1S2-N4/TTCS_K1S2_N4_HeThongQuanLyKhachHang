@@ -84,7 +84,11 @@ public class AvatarServlet extends HttpServlet {
 
             String avatarUrl = result.get("avatarUrl");
             if (avatarUrl != null && userId != null && userId > 0) {
-                new com.crm.dao.AccountDAO().updateAvatarUrl(userId, avatarUrl);
+                boolean updated = new com.crm.dao.AccountDAO().updateAvatarUrl(userId, avatarUrl);
+                if (!updated) {
+                    sendJsonError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể cập nhật đường dẫn ảnh đại diện vào cơ sở dữ liệu.");
+                    return;
+                }
                 if (session.getAttribute("currentUser") instanceof com.crm.model.Account) {
                     ((com.crm.model.Account) session.getAttribute("currentUser")).setAvatarUrl(avatarUrl);
                 }
@@ -92,7 +96,7 @@ public class AvatarServlet extends HttpServlet {
 
             response.setContentType("application/json;charset=UTF-8");
             PrintWriter out = response.getWriter();
-            out.print("{\"avatarUrl\":\"" + escapeJson(result.get("avatarUrl")) + "\",\"thumbnailUrl\":\"" + escapeJson(result.get("thumbnailUrl")) + "\"}");
+            out.print("{\"status\":200,\"message\":\"Tải ảnh đại diện thành công.\",\"avatarUrl\":\"" + escapeJson(result.get("avatarUrl")) + "\",\"thumbnailUrl\":\"" + escapeJson(result.get("thumbnailUrl")) + "\"}");
             out.flush();
 
         } catch (IllegalArgumentException e) {

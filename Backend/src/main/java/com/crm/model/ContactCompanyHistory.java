@@ -2,26 +2,27 @@ package com.crm.model;
 
 import java.sql.Timestamp;
 
+/**
+ * Model lưu lịch sử chuyển đổi công ty của Người liên hệ.
+ * Task S30-03 / S3-02.
+ */
 public class ContactCompanyHistory {
     private int historyId;
     private int contactId;
-    private int oldCustomerId;
-    private int newCustomerId;
-    private Integer transferredBy;
+    private int fromCustomerId;
+    private int toCustomerId;
     private Timestamp transferredAt;
-
-    // Joined / Display fields
-    private String oldCustomerName;
-    private String newCustomerName;
-    private String transferredByName;
+    private String reason;
+    private Integer transferredBy;
 
     public ContactCompanyHistory() {
     }
 
-    public ContactCompanyHistory(int contactId, int oldCustomerId, int newCustomerId, Integer transferredBy) {
+    public ContactCompanyHistory(int contactId, int fromCustomerId, int toCustomerId, String reason, Integer transferredBy) {
         this.contactId = contactId;
-        this.oldCustomerId = oldCustomerId;
-        this.newCustomerId = newCustomerId;
+        this.fromCustomerId = fromCustomerId;
+        this.toCustomerId = toCustomerId;
+        this.reason = reason;
         this.transferredBy = transferredBy;
     }
 
@@ -41,28 +42,20 @@ public class ContactCompanyHistory {
         this.contactId = contactId;
     }
 
-    public int getOldCustomerId() {
-        return oldCustomerId;
+    public int getFromCustomerId() {
+        return fromCustomerId;
     }
 
-    public void setOldCustomerId(int oldCustomerId) {
-        this.oldCustomerId = oldCustomerId;
+    public void setFromCustomerId(int fromCustomerId) {
+        this.fromCustomerId = fromCustomerId;
     }
 
-    public int getNewCustomerId() {
-        return newCustomerId;
+    public int getToCustomerId() {
+        return toCustomerId;
     }
 
-    public void setNewCustomerId(int newCustomerId) {
-        this.newCustomerId = newCustomerId;
-    }
-
-    public Integer getTransferredBy() {
-        return transferredBy;
-    }
-
-    public void setTransferredBy(Integer transferredBy) {
-        this.transferredBy = transferredBy;
+    public void setToCustomerId(int toCustomerId) {
+        this.toCustomerId = toCustomerId;
     }
 
     public Timestamp getTransferredAt() {
@@ -73,27 +66,19 @@ public class ContactCompanyHistory {
         this.transferredAt = transferredAt;
     }
 
-    public String getOldCustomerName() {
-        return oldCustomerName;
+    public String getReason() {
+        return reason;
     }
 
-    public void setOldCustomerName(String oldCustomerName) {
-        this.oldCustomerName = oldCustomerName;
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 
-    public String getNewCustomerName() {
-        return newCustomerName;
+    public Integer getTransferredBy() {
+        return transferredBy;
     }
 
-    public void setNewCustomerName(String newCustomerName) {
-        this.newCustomerName = newCustomerName;
-    }
-
-    public String getTransferredByName() {
-        return transferredByName;
-    }
-
-    public void setTransferredByName(String transferredByName) {
-        this.transferredByName = transferredByName;
+    public void setTransferredBy(Integer transferredBy) {
+        this.transferredBy = transferredBy;
     }
 }

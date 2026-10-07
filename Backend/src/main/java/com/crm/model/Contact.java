@@ -2,6 +2,10 @@ package com.crm.model;
 
 import java.sql.Timestamp;
 
+/**
+ * Model đại diện cho Người liên hệ (Contact) thuộc Customer.
+ * Task S30-03 / S3-02.
+ */
 public class Contact {
     private int contactId;
     private int customerId;
@@ -9,18 +13,16 @@ public class Contact {
     private String title;
     private String email;
     private String phone;
-    private String buyingRole; // DECISION_MAKER, INFLUENCER, END_USER, BLOCKER
+    private String buyingRole; // DECIDER, INFLUENCER, END_USER, BLOCKER
     private boolean isPrimary;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
-    // Display / Joined fields
-    private String customerName;
-
     public Contact() {
     }
 
-    public Contact(int contactId, int customerId, String fullName, String title, String email, String phone, String buyingRole, boolean isPrimary) {
+    public Contact(int contactId, int customerId, String fullName, String title, String email, String phone,
+                   String buyingRole, boolean isPrimary) {
         this.contactId = contactId;
         this.customerId = customerId;
         this.fullName = fullName;
@@ -109,29 +111,5 @@ public class Contact {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
-
-    public String getBuyingRoleLabel() {
-        if (buyingRole == null) return "";
-        switch (buyingRole.toUpperCase()) {
-            case "DECISION_MAKER":
-                return "Người quyết định";
-            case "INFLUENCER":
-                return "Người ảnh hưởng";
-            case "END_USER":
-                return "Người dùng cuối";
-            case "BLOCKER":
-                return "Người cản trở";
-            default:
-                return buyingRole;
-        }
     }
 }

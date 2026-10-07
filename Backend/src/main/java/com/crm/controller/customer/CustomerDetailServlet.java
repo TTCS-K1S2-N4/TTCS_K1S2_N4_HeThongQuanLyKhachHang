@@ -57,7 +57,11 @@ public class CustomerDetailServlet extends HttpServlet {
                 return;
             }
 
+            com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
+            List<com.crm.model.CustomFieldValue> customFieldValues = customFieldService.getValuesByEntity("CUSTOMER", id);
+
             req.setAttribute("customer", obj);
+            req.setAttribute("customFieldValues", customFieldValues);
             req.getRequestDispatcher("/WEB-INF/views/customers/detail.jsp").forward(req, resp);
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);

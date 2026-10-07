@@ -1,82 +1,107 @@
 package com.crm.dto;
 
-import com.crm.model.Contact;
-import com.crm.model.ContactCompanyHistory;
+import java.sql.Timestamp;
 
-import java.util.List;
-import java.util.Map;
-
+/**
+ * DTO trả về thông tin Contact cho Client.
+ * Task S30-03 / S3-02.
+ */
 public class ContactResponse {
-    private boolean success;
-    private String message;
-    private Map<String, String> errors;
-    private Contact contact;
-    private List<Contact> contacts;
-    private List<ContactCompanyHistory> history;
+    private int contactId;
+    private int customerId;
+    private String fullName;
+    private String title;
+    private String email;
+    private String phone;
+    private String buyingRole;
+    private boolean isPrimary;
+    private Timestamp createdAt;
 
     public ContactResponse() {
     }
 
-    public static ContactResponse success(String message) {
-        ContactResponse resp = new ContactResponse();
-        resp.setSuccess(true);
-        resp.setMessage(message);
-        return resp;
+    public ContactResponse(int contactId, int customerId, String fullName, String title, String email,
+                           String phone, String buyingRole, boolean isPrimary, Timestamp createdAt) {
+        this.contactId = contactId;
+        this.customerId = customerId;
+        this.fullName = fullName;
+        this.title = title;
+        this.email = email;
+        this.phone = phone;
+        this.buyingRole = buyingRole;
+        this.isPrimary = isPrimary;
+        this.createdAt = createdAt;
     }
 
-    public static ContactResponse error(String message, Map<String, String> errors) {
-        ContactResponse resp = new ContactResponse();
-        resp.setSuccess(false);
-        resp.setMessage(message);
-        resp.setErrors(errors);
-        return resp;
+    public int getContactId() {
+        return contactId;
     }
 
-    public boolean isSuccess() {
-        return success;
+    public void setContactId(int contactId) {
+        this.contactId = contactId;
     }
 
-    public void setSuccess(boolean success) {
-        this.success = success;
+    public int getCustomerId() {
+        return customerId;
     }
 
-    public String getMessage() {
-        return message;
+    public void setCustomerId(int customerId) {
+        this.customerId = customerId;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public String getFullName() {
+        return fullName;
     }
 
-    public Map<String, String> getErrors() {
-        return errors;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
-    public void setErrors(Map<String, String> errors) {
-        this.errors = errors;
+    public String getTitle() {
+        return title;
     }
 
-    public Contact getContact() {
-        return contact;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public void setContact(Contact contact) {
-        this.contact = contact;
+    public String getEmail() {
+        return email;
     }
 
-    public List<Contact> getContacts() {
-        return contacts;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public void setContacts(List<Contact> contacts) {
-        this.contacts = contacts;
+    public String getPhone() {
+        return phone;
     }
 
-    public List<ContactCompanyHistory> getHistory() {
-        return history;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
-    public void setHistory(List<ContactCompanyHistory> history) {
-        this.history = history;
+    public String getBuyingRole() {
+        return buyingRole;
+    }
+
+    public void setBuyingRole(String buyingRole) {
+        this.buyingRole = buyingRole;
+    }
+
+    public boolean isPrimary() {
+        return isPrimary;
+    }
+
+    public void setPrimary(boolean primary) {
+        isPrimary = primary;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
     }
 }
