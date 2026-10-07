@@ -14,6 +14,12 @@ public class CustomerDAO {
         obj.setCustomerid(rs.getInt("customer_id"));
         obj.setCustomername(rs.getString("customer_name"));
         obj.setPhone(rs.getString("phone"));
+        try { obj.setTaxCode(rs.getString("tax_code")); } catch (SQLException ignored) {}
+        try { obj.setIndustry(rs.getString("industry")); } catch (SQLException ignored) {}
+        try { obj.setSize(rs.getString("size")); } catch (SQLException ignored) {}
+        try { obj.setWebsite(rs.getString("website")); } catch (SQLException ignored) {}
+        try { obj.setAddress(rs.getString("address")); } catch (SQLException ignored) {}
+        try { obj.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
         obj.setOwnerId(rs.getInt("owner_id"));
         obj.setCreatedAt(rs.getTimestamp("created_at"));
         return obj;
@@ -178,10 +184,38 @@ public class CustomerDAO {
         return null;
     }
 
+    public boolean isTaxCodeExists(String taxCode, Integer excludeCustomerId) {
+        if (taxCode == null || taxCode.trim().isEmpty()) {
+            return false;
+        }
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM customers WHERE LOWER(TRIM(tax_code)) = LOWER(TRIM(?))");
+        if (excludeCustomerId != null && excludeCustomerId > 0) {
+            sql.append(" AND customer_id != ?");
+        }
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            ps.setString(1, taxCode.trim());
+            if (excludeCustomerId != null && excludeCustomerId > 0) {
+                ps.setInt(2, excludeCustomerId);
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public Customer findDuplicateCustomer(String taxCode, String phone, String customerName) {
         List<String> conditions = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
+        if (taxCode != null && !taxCode.trim().isEmpty()) {
+            conditions.add("tax_code = ?");
+            params.add(taxCode.trim());
+        }
         if (phone != null && !phone.trim().isEmpty()) {
             conditions.add("phone = ?");
             params.add(phone.trim());
@@ -212,12 +246,18 @@ public class CustomerDAO {
     }
 
     public boolean insert(Customer customer) {
-        String sql = "INSERT INTO customers (customer_name, phone, owner_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO customers (customer_name, phone, tax_code, industry, size, website, address, status, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
-            ps.setInt(3, customer.getOwnerId());
+            ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
+            ps.setString(4, customer.getIndustry());
+            ps.setString(5, customer.getSize());
+            ps.setString(6, customer.getWebsite());
+            ps.setString(7, customer.getAddress());
+            ps.setString(8, (customer.getStatus() != null && !customer.getStatus().trim().isEmpty()) ? customer.getStatus().trim() : "Tiềm năng");
+            ps.setInt(9, customer.getOwnerId());
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -238,13 +278,19 @@ public class CustomerDAO {
     }
 
     public boolean update(Customer customer) {
-        String sql = "UPDATE customers SET customer_name = ?, phone = ?, owner_id = ? WHERE customer_id = ?";
+        String sql = "UPDATE customers SET customer_name = ?, phone = ?, tax_code = ?, industry = ?, size = ?, website = ?, address = ?, status = ?, owner_id = ? WHERE customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
-            ps.setInt(3, customer.getOwnerId());
-            ps.setInt(4, customer.getCustomerId());
+            ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
+            ps.setString(4, customer.getIndustry());
+            ps.setString(5, customer.getSize());
+            ps.setString(6, customer.getWebsite());
+            ps.setString(7, customer.getAddress());
+            ps.setString(8, (customer.getStatus() != null && !customer.getStatus().trim().isEmpty()) ? customer.getStatus().trim() : "Tiềm năng");
+            ps.setInt(9, customer.getOwnerId());
+            ps.setInt(10, customer.getCustomerId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
