@@ -14,6 +14,7 @@ public class Customer360Response {
     private List<Opportunity> openOpportunities = new ArrayList<>();
     private List<Opportunity> closedOpportunities = new ArrayList<>();
     private double totalOpenOpportunityValue = 0.0;
+    private double signedValue = 0.0;
     private List<Activity> activities = new ArrayList<>();
     private int totalActivities = 0;
     private List<Map<String, Object>> attachments = new ArrayList<>();
@@ -32,6 +33,9 @@ public class Customer360Response {
 
     public double getTotalOpenOpportunityValue() { return totalOpenOpportunityValue; }
     public void setTotalOpenOpportunityValue(double totalOpenOpportunityValue) { this.totalOpenOpportunityValue = totalOpenOpportunityValue; }
+
+    public double getSignedValue() { return signedValue; }
+    public void setSignedValue(double signedValue) { this.signedValue = signedValue; }
 
     public List<Activity> getActivities() { return activities; }
     public void setActivities(List<Activity> activities) { this.activities = activities; }

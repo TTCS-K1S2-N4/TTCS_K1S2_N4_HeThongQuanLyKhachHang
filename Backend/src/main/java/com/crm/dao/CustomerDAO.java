@@ -278,16 +278,41 @@ public class CustomerDAO {
                 Map<String, Object> map = new HashMap<>();
                 map.put("contactId", rs.getInt("contact_id"));
                 map.put("customerId", rs.getInt("customer_id"));
-                map.put("contactName", rs.getString("contact_name"));
+
+                String fullName = "";
+                try {
+                    fullName = rs.getString("full_name");
+                    if (fullName == null) fullName = rs.getString("contact_name");
+                } catch (SQLException ignored) {
+                    try { fullName = rs.getString("contact_name"); } catch (SQLException ignored2) {}
+                }
+
+                String title = "";
+                try {
+                    title = rs.getString("title");
+                    if (title == null) title = rs.getString("position");
+                } catch (SQLException ignored) {
+                    try { title = rs.getString("position"); } catch (SQLException ignored2) {}
+                }
+
+                String buyingRole = "";
+                try { buyingRole = rs.getString("buying_role"); } catch (SQLException ignored) {}
+
+                map.put("fullName", fullName);
+                map.put("contactName", fullName);
+                map.put("name", fullName);
+                map.put("title", title);
+                map.put("position", title);
+                map.put("role", buyingRole);
+                map.put("buyingRole", buyingRole);
                 map.put("phone", rs.getString("phone"));
                 map.put("email", rs.getString("email"));
-                map.put("position", rs.getString("position"));
                 map.put("isPrimary", rs.getBoolean("is_primary"));
                 map.put("createdAt", rs.getTimestamp("created_at"));
                 list.add(map);
             }
         } catch (SQLException e) {
-            // Table might be missing or empty
+            e.printStackTrace();
         }
         return list;
     }

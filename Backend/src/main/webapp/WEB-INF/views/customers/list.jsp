@@ -188,6 +188,10 @@
                                                     </c:choose>
                                                 </td>
                                                 <td style="text-align: center;">
+                                                    <a href="${pageContext.request.contextPath}/customers/360?id=${item.customerId}"
+                                                        class="btn btn-secondary"
+                                                        style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 4px 8px; font-size: 13px;"
+                                                        title="Xem trang Customer 360"><i class="fas fa-user-check"></i> 360°</a>
                                                     <a href="${pageContext.request.contextPath}/customers/detail?id=${item.customerId}"
                                                         class="btn btn-secondary"
                                                         style="background: white; border: 1px solid var(--color-border); padding: 4px 8px; font-size: 13px;"

@@ -79,7 +79,7 @@ public class Customer360ServiceTest {
 
         when(customerDAO.findById(101)).thenReturn(c);
         doThrow(new AuthorizationException("Bạn không có quyền xem dữ liệu này."))
-                .when(permissionService).validateDataAccessForRoles(eq(4), (List<Integer>) anyList(), eq("ACCOUNT"), eq(5));
+                .when(permissionService).validateDataAccessForRoles(eq(4), org.mockito.ArgumentMatchers.<List<Integer>>any(), eq("ACCOUNT"), eq(5));
 
         assertThrows(AuthorizationException.class, () -> {
             customer360Service.getCustomer360(101, 4, Collections.singletonList(1));
@@ -103,5 +103,33 @@ public class Customer360ServiceTest {
         assertNotNull(list);
         assertEquals(1, list.size());
         assertEquals(301, list.get(0).getActivityId());
+    }
+
+    @Test
+    public void testPerformanceWith500Activities() throws Exception {
+        Customer c = new Customer();
+        c.setCustomerId(101);
+        c.setOwnerId(4);
+        when(customerDAO.findById(101)).thenReturn(c);
+
+        List<Activity> mock500List = new java.util.ArrayList<>();
+        for (int i = 1; i <= 500; i++) {
+            Activity act = new Activity();
+            act.setActivityId(i);
+            act.setTitle("Activity " + i);
+            act.setCustomerId(101);
+            mock500List.add(act);
+        }
+
+        when(activityDAO.getActivitiesByCustomerId(eq(101), anyInt(), anyInt())).thenReturn(mock500List.subList(0, 10));
+        when(activityDAO.countByCustomerId(101)).thenReturn(500);
+
+        long start = System.currentTimeMillis();
+        Customer360Response res = customer360Service.getCustomer360(101, 4, Collections.singletonList(1));
+        long duration = System.currentTimeMillis() - start;
+
+        assertNotNull(res);
+        assertEquals(500, res.getTotalActivities());
+        assertTrue(duration < 1500, "Performance test failed: took " + duration + " ms (limit 1500 ms)");
     }
 }

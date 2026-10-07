@@ -99,16 +99,21 @@ public class CustomerTimelineServlet extends HttpServlet {
         sb.append("\"page\":").append(page).append(",");
         sb.append("\"pageSize\":").append(pageSize).append(",");
         sb.append("\"loadTimeMs\":").append(loadTimeMs).append(",");
+        sb.append("\"hasMore\":").append(list.size() >= pageSize).append(",");
         sb.append("\"activities\":[");
         for (int i = 0; i < list.size(); i++) {
             Activity a = list.get(i);
             if (i > 0) sb.append(",");
+            String dateStr = a.getCreatedAt() != null ? a.getCreatedAt().toString() : "";
             sb.append("{");
             sb.append("\"activityId\":").append(a.getActivityId()).append(",");
             sb.append("\"title\":\"").append(escapeJson(a.getTitle())).append("\",");
             sb.append("\"description\":\"").append(escapeJson(a.getDescription())).append("\",");
+            sb.append("\"content\":\"").append(escapeJson(a.getDescription())).append("\",");
+            sb.append("\"user\":\"").append(a.getOwnerId() > 0 ? "User #" + a.getOwnerId() : "").append("\",");
+            sb.append("\"date\":\"").append(escapeJson(dateStr)).append("\",");
             sb.append("\"ownerId\":").append(a.getOwnerId()).append(",");
-            sb.append("\"createdAt\":\"").append(a.getCreatedAt() != null ? a.getCreatedAt().toString() : "").append("\"");
+            sb.append("\"createdAt\":\"").append(escapeJson(dateStr)).append("\"");
             sb.append("}");
         }
         sb.append("]}");

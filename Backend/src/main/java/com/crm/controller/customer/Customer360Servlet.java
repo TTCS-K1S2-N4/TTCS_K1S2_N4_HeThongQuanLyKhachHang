@@ -59,6 +59,14 @@ public class Customer360Servlet extends HttpServlet {
             } else {
                 req.setAttribute("customer360", data);
                 req.setAttribute("customer", data.getCustomer());
+                req.setAttribute("contacts", data.getContacts());
+                req.setAttribute("openOpportunities", data.getOpenOpportunities());
+                req.setAttribute("closedOpportunities", data.getClosedOpportunities());
+                req.setAttribute("totalOpenOpportunityValue", data.getTotalOpenOpportunityValue());
+                req.setAttribute("openOpportunityValue", data.getTotalOpenOpportunityValue());
+                req.setAttribute("signedValue", data.getSignedValue());
+                req.setAttribute("activities", data.getActivities());
+                req.setAttribute("attachments", data.getAttachments());
                 req.getRequestDispatcher("/WEB-INF/views/customers/360.jsp").forward(req, resp);
             }
         } catch (AuthorizationException e) {

@@ -28,6 +28,7 @@
                     <h1 class="page-title">Chi tiết khách hàng</h1>
                 </div>
                 <div class="page-actions">
+                    <a class="btn btn-primary" style="background: #0284c7; border-color: #0284c7;" href="${pageContext.request.contextPath}/customers/360?id=${customer.customerId}"><i class="fas fa-user-check"></i> Hồ sơ 360°</a>
                     <a class="btn btn-primary" href="${pageContext.request.contextPath}/customers/edit?id=${customer.customerId}"><i class="fas fa-edit"></i> Sửa</a>
                     <a class="btn btn-info" href="${pageContext.request.contextPath}/customers/hierarchy?id=${customer.customerId}"><i class="fas fa-sitemap"></i> Cây quan hệ</a>
                     <a class="btn btn-secondary" href="${pageContext.request.contextPath}/customers"><i class="fas fa-arrow-left"></i> Quay lại</a>

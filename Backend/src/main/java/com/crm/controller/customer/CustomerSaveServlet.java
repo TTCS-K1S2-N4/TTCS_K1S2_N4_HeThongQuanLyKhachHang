@@ -24,6 +24,38 @@ public class CustomerSaveServlet extends HttpServlet {
     private final CustomFieldService customFieldService = new CustomFieldService();
 
     @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String uri = req.getRequestURI();
+        Integer userId = (Integer) req.getSession().getAttribute("userId");
+        if (userId == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            return;
+        }
+
+        if (uri.endsWith("/edit")) {
+            String idStr = req.getParameter("id");
+            if (idStr == null || idStr.trim().isEmpty()) {
+                idStr = req.getParameter("customerId");
+            }
+            if (idStr != null && !idStr.trim().isEmpty()) {
+                try {
+                    int id = Integer.parseInt(idStr.trim());
+                    Customer customer = customerDAO.findById(id);
+                    if (customer != null) {
+                        req.setAttribute("customer", customer);
+                        req.getRequestDispatcher("/WEB-INF/views/customers/edit.jsp").forward(req, resp);
+                        return;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+            resp.sendRedirect(req.getContextPath() + "/customers");
+            return;
+        }
+
+        resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "HTTP method GET is not supported by this URL");
+    }
+
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String uri = req.getRequestURI();
         Integer userId = (Integer) req.getSession().getAttribute("userId");

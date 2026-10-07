@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -27,6 +27,13 @@
                 </div>
             </div>
 
+            <c:set var="contactList" value="${not empty contacts ? contacts : customer360.contacts}"/>
+            <c:set var="openOppList" value="${not empty openOpportunities ? openOpportunities : customer360.openOpportunities}"/>
+            <c:set var="closedOppList" value="${not empty closedOpportunities ? closedOpportunities : customer360.closedOpportunities}"/>
+            <c:set var="signedVal" value="${signedValue != null ? signedValue : customer360.signedValue}"/>
+            <c:set var="openVal" value="${openOpportunityValue != null ? openOpportunityValue : (totalOpenOpportunityValue != null ? totalOpenOpportunityValue : customer360.totalOpenOpportunityValue)}"/>
+            <c:set var="attachmentList" value="${not empty attachments ? attachments : customer360.attachments}"/>
+
             <!-- Customer 360 Grid -->
             <div class="customer-360-container" id="customer360App">
                 <div class="customer-360-main">
@@ -39,27 +46,31 @@
                             <div class="c360-overview-grid">
                                 <div class="c360-field">
                                     <span class="c360-label">Tên công ty / Khách hàng</span>
-                                    <span class="c360-value"><c:out value="${customer != null ? customer.name : 'Chưa có dữ liệu'}"/></span>
+                                    <span class="c360-value">
+                                        <c:out value="${customer != null ? (not empty customer.customerName ? customer.customerName : customer.customername) : 'Chưa có dữ liệu'}"/>
+                                    </span>
                                 </div>
                                 <div class="c360-field">
                                     <span class="c360-label">Mã khách hàng</span>
-                                    <span class="c360-value"><c:out value="${customer != null ? customer.code : '---'}"/></span>
+                                    <span class="c360-value">
+                                        <c:out value="${customer != null ? (customer.customerId > 0 ? customer.customerId : customer.customerid) : '---'}"/>
+                                    </span>
                                 </div>
                                 <div class="c360-field">
                                     <span class="c360-label">Mã số thuế</span>
-                                    <span class="c360-value"><c:out value="${customer != null ? customer.taxCode : '---'}"/></span>
+                                    <span class="c360-value"><c:out value="${customer != null && not empty customer.taxCode ? customer.taxCode : '---'}"/></span>
                                 </div>
                                 <div class="c360-field">
                                     <span class="c360-label">Ngành nghề</span>
-                                    <span class="c360-value"><c:out value="${customer != null ? customer.industry : '---'}"/></span>
+                                    <span class="c360-value"><c:out value="${customer != null && not empty customer.industry ? customer.industry : '---'}"/></span>
                                 </div>
                                 <div class="c360-field">
                                     <span class="c360-label">Địa chỉ</span>
-                                    <span class="c360-value"><c:out value="${customer != null ? customer.address : '---'}"/></span>
+                                    <span class="c360-value"><c:out value="${customer != null && not empty customer.address ? customer.address : '---'}"/></span>
                                 </div>
                                 <div class="c360-field">
                                     <span class="c360-label">Trạng thái</span>
-                                    <span class="c360-value badge badge-primary"><c:out value="${customer != null ? customer.status : 'Mới'}"/></span>
+                                    <span class="c360-value badge badge-primary"><c:out value="${customer != null && not empty customer.status ? customer.status : 'Mới'}"/></span>
                                 </div>
                             </div>
                         </div>
@@ -72,17 +83,21 @@
                         </div>
                         <div class="card-body">
                             <c:choose>
-                                <c:when test="${not empty contacts}">
+                                <c:when test="${not empty contactList}">
                                     <ul class="c360-list">
-                                        <c:forEach var="contact" items="${contacts}">
+                                        <c:forEach var="contact" items="${contactList}">
                                             <li class="c360-list-item">
                                                 <div class="c360-contact-info">
-                                                    <strong><c:out value="${contact.name}"/></strong>
-                                                    <span class="text-sm text-gray"><c:out value="${contact.role}"/></span>
+                                                    <strong>
+                                                        <c:out value="${not empty contact.fullName ? contact.fullName : (not empty contact.contactName ? contact.contactName : contact.name)}"/>
+                                                    </strong>
+                                                    <span class="text-sm text-gray">
+                                                        <c:out value="${not empty contact.title ? contact.title : (not empty contact.position ? contact.position : contact.role)}"/>
+                                                    </span>
                                                 </div>
                                                 <div class="c360-contact-contact">
-                                                    <span><i class="fa-solid fa-envelope"></i> <c:out value="${contact.email}"/></span>
-                                                    <span><i class="fa-solid fa-phone"></i> <c:out value="${contact.phone}"/></span>
+                                                    <span><i class="fa-solid fa-envelope"></i> <c:out value="${empty contact.email ? '—' : contact.email}"/></span>
+                                                    <span><i class="fa-solid fa-phone"></i> <c:out value="${empty contact.phone ? '—' : contact.phone}"/></span>
                                                 </div>
                                             </li>
                                         </c:forEach>
@@ -111,7 +126,7 @@
                             
                             <div id="tab-opp-open" class="c360-tab-content active">
                                 <c:choose>
-                                    <c:when test="${not empty openOpportunities}">
+                                    <c:when test="${not empty openOppList}">
                                         <table class="table">
                                             <thead>
                                                 <tr>
@@ -121,11 +136,11 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <c:forEach var="opp" items="${openOpportunities}">
+                                                <c:forEach var="opp" items="${openOppList}">
                                                     <tr>
-                                                        <td><c:out value="${opp.name}"/></td>
-                                                        <td><fmt:formatNumber value="${opp.value}" type="currency" currencySymbol="VND"/></td>
-                                                        <td><span class="badge badge-warning"><c:out value="${opp.stage}"/></span></td>
+                                                        <td><c:out value="${not empty opp.title ? opp.title : opp.name}"/></td>
+                                                        <td><fmt:formatNumber value="${opp.amount != null ? opp.amount : opp.value}" type="currency" currencySymbol="VND"/></td>
+                                                        <td><span class="badge badge-warning"><c:out value="${not empty opp.stageName ? opp.stageName : opp.stage}"/></span></td>
                                                     </tr>
                                                 </c:forEach>
                                             </tbody>
@@ -142,7 +157,7 @@
 
                             <div id="tab-opp-closed" class="c360-tab-content" style="display: none;">
                                 <c:choose>
-                                    <c:when test="${not empty closedOpportunities}">
+                                    <c:when test="${not empty closedOppList}">
                                         <table class="table">
                                             <thead>
                                                 <tr>
@@ -152,11 +167,11 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <c:forEach var="opp" items="${closedOpportunities}">
+                                                <c:forEach var="opp" items="${closedOppList}">
                                                     <tr>
-                                                        <td><c:out value="${opp.name}"/></td>
-                                                        <td><fmt:formatNumber value="${opp.value}" type="currency" currencySymbol="VND"/></td>
-                                                        <td><span class="badge badge-success"><c:out value="${opp.stage}"/></span></td>
+                                                        <td><c:out value="${not empty opp.title ? opp.title : opp.name}"/></td>
+                                                        <td><fmt:formatNumber value="${opp.amount != null ? opp.amount : opp.value}" type="currency" currencySymbol="VND"/></td>
+                                                        <td><span class="badge badge-success"><c:out value="${not empty opp.stageName ? opp.stageName : opp.stage}"/></span></td>
                                                     </tr>
                                                 </c:forEach>
                                             </tbody>
@@ -185,23 +200,13 @@
                                 <div class="c360-value-item">
                                     <span class="c360-value-label">Giá trị đã ký</span>
                                     <span class="c360-value-amount text-success">
-                                        <c:choose>
-                                            <c:when test="${signedValue != null}">
-                                                <fmt:formatNumber value="${signedValue}" type="currency" currencySymbol="VND"/>
-                                            </c:when>
-                                            <c:otherwise>0 VND</c:otherwise>
-                                        </c:choose>
+                                        <fmt:formatNumber value="${signedVal != null ? signedVal : 0}" type="currency" currencySymbol="VND"/>
                                     </span>
                                 </div>
                                 <div class="c360-value-item">
                                     <span class="c360-value-label">Giá trị cơ hội (Open)</span>
                                     <span class="c360-value-amount text-warning">
-                                        <c:choose>
-                                            <c:when test="${openOpportunityValue != null}">
-                                                <fmt:formatNumber value="${openOpportunityValue}" type="currency" currencySymbol="VND"/>
-                                            </c:when>
-                                            <c:otherwise>0 VND</c:otherwise>
-                                        </c:choose>
+                                        <fmt:formatNumber value="${openVal != null ? openVal : 0}" type="currency" currencySymbol="VND"/>
                                     </span>
                                 </div>
                             </div>
@@ -215,12 +220,14 @@
                         </div>
                         <div class="card-body">
                             <c:choose>
-                                <c:when test="${not empty attachments}">
+                                <c:when test="${not empty attachmentList}">
                                     <ul class="c360-attachment-list">
-                                        <c:forEach var="att" items="${attachments}">
+                                        <c:forEach var="att" items="${attachmentList}">
                                             <li>
                                                 <i class="fa-solid fa-paperclip"></i>
-                                                <a href="${pageContext.request.contextPath}${att.url}" target="_blank"><c:out value="${att.name}"/></a>
+                                                <a href="${pageContext.request.contextPath}${not empty att.filePath ? att.filePath : att.url}" target="_blank">
+                                                    <c:out value="${not empty att.fileName ? att.fileName : att.name}"/>
+                                                </a>
                                             </li>
                                         </c:forEach>
                                     </ul>
@@ -256,7 +263,7 @@
                 </div>
             </div>
             
-            <input type="hidden" id="c360-customer-id" value="${customer != null ? customer.id : ''}">
+            <input type="hidden" id="c360-customer-id" value="${customer != null ? (customer.customerId > 0 ? customer.customerId : customer.customerid) : ''}">
             <input type="hidden" id="c360-context-path" value="${pageContext.request.contextPath}">
         </div>
     </main>

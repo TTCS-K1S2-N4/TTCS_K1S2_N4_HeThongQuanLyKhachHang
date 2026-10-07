@@ -50,10 +50,12 @@ public class Customer360Service {
         List<Opportunity> openOpps = opportunityDAO.getOpenOpportunitiesByCustomerId(customerId);
         List<Opportunity> closedOpps = opportunityDAO.getClosedOpportunitiesByCustomerId(customerId);
         double openAmount = opportunityDAO.calculateTotalOpenAmount(customerId);
+        double signedAmount = opportunityDAO.calculateTotalSignedAmount(customerId);
 
         response.setOpenOpportunities(openOpps);
         response.setClosedOpportunities(closedOpps);
         response.setTotalOpenOpportunityValue(openAmount);
+        response.setSignedValue(signedAmount);
 
         List<Activity> activities = activityDAO.getActivitiesByCustomerId(customerId, 1, 10);
         int totalActivities = activityDAO.countByCustomerId(customerId);
