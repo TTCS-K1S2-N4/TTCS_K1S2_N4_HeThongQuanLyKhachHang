@@ -67,6 +67,17 @@
                 flex: 1;
             }
         }
+        .pagination-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .page-link-custom {
+            padding: 4px 12px;
+        }
+        .page-link-inactive {
+            background: white;
+            border: 1px solid var(--color-border);
+        }
     </style>
 </head>
 <body>
@@ -212,16 +223,16 @@
                     <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding: 12px 24px;">
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Trang ${currentPage} / ${totalPages}</span>
                         <ul class="pagination" style="margin: 0; display: flex; gap: 4px; list-style: none; padding: 0;">
-                            <li class="page-item ${currentPage == 1 ? 'disabled' : ''}" style="opacity: ${currentPage == 1 ? '0.5' : '1'}; pointer-events: ${currentPage == 1 ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
+                            <li class="page-item ${currentPage == 1 ? 'disabled pagination-disabled' : ''}">
+                                <a class="page-link btn btn-secondary page-link-custom page-link-inactive" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
                             </li>
                             <c:forEach begin="${Math.max(1, currentPage - 2)}" end="${Math.min(totalPages, currentPage + 2)}" var="i">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                    <a class="page-link btn ${currentPage == i ? 'btn-primary' : 'btn-secondary'}" style="padding: 4px 12px; ${currentPage != i ? 'background: white; border: 1px solid var(--color-border);' : ''}" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
+                                    <a class="page-link btn ${currentPage == i ? 'btn-primary page-link-custom' : 'btn-secondary page-link-custom page-link-inactive'}" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
                                 </li>
                             </c:forEach>
-                            <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}" style="opacity: ${currentPage == totalPages ? '0.5' : '1'}; pointer-events: ${currentPage == totalPages ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage + 1}&keyword=<c:out value='${keyword}'/>">Sau ›</a>
+                            <li class="page-item ${currentPage == totalPages ? 'disabled pagination-disabled' : ''}">
+                                <a class="page-link btn btn-secondary page-link-custom page-link-inactive" href="?page=${currentPage + 1}&keyword=<c:out value='${keyword}'/>">Sau ›</a>
                             </li>
                         </ul>
                     </div>
