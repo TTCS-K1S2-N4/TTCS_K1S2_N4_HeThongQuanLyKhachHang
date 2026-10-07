@@ -43,6 +43,9 @@ public class AccountDAO {
             while (rs.next()) {
                 list.add(mapResultSetToAccount(rs));
             }
+            for (Account account : list) {
+                loadRoles(conn, account);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -98,6 +101,23 @@ public class AccountDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, avatarUrl);
             ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateUserTeam(int userId, Integer newTeamId) {
+        String sql = "UPDATE users SET team_id = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (newTeamId != null && newTeamId > 0) {
+                ps.setInt(1, newTeamId);
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -62,15 +62,21 @@ CREATE TABLE IF NOT EXISTS customers (
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
 
--- 6. Bảng Cơ hội bán hàng (Có trường owner_id phục vụ S1-10)
+-- 6. Bảng Cơ hội bán hàng (Có trường owner_id phục vụ S1-10, S2-09, S2-10)
 CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) DEFAULT 0,
     owner_id INT NOT NULL,
+    pipeline_stage_id INT NULL,
+    probability DECIMAL(5, 2) DEFAULT 0,
+    win_loss_reason_id INT NULL,
+    competitor_id INT NULL,
+    close_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
+
 
 -- 6.1. Bảng Hoạt động (Activities)
 CREATE TABLE IF NOT EXISTS activities (

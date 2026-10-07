@@ -52,7 +52,37 @@ public class TeamListServlet extends HttpServlet {
             }
         }
 
+        String action = req.getParameter("action");
+        if ("members".equals(action)) {
+            int tId = 0;
+            try {
+                tId = Integer.parseInt(req.getParameter("teamId"));
+            } catch (Exception ignored) {}
+            List<Account> members = organizationService.getTeamMembers(tId);
+            resp.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = resp.getWriter();
+            StringBuilder json = new StringBuilder();
+            json.append("{\"success\": true, \"members\": [");
+            for (int i = 0; i < members.size(); i++) {
+                Account m = members.get(i);
+                if (i > 0) json.append(",");
+                json.append("{");
+                json.append("\"userId\":").append(m.getAccountId()).append(",");
+                json.append("\"fullName\":\"").append(escapeJson(m.getFullName())).append("\",");
+                json.append("\"email\":\"").append(escapeJson(m.getEmail())).append("\",");
+                json.append("\"teamId\":").append(m.getTeamId() != null ? m.getTeamId() : "null").append(",");
+                json.append("\"teamName\":\"").append(escapeJson(m.getTeamName())).append("\"");
+                json.append("}");
+            }
+            json.append("]}");
+            out.print(json.toString());
+            out.flush();
+            return;
+        }
+
         List<Team> teams = organizationService.getAllTeams();
+        List<Account> users = organizationService.getAllActiveUsers();
+        List<Account> leaderCandidates = organizationService.getLeaderCandidateUsers();
 
         if (isAjaxRequest(req)) {
             resp.setContentType("application/json;charset=UTF-8");
@@ -85,11 +115,28 @@ public class TeamListServlet extends HttpServlet {
                 json.append("\"updatedAt\":").append(t.getUpdatedAt() != null ? "\"" + t.getUpdatedAt().toString() + "\"" : "null");
                 json.append("}");
             }
+            json.append("],");
+            json.append("\"users\":[");
+            for (int i = 0; i < users.size(); i++) {
+                Account u = users.get(i);
+                boolean isQualified = organizationService.isQualifiedLeader(u);
+                if (i > 0) json.append(",");
+                json.append("{");
+                json.append("\"userId\":").append(u.getAccountId()).append(",");
+                json.append("\"fullName\":\"").append(escapeJson(u.getFullName())).append("\",");
+                json.append("\"email\":\"").append(escapeJson(u.getEmail())).append("\",");
+                json.append("\"teamId\":").append(u.getTeamId() != null ? u.getTeamId() : "null").append(",");
+                json.append("\"teamName\":\"").append(escapeJson(u.getTeamName())).append("\",");
+                json.append("\"isLeaderQualified\":").append(isQualified);
+                json.append("}");
+            }
             json.append("]}");
             out.print(json.toString());
             out.flush();
         } else {
             req.setAttribute("teams", teams);
+            req.setAttribute("users", users);
+            req.setAttribute("leaderCandidates", leaderCandidates);
             req.getRequestDispatcher("/WEB-INF/views/organization/teams.jsp").forward(req, resp);
         }
     }

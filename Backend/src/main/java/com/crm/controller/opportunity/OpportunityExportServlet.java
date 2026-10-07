@@ -1,8 +1,12 @@
-package com.crm.controller.customer;
+package com.crm.controller.opportunity;
 
-import com.crm.dao.CustomerDAO;
-import com.crm.model.Customer;
+import com.crm.dao.OpportunityDAO;
+import com.crm.model.CustomFieldDefinition;
+import com.crm.model.CustomFieldValue;
+import com.crm.model.Opportunity;
+import com.crm.service.CustomFieldService;
 import com.crm.service.PermissionService;
+import com.crm.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,65 +17,67 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@WebServlet("/customers/export")
-public class CustomerExportServlet extends HttpServlet {
-    private final CustomerDAO customerDAO = new CustomerDAO();
+@WebServlet("/deals/export")
+public class OpportunityExportServlet extends HttpServlet {
+
+    private final OpportunityDAO opportunityDAO = new OpportunityDAO();
     private final PermissionService permissionService = new PermissionService();
+    private final CustomFieldService customFieldService = new CustomFieldService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Integer userId = (Integer) req.getSession().getAttribute("userId");
         Integer roleId = (Integer) req.getSession().getAttribute("roleId");
-        List<Integer> roleIds = com.crm.util.ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
+        List<Integer> roleIds = ValidationUtil.getSafeIntegerList(req.getAttribute("effectiveRoleIds"));
 
         if (userId == null || (roleId == null && (roleIds == null || roleIds.isEmpty()))) {
             resp.sendRedirect(req.getContextPath() + "/auth/login");
             return;
         }
 
-        List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty()) 
-                ? roleIds 
+        List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty())
+                ? roleIds
                 : Collections.singletonList(roleId);
 
-        List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, effectiveRoles, "ACCOUNT");
+        List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, effectiveRoles, "OPPORTUNITY");
         String keyword = req.getParameter("keyword");
 
-        List<Customer> customers = customerDAO.getListForExport(keyword, ownerIds);
-
-        com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
-        List<com.crm.model.CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("CUSTOMER", "ACTIVE");
+        List<Opportunity> opportunities = opportunityDAO.getListForExport(keyword, ownerIds);
+        List<CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("OPPORTUNITY", "ACTIVE");
 
         resp.setContentType("text/csv; charset=UTF-8");
-        resp.setHeader("Content-Disposition", "attachment; filename=\"customers_export.csv\"");
+        resp.setHeader("Content-Disposition", "attachment; filename=\"opportunities_export.csv\"");
 
         PrintWriter writer = resp.getWriter();
         writer.write("\uFEFF"); // UTF-8 BOM
 
-        StringBuilder headerSb = new StringBuilder("ID,Tên khách hàng,Số điện thoại,ID Người sở hữu,Ngày tạo");
-        for (com.crm.model.CustomFieldDefinition def : customFieldDefs) {
+        StringBuilder headerSb = new StringBuilder("ID,Tiêu đề,Số tiền,ID Người sở hữu,Ngày tạo");
+        for (CustomFieldDefinition def : customFieldDefs) {
             headerSb.append(",").append(escapeCsvField(def.getFieldLabel()));
         }
         writer.println(headerSb.toString());
 
-        for (Customer c : customers) {
+        for (Opportunity opp : opportunities) {
             StringBuilder sb = new StringBuilder();
-            sb.append(escapeCsvField(c.getCustomerid())).append(",");
-            sb.append(escapeCsvField(c.getCustomername())).append(",");
-            sb.append(escapeCsvField(c.getPhone())).append(",");
-            sb.append(escapeCsvField(c.getOwnerId())).append(",");
-            sb.append(escapeCsvField(c.getCreatedAt()));
+            sb.append(escapeCsvField(opp.getOpportunityId())).append(",");
+            sb.append(escapeCsvField(opp.getTitle())).append(",");
+            sb.append(escapeCsvField(opp.getAmount())).append(",");
+            sb.append(escapeCsvField(opp.getOwnerId())).append(",");
+            sb.append(escapeCsvField(opp.getCreatedAt()));
 
-            List<com.crm.model.CustomFieldValue> cfValues = customFieldService.getValuesByEntity("CUSTOMER", c.getCustomerId());
-            java.util.Map<Integer, String> valMap = new java.util.HashMap<>();
+            List<CustomFieldValue> cfValues = customFieldService.getValuesByEntity("OPPORTUNITY", opp.getOpportunityId());
+            Map<Integer, String> valMap = new HashMap<>();
             if (cfValues != null) {
-                for (com.crm.model.CustomFieldValue v : cfValues) {
+                for (CustomFieldValue v : cfValues) {
                     valMap.put(v.getFieldId(), v.getFieldValue());
                 }
             }
 
-            for (com.crm.model.CustomFieldDefinition def : customFieldDefs) {
+            for (CustomFieldDefinition def : customFieldDefs) {
                 String val = valMap.get(def.getFieldId());
                 sb.append(",").append(escapeCsvField(val != null ? val : ""));
             }
@@ -79,7 +85,6 @@ public class CustomerExportServlet extends HttpServlet {
         }
         writer.flush();
     }
-
 
     public static String escapeCsvField(Object field) {
         if (field == null) return "";
@@ -89,8 +94,8 @@ public class CustomerExportServlet extends HttpServlet {
         boolean isNegativeNumber = value.matches("^-[0-9]+(\\.[0-9]+)?$");
         String trimmed = value.stripLeading();
 
-        if (!isNegativeNumber && (trimmed.startsWith("=") || trimmed.startsWith("+") || 
-                                  trimmed.startsWith("-") || trimmed.startsWith("@") || 
+        if (!isNegativeNumber && (trimmed.startsWith("=") || trimmed.startsWith("+") ||
+                                  trimmed.startsWith("-") || trimmed.startsWith("@") ||
                                   trimmed.startsWith("\t") || trimmed.startsWith("\r"))) {
             value = "'" + value;
         }

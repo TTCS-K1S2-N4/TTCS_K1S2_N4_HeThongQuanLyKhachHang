@@ -35,17 +35,31 @@ public class CustomerListServlet extends HttpServlet {
         
         List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "ACCOUNT");
 
-        List<Customer> list = dao.getList(keyword, ownerIds, page, pageSize);
-        int total = dao.count(keyword, ownerIds);
+        String filterFieldIdStr = req.getParameter("filterFieldId");
+        String filterFieldValue = req.getParameter("filterFieldValue");
+        Integer filterFieldId = null;
+        if (filterFieldIdStr != null && !filterFieldIdStr.trim().isEmpty()) {
+            try { filterFieldId = Integer.parseInt(filterFieldIdStr.trim()); } catch (Exception ignored) {}
+        }
+
+        com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
+        List<com.crm.model.CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("CUSTOMER", "ACTIVE");
+
+        List<Customer> list = dao.getList(keyword, ownerIds, filterFieldId, filterFieldValue, page, pageSize);
+        int total = dao.count(keyword, ownerIds, filterFieldId, filterFieldValue);
         int totalPages = (int) Math.ceil((double) total / pageSize);
 
         req.setAttribute("list", list);
         req.setAttribute("currentPage", page);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("keyword", keyword);
+        req.setAttribute("customFieldDefinitions", customFieldDefs);
+        req.setAttribute("filterFieldId", filterFieldId);
+        req.setAttribute("filterFieldValue", filterFieldValue);
 
         req.getRequestDispatcher("/WEB-INF/views/customers/list.jsp").forward(req, resp);
     }
+
 }
 
 
