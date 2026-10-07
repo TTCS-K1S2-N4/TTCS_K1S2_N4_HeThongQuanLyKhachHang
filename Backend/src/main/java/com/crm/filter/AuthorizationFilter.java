@@ -53,7 +53,7 @@ public class AuthorizationFilter implements Filter {
     public void initProtectedUrlMap() {
         protectedUrlMap.clear();
 
-        // Khai báo các URL pattern bảo vệ trong module BE3
+        // Khai báo các URL pattern bảo vệ trong module Khách hàng (bao gồm Sprint 03)
         protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/delete", "ACCOUNT_DELETE");
@@ -62,7 +62,29 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/merge", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/hierarchy", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/detail", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/hierarchy", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/duplicates", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/merge", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/support", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/risk", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/care/config", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/care", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers", "ACCOUNT_VIEW");
+
+        // Alias URL ngắn gọn nếu có
+        protectedUrlMap.put("/support", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/risk", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/care", "ACCOUNT_VIEW");
+
+        // Quản lý người liên hệ (Contacts - Sprint 03 S3-02)
+        protectedUrlMap.put("/contacts/create", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/contacts/edit", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/contacts/primary", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/contacts/transfer", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/contacts/detail", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/contacts/list", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/contacts", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/contacts", "ACCOUNT_VIEW");
 
         protectedUrlMap.put("/accounts/create", "USER_CREATE");
         protectedUrlMap.put("/accounts/edit", "USER_EDIT");
@@ -257,12 +279,23 @@ public class AuthorizationFilter implements Filter {
     public String matchRequiredPermission(String path) {
         if (path == null) return null;
         String normalized = normalizePath(path);
+        // 1. Khớp chính xác đường dẫn
         for (Map.Entry<String, String> entry : protectedUrlMap.entrySet()) {
             if (normalized.equalsIgnoreCase(entry.getKey())) {
                 return entry.getValue();
             }
         }
-        return null;
+        // 2. Khớp tiền tố (prefix) cho các URL con (ví dụ /customers/care/config hoặc /customers/support/...)
+        String bestMatch = null;
+        String matchedKey = "";
+        for (Map.Entry<String, String> entry : protectedUrlMap.entrySet()) {
+            String key = entry.getKey();
+            if (normalized.toLowerCase().startsWith(key.toLowerCase() + "/") && key.length() > matchedKey.length()) {
+                matchedKey = key;
+                bestMatch = entry.getValue();
+            }
+        }
+        return bestMatch;
     }
 
     private boolean isPublicOrProfilePath(String normalizedPath) {
