@@ -22,9 +22,13 @@ public class ImportExcelService {
     private final AccountService accountService;
 
     public ImportExcelService() {
-        this.accountDAO = new AccountDAO();
-        this.roleDAO = new RoleDAO();
-        this.accountService = new AccountService();
+        this(new AccountDAO(), new RoleDAO(), new AccountService());
+    }
+
+    public ImportExcelService(AccountDAO accountDAO, RoleDAO roleDAO, AccountService accountService) {
+        this.accountDAO = accountDAO;
+        this.roleDAO = roleDAO;
+        this.accountService = accountService;
     }
 
     public Map<String, Object> validatePreview(List<ImportExcelRequest> rows) {
@@ -36,10 +40,13 @@ public class ImportExcelService {
         int validRows = 0;
         int invalidRows = 0;
         List<ImportExcelRequest> rowErrors = new java.util.ArrayList<>();
+        List<ImportExcelRequest> allRows = new java.util.ArrayList<>();
 
         java.util.Set<String> emailsInFile = new java.util.HashSet<>();
 
         for (ImportExcelRequest row : rows) {
+            allRows.add(row);
+
             if (row.isValid()
                     && row.getEmail() != null
                     && !row.getEmail().trim().isEmpty()) {
@@ -52,7 +59,9 @@ public class ImportExcelService {
             }
 
             if (row.isValid()
-                    && accountDAO.isEmailExists(row.getEmail(), -1)) {
+                    && row.getEmail() != null
+                    && !row.getEmail().trim().isEmpty()
+                    && accountDAO.isEmailExists(row.getEmail().trim(), -1)) {
                 row.setError("Email đã tồn tại trong hệ thống");
             }
 
@@ -67,6 +76,7 @@ public class ImportExcelService {
         Map<String, Object> result = new HashMap<>();
         result.put("validRows", validRows);
         result.put("invalidRows", invalidRows);
+        result.put("allRows", allRows);
         result.put("rowErrors", rowErrors);
 
         return result;
@@ -79,10 +89,7 @@ public class ImportExcelService {
             result.put("totalRows", 0);
             result.put("successCount", 0);
             result.put("failedCount", 0);
-            result.put(
-                    "errors",
-                    Collections.singletonList(
-                            "Không có dữ liệu để import."));
+            result.put("errors", Collections.singletonList("Không có dữ liệu để import."));
             return result;
         }
 
@@ -90,19 +97,23 @@ public class ImportExcelService {
         int failedCount = 0;
         List<String> errors = new java.util.ArrayList<>();
 
-        Role defaultRole;
+        Role defaultRole = null;
 
         try {
             defaultRole = roleDAO.findByCode("SALES_REP");
+            if (defaultRole == null) {
+                // Fallback to first role if SALES_REP not found
+                List<Role> roles = roleDAO.findAll();
+                if (roles != null && !roles.isEmpty()) {
+                    defaultRole = roles.get(0);
+                }
+            }
         } catch (Exception e) {
             Map<String, Object> result = new HashMap<>();
             result.put("totalRows", rows.size());
             result.put("successCount", 0);
             result.put("failedCount", rows.size());
-            result.put(
-                    "errors",
-                    Collections.singletonList(
-                            "Không thể tải role mặc định: " + e.getMessage()));
+            result.put("errors", Collections.singletonList("Không thể tải vai trò mặc định: " + e.getMessage()));
             return result;
         }
 
@@ -111,33 +122,25 @@ public class ImportExcelService {
             result.put("totalRows", rows.size());
             result.put("successCount", 0);
             result.put("failedCount", rows.size());
-            result.put(
-                    "errors",
-                    Collections.singletonList(
-                            "Không tìm thấy role mặc định SALES_REP."));
+            result.put("errors", Collections.singletonList("Không tìm thấy vai trò hệ thống cho tài khoản mới."));
             return result;
         }
 
         for (ImportExcelRequest row : rows) {
+            String rowLabel = "Dòng " + (row.getRowIndex() > 0 ? row.getRowIndex() : "?");
+            String emailLabel = (row.getEmail() != null && !row.getEmail().isEmpty()) ? row.getEmail() : "Chưa có email";
 
             // 1. Bỏ qua dòng đã không hợp lệ từ bước preview/validate
             if (!row.isValid()) {
                 failedCount++;
-                errors.add(
-                        "Dòng không hợp lệ: "
-                                + row.getEmail()
-                                + " - "
-                                + row.getError());
+                errors.add(rowLabel + " (" + emailLabel + ") bị bỏ qua do lỗi: " + row.getError());
                 continue;
             }
 
-            // 2. Revalidate email ngay trước khi ghi DB
-            // Tránh trường hợp email được tạo sau bước preview
+            // 2. Revalidate email ngay trước khi ghi DB (phòng race condition)
             if (accountDAO.isEmailExists(row.getEmail(), -1)) {
                 failedCount++;
-                errors.add(
-                        "Email đã tồn tại trong hệ thống: "
-                                + row.getEmail());
+                errors.add(rowLabel + " (" + emailLabel + "): Email đã tồn tại trong hệ thống");
                 continue;
             }
 
@@ -153,39 +156,23 @@ public class ImportExcelService {
                 AccountService.CreateAccountResult createResult = accountService.createAccountResult(accountRequest);
 
                 if (createResult.getStatus() == AccountService.CreateAccountStatus.SUCCESS_EMAIL_SENT) {
-
                     successCount++;
-
                 } else if (createResult.getStatus() == AccountService.CreateAccountStatus.SUCCESS_EMAIL_FAILED) {
-
                     successCount++;
-
-                    errors.add(
-                            "Đã tạo tài khoản nhưng gửi email mật khẩu tạm thất bại: "
-                                    + row.getEmail()
-                                    + (createResult.getErrorMessage() != null
-                                            ? " - " + createResult.getErrorMessage()
-                                            : ""));
-
+                    errors.add(rowLabel + " (" + emailLabel + "): Tạo thành công nhưng không gửi được email thông báo ("
+                            + (createResult.getErrorMessage() != null ? createResult.getErrorMessage() : "Lỗi SMTP") + ")");
                 } else {
-
                     failedCount++;
-
-                    errors.add(
-                            "Không thể tạo tài khoản cho email: "
-                                    + row.getEmail()
-                                    + (createResult.getErrorMessage() != null
-                                            ? " - " + createResult.getErrorMessage()
-                                            : ""));
+                    errors.add(rowLabel + " (" + emailLabel + "): Thất bại - "
+                            + (createResult.getErrorMessage() != null ? createResult.getErrorMessage() : "Không thể tạo tài khoản"));
                 }
             } catch (Exception e) {
                 failedCount++;
-                errors.add("Lỗi tạo tài khoản cho email " + row.getEmail() + ": " + e.getMessage());
+                errors.add(rowLabel + " (" + emailLabel + "): Lỗi ngoại lệ - " + e.getMessage());
             }
         }
 
         Map<String, Object> result = new HashMap<>();
-
         result.put("totalRows", rows.size());
         result.put("successCount", successCount);
         result.put("failedCount", failedCount);

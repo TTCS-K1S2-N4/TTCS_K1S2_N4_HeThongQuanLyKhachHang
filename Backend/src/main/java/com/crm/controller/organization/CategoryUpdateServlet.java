@@ -58,7 +58,7 @@ public class CategoryUpdateServlet extends HttpServlet {
         String actionStr = req.getParameter("action");
         Category.Action action = Category.Action.fromString(actionStr);
         if (action == null) {
-            errors.add("Tham số 'action' không hợp lệ. Giá trị hợp lệ: CREATE, UPDATE, DEACTIVATE.");
+            errors.add("Tham số 'action' không hợp lệ. Giá trị hợp lệ: CREATE, UPDATE, DEACTIVATE, DELETE.");
         }
 
         String categoryIdStr = req.getParameter("categoryId");

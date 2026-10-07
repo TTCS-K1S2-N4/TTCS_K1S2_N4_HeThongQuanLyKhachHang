@@ -97,6 +97,7 @@ public class ProductDetailServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             StringBuilder json = new StringBuilder();
             json.append("{");
+            json.append("\"canAccessCostPrice\":").append(canViewCost).append(",");
             json.append("\"product\":{");
             json.append("\"productId\":").append(product.getProductId()).append(",");
             json.append("\"productCode\":\"").append(escapeJson(product.getProductCode())).append("\",");

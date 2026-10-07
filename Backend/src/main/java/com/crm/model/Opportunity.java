@@ -7,6 +7,14 @@ public class Opportunity {
     private String title;
     private Double amount;
     private int ownerId;
+    private Integer pipelineStageId;
+    private String stageName;
+    private Double probability;
+    private Integer winLossReasonId;
+    private String reasonName;
+    private Integer competitorId;
+    private String competitorName;
+    private Timestamp closeDate;
     private Timestamp createdAt;
 
     public int getOpportunityid() { return opportunityId; }
@@ -23,6 +31,31 @@ public class Opportunity {
     public int getOwnerId() { return ownerId; }
     public void setOwnerId(int ownerId) { this.ownerId = ownerId; }
 
+    public Integer getPipelineStageId() { return pipelineStageId; }
+    public void setPipelineStageId(Integer pipelineStageId) { this.pipelineStageId = pipelineStageId; }
+
+    public String getStageName() { return stageName; }
+    public void setStageName(String stageName) { this.stageName = stageName; }
+
+    public Double getProbability() { return probability; }
+    public void setProbability(Double probability) { this.probability = probability; }
+
+    public Integer getWinLossReasonId() { return winLossReasonId; }
+    public void setWinLossReasonId(Integer winLossReasonId) { this.winLossReasonId = winLossReasonId; }
+
+    public String getReasonName() { return reasonName; }
+    public void setReasonName(String reasonName) { this.reasonName = reasonName; }
+
+    public Integer getCompetitorId() { return competitorId; }
+    public void setCompetitorId(Integer competitorId) { this.competitorId = competitorId; }
+
+    public String getCompetitorName() { return competitorName; }
+    public void setCompetitorName(String competitorName) { this.competitorName = competitorName; }
+
+    public Timestamp getCloseDate() { return closeDate; }
+    public void setCloseDate(Timestamp closeDate) { this.closeDate = closeDate; }
+
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 }
+

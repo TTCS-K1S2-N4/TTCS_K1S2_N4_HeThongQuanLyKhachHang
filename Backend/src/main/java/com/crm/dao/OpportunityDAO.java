@@ -15,28 +15,84 @@ public class OpportunityDAO {
         obj.setTitle(rs.getString("title"));
         obj.setAmount(rs.getDouble("amount"));
         obj.setOwnerId(rs.getInt("owner_id"));
+
+        try {
+            int stageId = rs.getInt("pipeline_stage_id");
+            if (!rs.wasNull()) obj.setPipelineStageId(stageId);
+        } catch (SQLException ignored) {}
+
+        try {
+            double prob = rs.getDouble("probability");
+            if (!rs.wasNull()) obj.setProbability(prob);
+        } catch (SQLException ignored) {}
+
+        try {
+            int reasonId = rs.getInt("win_loss_reason_id");
+            if (!rs.wasNull()) obj.setWinLossReasonId(reasonId);
+        } catch (SQLException ignored) {}
+
+        try {
+            int compId = rs.getInt("competitor_id");
+            if (!rs.wasNull()) obj.setCompetitorId(compId);
+        } catch (SQLException ignored) {}
+
+        try {
+            obj.setCloseDate(rs.getTimestamp("close_date"));
+        } catch (SQLException ignored) {}
+
+        try {
+            obj.setStageName(rs.getString("stage_name"));
+        } catch (SQLException ignored) {}
+
+        try {
+            obj.setReasonName(rs.getString("reason_name"));
+        } catch (SQLException ignored) {}
+
+        try {
+            obj.setCompetitorName(rs.getString("competitor_name"));
+        } catch (SQLException ignored) {}
+
         obj.setCreatedAt(rs.getTimestamp("created_at"));
         return obj;
     }
 
     public List<Opportunity> getList(String keyword, List<Integer> ownerIds, int page, int pageSize) {
+        return getList(keyword, ownerIds, null, null, page, pageSize);
+    }
+
+    public List<Opportunity> getList(String keyword, List<Integer> ownerIds, Integer filterFieldId, String filterFieldValue, int page, int pageSize) {
         if (ownerIds != null && ownerIds.isEmpty()) return new ArrayList<>();
         
         List<Opportunity> list = new ArrayList<>();
-        String sql = "SELECT * FROM opportunities WHERE 1=1";
+        StringBuilder sql = new StringBuilder(
+            "SELECT DISTINCT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+            "FROM opportunities o " +
+            "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+            "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+            "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id "
+        );
+        if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+            sql.append("JOIN custom_field_values cfv ON o.opportunity_id = cfv.entity_id AND cfv.entity_type = 'OPPORTUNITY' ");
+        }
+        sql.append("WHERE 1=1 ");
+        
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql += " AND title LIKE ?";
+            sql.append("AND o.title LIKE ? ");
         }
         
         if (ownerIds != null) {
             String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
-            sql += " AND owner_id IN (" + inClause + ")";
+            sql.append("AND o.owner_id IN (").append(inClause).append(") ");
+        }
+
+        if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+            sql.append("AND cfv.field_id = ? AND cfv.field_value LIKE ? ");
         }
         
-        sql += " ORDER BY opportunity_id DESC LIMIT ? OFFSET ?";
+        sql.append("ORDER BY o.opportunity_id DESC LIMIT ? OFFSET ?");
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int idx = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 ps.setString(idx++, "%" + keyword.trim() + "%");
@@ -45,6 +101,10 @@ public class OpportunityDAO {
                 for (Integer oid : ownerIds) {
                     ps.setInt(idx++, oid);
                 }
+            }
+            if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+                ps.setInt(idx++, filterFieldId);
+                ps.setString(idx++, "%" + filterFieldValue.trim() + "%");
             }
             ps.setInt(idx++, pageSize);
             ps.setInt(idx++, (page - 1) * pageSize);
@@ -59,20 +119,31 @@ public class OpportunityDAO {
         return list;
     }
 
-    public int count(String keyword, List<Integer> ownerIds) {
-        if (ownerIds != null && ownerIds.isEmpty()) return 0;
+    public List<Opportunity> getListForExport(String keyword, List<Integer> ownerIds) {
+        if (ownerIds != null && ownerIds.isEmpty()) return new ArrayList<>();
         
-        String sql = "SELECT COUNT(*) FROM opportunities WHERE 1=1";
+        List<Opportunity> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+            "FROM opportunities o " +
+            "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+            "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+            "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+            "WHERE 1=1"
+        );
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql += " AND title LIKE ?";
+            sql.append(" AND o.title LIKE ?");
         }
+        
         if (ownerIds != null) {
             String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
-            sql += " AND owner_id IN (" + inClause + ")";
+            sql.append(" AND o.owner_id IN (").append(inClause).append(")");
         }
+        
+        sql.append(" ORDER BY o.opportunity_id DESC");
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             int idx = 1;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 ps.setString(idx++, "%" + keyword.trim() + "%");
@@ -81,6 +152,56 @@ public class OpportunityDAO {
                 for (Integer oid : ownerIds) {
                     ps.setInt(idx++, oid);
                 }
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int count(String keyword, List<Integer> ownerIds) {
+        return count(keyword, ownerIds, null, null);
+    }
+
+    public int count(String keyword, List<Integer> ownerIds, Integer filterFieldId, String filterFieldValue) {
+        if (ownerIds != null && ownerIds.isEmpty()) return 0;
+        
+        StringBuilder sql = new StringBuilder("SELECT COUNT(DISTINCT o.opportunity_id) FROM opportunities o ");
+        if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+            sql.append("JOIN custom_field_values cfv ON o.opportunity_id = cfv.entity_id AND cfv.entity_type = 'OPPORTUNITY' ");
+        }
+        sql.append("WHERE 1=1 ");
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND o.title LIKE ? ");
+        }
+        if (ownerIds != null) {
+            String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
+            sql.append("AND o.owner_id IN (").append(inClause).append(") ");
+        }
+        if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+            sql.append("AND cfv.field_id = ? AND cfv.field_value LIKE ? ");
+        }
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            int idx = 1;
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                ps.setString(idx++, "%" + keyword.trim() + "%");
+            }
+            if (ownerIds != null) {
+                for (Integer oid : ownerIds) {
+                    ps.setInt(idx++, oid);
+                }
+            }
+            if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
+                ps.setInt(idx++, filterFieldId);
+                ps.setString(idx++, "%" + filterFieldValue.trim() + "%");
             }
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -93,7 +214,12 @@ public class OpportunityDAO {
     }
 
     public Opportunity findById(int id) {
-        String sql = "SELECT * FROM opportunities WHERE opportunity_id = ?";
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+                     "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "WHERE o.opportunity_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -105,6 +231,65 @@ public class OpportunityDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean insert(Opportunity opp) {
+        String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, opp.getTitle());
+            ps.setObject(2, opp.getAmount());
+            ps.setInt(3, opp.getOwnerId());
+            ps.setObject(4, opp.getPipelineStageId());
+            ps.setObject(5, opp.getProbability());
+            ps.setObject(6, opp.getWinLossReasonId());
+            ps.setObject(7, opp.getCompetitorId());
+            ps.setTimestamp(8, opp.getCloseDate());
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        opp.setOpportunityId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean update(Opportunity opp) {
+        String sql = "UPDATE opportunities SET title = ?, amount = ?, owner_id = ?, pipeline_stage_id = ?, probability = ?, win_loss_reason_id = ?, competitor_id = ?, close_date = ? WHERE opportunity_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, opp.getTitle());
+            ps.setObject(2, opp.getAmount());
+            ps.setInt(3, opp.getOwnerId());
+            ps.setObject(4, opp.getPipelineStageId());
+            ps.setObject(5, opp.getProbability());
+            ps.setObject(6, opp.getWinLossReasonId());
+            ps.setObject(7, opp.getCompetitorId());
+            ps.setTimestamp(8, opp.getCloseDate());
+            ps.setInt(9, opp.getOpportunityId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean delete(int opportunityId) {
+        String sql = "DELETE FROM opportunities WHERE opportunity_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, opportunityId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public boolean updateTargetAmount(int opportunityId, double targetAmount, int performedBy) {
@@ -132,3 +317,4 @@ public class OpportunityDAO {
         }
     }
 }
+

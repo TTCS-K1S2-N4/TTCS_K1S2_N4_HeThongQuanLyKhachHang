@@ -20,7 +20,7 @@
             
             <div class="card">
                 <div class="card-body">
-                    <form id="editForm" action="/products/edit" method="POST">
+                    <form id="editForm" action="../../products/edit" method="POST">
                         <input type="hidden" name="productId" id="productId">
                         <div class="form-group">
                             <label>Mã SP (*)</label>
@@ -43,15 +43,22 @@
                         </div>
                         <div class="form-group">
                             <label>Giá niêm yết (*)</label>
-                            <input type="number" name="listPrice" id="listPrice" class="form-control" required min="0">
+                            <input type="number" step="0.01" name="listPrice" id="listPrice" class="form-control" required min="0">
                         </div>
                         <div class="form-group">
                             <label>Giá sàn</label>
-                            <input type="number" name="floorPrice" id="floorPrice" class="form-control" min="0">
+                            <input type="number" step="0.01" name="floorPrice" id="floorPrice" class="form-control" min="0">
+                        </div>
+                        <div class="form-group" id="costPriceGroup" style="display: none;">
+                            <label>Giá vốn (Chỉ Giám đốc kinh doanh)</label>
+                            <input type="number" step="0.01" name="costPrice" id="costPrice" class="form-control" min="0">
                         </div>
                         <div class="form-group">
-                            <label>Giá vốn</label>
-                            <input type="number" name="costPrice" id="costPrice" class="form-control" min="0">
+                            <label>Trạng thái</label>
+                            <select name="status" id="status" class="form-control">
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Ngừng hoạt động</option>
+                            </select>
                         </div>
                         
                         <div class="form-actions mt-3">
@@ -70,19 +77,37 @@
         const productId = urlParams.get('productId');
         if(productId) {
             document.getElementById('productId').value = productId;
-            fetch(`/products/detail?productId=${productId}`)
-                .then(res => res.json())
+            fetch(`../../products/detail?productId=${productId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('API Error ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     if(data.product) {
                         document.getElementById('productCode').value = data.product.productCode || '';
                         document.getElementById('productName').value = data.product.productName || '';
                         document.getElementById('productType').value = data.product.productType || 'ONE_TIME';
                         document.getElementById('unit').value = data.product.unit || '';
-                        document.getElementById('listPrice').value = data.product.listPrice || '';
-                        document.getElementById('floorPrice').value = data.product.floorPrice || '';
-                        document.getElementById('costPrice').value = data.product.costPrice || '';
+                        document.getElementById('listPrice').value = data.product.listPrice != null ? data.product.listPrice : '';
+                        document.getElementById('floorPrice').value = data.product.floorPrice != null ? data.product.floorPrice : '';
+                        document.getElementById('status').value = data.product.status || 'ACTIVE';
+                        
+                        const costGroup = document.getElementById('costPriceGroup');
+                        if (data.canAccessCostPrice) {
+                            costGroup.style.display = 'block';
+                            document.getElementById('costPrice').value = data.product.costPrice != null ? data.product.costPrice : '';
+                        } else {
+                            costGroup.style.display = 'none';
+                        }
                     }
-                }).catch(err => console.error(err));
+                }).catch(err => {
+                    const messageDiv = document.getElementById('editMessage');
+                    messageDiv.textContent = 'Không thể tải dữ liệu sản phẩm: ' + err.message;
+                    messageDiv.className = 'toast-message error';
+                    messageDiv.style.display = 'block';
+                });
         }
 
         // Submit edit
@@ -91,24 +116,36 @@
             const messageDiv = document.getElementById('editMessage');
             messageDiv.style.display = 'block';
             
+            const listPrice = parseFloat(document.getElementById('listPrice').value || 0);
+            const floorPriceVal = document.getElementById('floorPrice').value;
+            if (floorPriceVal !== '' && parseFloat(floorPriceVal) > listPrice) {
+                messageDiv.textContent = 'Giá sàn không được lớn hơn giá niêm yết.';
+                messageDiv.className = 'toast-message error';
+                return;
+            }
+            
             const formData = new FormData(this);
             const urlEncodedData = new URLSearchParams(formData).toString();
             
             fetch(this.action, {
                 method: this.method,
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: urlEncodedData
             })
-            .then(res => {
-                if(!res.ok) throw new Error('API Error');
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     messageDiv.textContent = 'Cập nhật thành công!';
                     messageDiv.className = 'toast-message success';
+                    setTimeout(() => {
+                        window.location.href = `detail.html?productId=${productId}`;
+                    }, 1000);
                 } else {
-                    messageDiv.textContent = data.errors ? data.errors.join(', ') : 'Lỗi cập nhật.';
+                    messageDiv.textContent = data.errors ? data.errors.join(', ') : (data.message || 'Lỗi cập nhật.');
                     messageDiv.className = 'toast-message error';
                 }
             })

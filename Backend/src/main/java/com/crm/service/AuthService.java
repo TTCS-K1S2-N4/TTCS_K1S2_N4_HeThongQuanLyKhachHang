@@ -105,7 +105,8 @@ public class AuthService {
             throw e;
         } catch (Exception e) {
             if (conn != null) try { conn.rollback(); } catch (Exception ignored) {}
-            throw new AuthenticationException("Không thể xử lý đăng nhập.", e);
+            e.printStackTrace();
+            throw new AuthenticationException("Lỗi hệ thống: " + (e.getMessage() != null ? e.getMessage() : e.toString()), e);
         } finally {
             if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (Exception ignored) {}
         }

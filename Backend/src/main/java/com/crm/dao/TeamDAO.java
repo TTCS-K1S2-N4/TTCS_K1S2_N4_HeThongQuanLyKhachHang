@@ -97,6 +97,33 @@ public class TeamDAO {
         }
     }
 
+    public Team findTeamByLeaderIdExcludingTeamId(int leaderId, int excludeTeamId) throws SQLException {
+        if (leaderId <= 0) return null;
+        String sql =
+                "SELECT t.team_id AS id, t.team_name AS name, t.description, " +
+                "       t.parent_team_id, pt.team_name AS parent_team_name, " +
+                "       t.leader_id, u.full_name AS leader_name, " +
+                "       t.region, t.created_at, t.updated_at " +
+                "FROM teams t " +
+                "LEFT JOIN teams pt ON t.parent_team_id = pt.team_id " +
+                "LEFT JOIN users u ON t.leader_id = u.user_id " +
+                "WHERE t.leader_id = ? AND t.team_id <> ?";
+
+        try (
+            Connection connection = DBConnection.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            statement.setInt(1, leaderId);
+            statement.setInt(2, excludeTeamId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapResultSetToTeam(resultSet);
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean insert(Team team) throws SQLException {
         String sql =
                 "INSERT INTO teams (team_name, description, parent_team_id, leader_id, region) " +

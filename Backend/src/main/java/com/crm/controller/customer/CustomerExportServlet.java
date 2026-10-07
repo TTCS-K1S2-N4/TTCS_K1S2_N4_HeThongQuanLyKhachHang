@@ -40,12 +40,20 @@ public class CustomerExportServlet extends HttpServlet {
 
         List<Customer> customers = customerDAO.getListForExport(keyword, ownerIds);
 
+        com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
+        List<com.crm.model.CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("CUSTOMER", "ACTIVE");
+
         resp.setContentType("text/csv; charset=UTF-8");
         resp.setHeader("Content-Disposition", "attachment; filename=\"customers_export.csv\"");
 
         PrintWriter writer = resp.getWriter();
         writer.write("\uFEFF"); // UTF-8 BOM
-        writer.println("ID,Tên khách hàng,Số điện thoại,ID Người sở hữu,Ngày tạo");
+
+        StringBuilder headerSb = new StringBuilder("ID,Tên khách hàng,Số điện thoại,ID Người sở hữu,Ngày tạo");
+        for (com.crm.model.CustomFieldDefinition def : customFieldDefs) {
+            headerSb.append(",").append(escapeCsvField(def.getFieldLabel()));
+        }
+        writer.println(headerSb.toString());
 
         for (Customer c : customers) {
             StringBuilder sb = new StringBuilder();
@@ -54,10 +62,24 @@ public class CustomerExportServlet extends HttpServlet {
             sb.append(escapeCsvField(c.getPhone())).append(",");
             sb.append(escapeCsvField(c.getOwnerId())).append(",");
             sb.append(escapeCsvField(c.getCreatedAt()));
+
+            List<com.crm.model.CustomFieldValue> cfValues = customFieldService.getValuesByEntity("CUSTOMER", c.getCustomerId());
+            java.util.Map<Integer, String> valMap = new java.util.HashMap<>();
+            if (cfValues != null) {
+                for (com.crm.model.CustomFieldValue v : cfValues) {
+                    valMap.put(v.getFieldId(), v.getFieldValue());
+                }
+            }
+
+            for (com.crm.model.CustomFieldDefinition def : customFieldDefs) {
+                String val = valMap.get(def.getFieldId());
+                sb.append(",").append(escapeCsvField(val != null ? val : ""));
+            }
             writer.println(sb.toString());
         }
         writer.flush();
     }
+
 
     public static String escapeCsvField(Object field) {
         if (field == null) return "";

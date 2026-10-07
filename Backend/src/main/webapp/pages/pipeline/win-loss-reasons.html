@@ -1,47 +1,604 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Win/Loss Reasons</title>
+
     <link rel="stylesheet" href="../../assets/css/variables.css">
+
     <link rel="stylesheet" href="../../assets/css/common.css">
+
     <link rel="stylesheet" href="../../assets/css/layout.css">
+
     <link rel="stylesheet" href="../../assets/css/modules/pipeline.css">
+
 </head>
+
 <body>
+
     <div class="app">
+
         <main class="main-content">
+
             <h1>Win/Loss Reasons</h1>
-            
-            <form id="reasonForm" method="POST" action="/pipeline/win-loss-reasons">
-                <input type="hidden" name="action" value="CREATE">
-                <input type="hidden" name="reasonId" value="">
-                
+
+
+            <form id="reasonForm" method="POST">
+
+                <input type="hidden" id="action" name="action" value="CREATE">
+
+                <input type="hidden" id="reasonId" name="reasonId" value="">
+
+
                 <div>
-                    <label>Loại (WIN/LOSS): 
-                        <select name="reasonType" required>
-                            <option value="WIN">WIN</option>
-                            <option value="LOSS">LOSS</option>
+
+                    <label>
+                        Loại:
+
+                        <select id="reasonType" name="reasonType" required>
+
+                            <option value="WIN">
+                                WIN
+                            </option>
+
+                            <option value="LOSS">
+                                LOSS
+                            </option>
+
                         </select>
+
                     </label>
-                    <label>Tên lý do: <input type="text" name="reasonName" required></label>
-                    <label>Thứ tự: <input type="number" name="displayOrder"></label>
-                    <label>Trạng thái: 
-                        <select name="status">
-                            <option value="ACTIVE">Hoạt động</option>
-                            <option value="INACTIVE">Ngừng hoạt động</option>
+
+
+                    <label>
+                        Tên lý do:
+
+                        <input type="text" id="reasonName" name="reasonName" required>
+
+                    </label>
+
+
+                    <label>
+                        Thứ tự:
+
+                        <input type="number" id="displayOrder" name="displayOrder" value="0">
+
+                    </label>
+
+
+                    <label>
+                        Trạng thái:
+
+                        <select id="status" name="status">
+
+                            <option value="ACTIVE">
+                                Hoạt động
+                            </option>
+
+                            <option value="INACTIVE">
+                                Ngừng hoạt động
+                            </option>
+
                         </select>
+
                     </label>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
+
+
+                    <button type="submit" class="btn btn-primary">
+
+                        Lưu
+
+                    </button>
+
+
+                    <button type="button" id="cancelEdit" class="btn btn-secondary" style="display:none;">
+
+                        Hủy sửa
+
+                    </button>
+
                 </div>
+
             </form>
 
-            <div>
-                <h2>Danh sách Lý do</h2>
-                <!-- Data will be loaded via GET /pipeline/win-loss-reasons?reasonType=WIN|LOSS -->
-                <ul id="reasonList"></ul>
+
+            <hr>
+
+
+            <h2>Danh sách lý do</h2>
+
+
+            <div id="reasonList">
+
+                Đang tải dữ liệu...
+
             </div>
+
         </main>
+
     </div>
+
+
+    <script>
+
+        function getContextPath() {
+
+            const path =
+                window.location.pathname;
+
+            const marker =
+                "/pages/";
+
+            const index =
+                path.indexOf(marker);
+
+            if (index === -1) {
+
+                return "";
+
+            }
+
+            return path.substring(
+                0,
+                index
+            );
+
+        }
+
+
+        const contextPath =
+            getContextPath();
+
+
+        const API_URL =
+            contextPath +
+            "/pipeline/win-loss-reasons";
+
+
+        const form =
+            document.getElementById(
+                "reasonForm"
+            );
+
+        const list =
+            document.getElementById(
+                "reasonList"
+            );
+
+        const actionInput =
+            document.getElementById(
+                "action"
+            );
+
+        const reasonIdInput =
+            document.getElementById(
+                "reasonId"
+            );
+
+        const reasonTypeInput =
+            document.getElementById(
+                "reasonType"
+            );
+
+        const reasonNameInput =
+            document.getElementById(
+                "reasonName"
+            );
+
+        const displayOrderInput =
+            document.getElementById(
+                "displayOrder"
+            );
+
+        const statusInput =
+            document.getElementById(
+                "status"
+            );
+
+        const cancelEditButton =
+            document.getElementById(
+                "cancelEdit"
+            );
+
+
+        let reasonsCache = [];
+
+
+        function escapeHtml(value) {
+
+            return String(
+                value == null
+                    ? ""
+                    : value
+            ).replace(
+                /[&<>"']/g,
+                function (character) {
+
+                    const map = {
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;"
+                    };
+
+                    return map[character];
+
+                }
+            );
+
+        }
+
+
+        async function loadReasons() {
+
+            try {
+
+                list.innerHTML =
+                    "<p>Đang tải dữ liệu...</p>";
+
+
+                const reasonType =
+                    reasonTypeInput.value;
+
+
+                const url =
+                    API_URL +
+                    "?reasonType=" +
+                    encodeURIComponent(
+                        reasonType
+                    );
+
+
+                const response =
+                    await fetch(
+                        url,
+                        {
+                            method: "GET",
+
+                            headers: {
+                                "Accept":
+                                    "application/json"
+                            }
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                console.log(
+                    "GET Win/Loss:",
+                    data
+                );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.errors ||
+                        "HTTP " +
+                        response.status
+                    );
+
+                }
+
+
+                reasonsCache =
+                    data.winLossReasons || [];
+
+
+                renderReasons(
+                    reasonsCache
+                );
+
+
+            } catch (error) {
+
+                console.error(error);
+
+
+                list.innerHTML =
+                    "<p>Không thể tải dữ liệu Win/Loss.</p>";
+
+            }
+
+        }
+
+
+        function renderReasons(reasons) {
+
+            if (!reasons.length) {
+
+                list.innerHTML =
+                    "<p>Chưa có lý do.</p>";
+
+                return;
+
+            }
+
+
+            list.innerHTML =
+                reasons.map(
+                    function (reason) {
+
+                        return `
+
+                        <div class="pipeline-stage">
+
+                            <div class="stage-header">
+
+                                <strong>
+                                    ${escapeHtml(
+                            reason.reasonName
+                        )}
+                                </strong>
+
+                                <span>
+                                    ${escapeHtml(
+                            reason.reasonType
+                        )}
+                                </span>
+
+                            </div>
+
+
+                            <p>
+                                Thứ tự:
+                                ${reason.displayOrder}
+                            </p>
+
+
+                            <p>
+                                Trạng thái:
+                                ${escapeHtml(
+                            reason.status
+                        )}
+                            </p>
+
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary edit-reason"
+                                data-id="${reason.reasonId}">
+
+                                Sửa
+
+                            </button>
+
+                        </div>
+
+                    `;
+
+                    }
+                ).join("");
+
+        }
+
+
+        form.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const formData =
+                    new URLSearchParams();
+
+
+                formData.append(
+                    "action",
+                    actionInput.value
+                );
+
+                formData.append(
+                    "reasonId",
+                    reasonIdInput.value
+                );
+
+                formData.append(
+                    "reasonType",
+                    reasonTypeInput.value
+                );
+
+                formData.append(
+                    "reasonName",
+                    reasonNameInput.value.trim()
+                );
+
+                formData.append(
+                    "displayOrder",
+                    displayOrderInput.value
+                );
+
+                formData.append(
+                    "status",
+                    statusInput.value
+                );
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            API_URL,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/x-www-form-urlencoded",
+
+                                    "Accept":
+                                        "application/json"
+                                },
+
+                                body:
+                                    formData.toString()
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.errors ||
+                            "HTTP " +
+                            response.status
+                        );
+
+                    }
+
+
+                    if (!data.success) {
+
+                        throw new Error(
+                            data.errors ||
+                            "Không thể lưu."
+                        );
+
+                    }
+
+
+                    alert(
+                        "Lưu Win/Loss Reason thành công."
+                    );
+
+
+                    resetForm();
+
+                    await loadReasons();
+
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(
+                        error.message ||
+                        "Lỗi kết nối Win/Loss API."
+                    );
+
+                }
+
+            }
+        );
+
+
+        list.addEventListener(
+            "click",
+            function (event) {
+
+                const button =
+                    event.target.closest(
+                        ".edit-reason"
+                    );
+
+
+                if (!button) {
+
+                    return;
+
+                }
+
+
+                startEdit(
+                    button.dataset.id
+                );
+
+            }
+        );
+
+
+        function startEdit(id) {
+
+            const reason =
+                reasonsCache.find(
+                    function (item) {
+
+                        return String(
+                            item.reasonId
+                        ) === String(id);
+
+                    }
+                );
+
+
+            if (!reason) {
+
+                return;
+
+            }
+
+
+            actionInput.value =
+                "UPDATE";
+
+            reasonIdInput.value =
+                reason.reasonId;
+
+            reasonTypeInput.value =
+                reason.reasonType;
+
+            reasonNameInput.value =
+                reason.reasonName;
+
+            displayOrderInput.value =
+                reason.displayOrder;
+
+            statusInput.value =
+                reason.status || "ACTIVE";
+
+
+            cancelEditButton.style.display =
+                "inline-block";
+
+        }
+
+
+        function resetForm() {
+
+            form.reset();
+
+            actionInput.value =
+                "CREATE";
+
+            reasonIdInput.value =
+                "";
+
+            cancelEditButton.style.display =
+                "none";
+
+        }
+
+
+        cancelEditButton.addEventListener(
+            "click",
+            resetForm
+        );
+
+
+        reasonTypeInput.addEventListener(
+            "change",
+            loadReasons
+        );
+
+
+        loadReasons();
+
+    </script>
+
 </body>
+
 </html>

@@ -101,10 +101,15 @@ public class AccountService {
         return accountDAO.unlockAccount(accountId);
     }
 
-    public List<Account> getAccountList(String keyword, Integer teamId, Integer roleId, String status, int page) {
-        int limit = 20;
+    public List<Account> getAccountList(String keyword, Integer teamId, Integer roleId, String status, int page, int pageSize) {
+        int limit = pageSize > 0 ? pageSize : 10;
         int offset = (page - 1) * limit;
+        if (offset < 0) offset = 0;
         return accountDAO.getAccounts(keyword, teamId, roleId, status, offset, limit);
+    }
+
+    public List<Account> getAccountList(String keyword, Integer teamId, Integer roleId, String status, int page) {
+        return getAccountList(keyword, teamId, roleId, status, page, 10);
     }
 
     public int countTotalAccounts(String keyword, Integer teamId, Integer roleId, String status) {

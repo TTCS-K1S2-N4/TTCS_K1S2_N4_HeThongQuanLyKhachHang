@@ -12,13 +12,19 @@ public class CustomerMergeService {
 
     public List<Customer> findDuplicates() {
         List<Customer> duplicates = new ArrayList<>();
-        // Basic rule: find by same phone or exact name
         String sql = "SELECT * FROM customers WHERE phone IN " +
                      "(SELECT phone FROM customers WHERE phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) " +
-                     "OR customer_name IN " +
-                     "(SELECT customer_name FROM customers GROUP BY customer_name HAVING COUNT(*) > 1) " +
-                     "ORDER BY customer_name, phone";
-                     
+                     "OR LOWER(TRIM(customer_name)) IN " +
+                     "(SELECT LOWER(TRIM(customer_name)) FROM customers GROUP BY LOWER(TRIM(customer_name)) HAVING COUNT(*) > 1) " +
+                     "OR customer_id IN " +
+                     "(SELECT v1.entity_id FROM custom_field_values v1 " +
+                     " JOIN custom_field_definitions d1 ON v1.field_id = d1.field_id " +
+                     " WHERE d1.entity_type = 'CUSTOMER' AND d1.field_key IN ('tax_code', 'website') " +
+                     "   AND v1.field_value IS NOT NULL AND v1.field_value != '' " +
+                     "   AND EXISTS (SELECT 1 FROM custom_field_values v2 WHERE v2.field_id = v1.field_id " +
+                     "               AND v2.entity_id != v1.entity_id " +
+                     "               AND LOWER(TRIM(v2.field_value)) = LOWER(TRIM(v1.field_value))) " +
+                     ") ORDER BY customer_name, phone";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ResultSet rs = ps.executeQuery();

@@ -68,7 +68,7 @@ public class AuditLogListServlet extends HttpServlet {
                 json.append("\"entityType\":").append(toJsonString(log.getEntityType())).append(",");
                 json.append("\"entityId\":").append(log.getEntityId()).append(",");
                 json.append("\"details\":").append(toJsonString(log.getDetails())).append(",");
-                json.append("\"createdAt\":").append(toJsonString(log.getCreatedAt() != null ? log.getCreatedAt().toString() : ""));
+                json.append("\"createdAt\":").append(toJsonString(log.getFormattedCreatedAt()));
                 json.append("}");
                 if (i < logs.size() - 1) json.append(",");
             }

@@ -7,7 +7,8 @@ public class Category {
     public enum Action {
         CREATE,
         UPDATE,
-        DEACTIVATE;
+        DEACTIVATE,
+        DELETE;
 
         public static Action fromString(String value) {
             if (value == null || value.trim().isEmpty()) {

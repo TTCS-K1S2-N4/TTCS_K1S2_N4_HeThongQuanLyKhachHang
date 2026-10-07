@@ -46,7 +46,6 @@
                             </tr>
                         </c:if>
                         <tr><th>Trạng thái</th><td><c:out value="${product.status}"/></td></tr>
-                        <tr><th>Mô tả</th><td><c:out value="${product.description}"/></td></tr>
                     </table>
                 </div>
             </div>

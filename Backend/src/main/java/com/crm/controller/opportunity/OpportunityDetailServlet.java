@@ -57,8 +57,21 @@ public class OpportunityDetailServlet extends HttpServlet {
                 return;
             }
 
+            com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
+            List<com.crm.model.CustomFieldValue> customFieldValues = customFieldService.getValuesByEntity("OPPORTUNITY", id);
+
+            com.crm.dao.PipelineStageDAO stageDAO = new com.crm.dao.PipelineStageDAO();
+            com.crm.dao.WinLossReasonDAO reasonDAO = new com.crm.dao.WinLossReasonDAO();
+            com.crm.dao.CompetitorDAO competitorDAO = new com.crm.dao.CompetitorDAO();
+
             req.setAttribute("opportunity", obj);
+            req.setAttribute("customFieldValues", customFieldValues);
+            req.setAttribute("pipelineStages", stageDAO.findAll());
+            req.setAttribute("winReasons", reasonDAO.findAll("WIN"));
+            req.setAttribute("lossReasons", reasonDAO.findAll("LOSS"));
+            req.setAttribute("competitors", competitorDAO.findAll());
             req.getRequestDispatcher("/WEB-INF/views/deals/detail.jsp").forward(req, resp);
+
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         } catch (ServletException e) {

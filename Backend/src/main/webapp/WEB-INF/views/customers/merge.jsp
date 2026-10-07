@@ -1,139 +1,316 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
     <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-        <!DOCTYPE html>
-        <html lang="vi">
+        <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-        <head>
-            <title>Gộp khách hàng | CRM</title>
-            <jsp:include page="/WEB-INF/views/fragments/head.jsp" />
-            <style>
-                .compare-container {
-                    display: flex;
-                    gap: 20px;
-                    margin-bottom: 20px;
-                }
+            <!DOCTYPE html>
+            <html lang="vi">
 
-                .compare-col {
-                    flex: 1;
-                    border: 1px solid #ddd;
-                    padding: 15px;
-                    border-radius: 4px;
-                    background: #fff;
-                }
-            </style>
-        </head>
+            <head>
+                <title>Gộp khách hàng | CRM</title>
+                <jsp:include page="/WEB-INF/views/fragments/head.jsp" />
 
-        <body>
-            <div class="app">
-                <jsp:include page="/WEB-INF/views/fragments/header.jsp" />
-                <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp" />
-                <main class="main-content">
-                    <div class="content-container">
-                        <h1 class="page-title">So sánh và Gộp khách hàng</h1>
-                        <c:if test="${not empty errorMessage}">
-                            <div class="alert alert-danger">
-                                <c:out value="${errorMessage}" />
-                            </div>
-                        </c:if>
-                        <c:if test="${not empty successMessage}">
-                            <div class="alert alert-success">
-                                <c:out value="${successMessage}" />
-                            </div>
-                        </c:if>
+                <style>
+                    .merge-container {
+                        margin-top: 20px;
+                    }
 
-                        <c:choose>
-                            <c:when test="${not empty left and not empty right}">
-                                <div class="alert alert-warning">
-                                    Cảnh báo: Hành động này không thể hoàn tác. Khách hàng bị gộp sẽ được chuyển sang
-                                    trạng thái đã gộp và dữ liệu liên quan sẽ được chuyển sang khách hàng chính.
+                    .merge-warning {
+                        margin-bottom: 20px;
+                    }
+
+                    .merge-compare {
+                        display: flex;
+                        gap: 20px;
+                        align-items: stretch;
+                    }
+
+                    .merge-column {
+                        flex: 1;
+                        min-width: 0;
+                    }
+
+                    .merge-arrow {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-width: 100px;
+                        font-weight: 600;
+                    }
+
+                    .customer-card {
+                        height: 100%;
+                    }
+
+                    .customer-card .card-body p {
+                        margin-bottom: 8px;
+                    }
+
+                    .merge-actions {
+                        margin-top: 20px;
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                    }
+
+                    @media (max-width: 768px) {
+                        .merge-compare {
+                            flex-direction: column;
+                        }
+
+                        .merge-arrow {
+                            min-width: auto;
+                            padding: 8px 0;
+                        }
+                    }
+                </style>
+            </head>
+
+            <body>
+
+                <div class="app">
+
+                    <jsp:include page="/WEB-INF/views/fragments/header.jsp" />
+                    <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp" />
+
+                    <main class="main-content">
+
+                        <div class="content-container merge-container">
+
+                            <h1 class="page-title">So sánh và Gộp khách hàng</h1>
+
+                            <c:if test="${not empty errorMessage}">
+                                <div class="alert alert-danger">
+                                    <c:out value="${errorMessage}" />
                                 </div>
+                            </c:if>
 
-                                <form action="${pageContext.request.contextPath}/customers/merge" method="post">
-                                    <div class="compare-container">
-                                        <div class="compare-col">
-                                            <h3>Khách hàng 1 (Left)</h3>
-                                            <p><strong>ID:</strong> ${left.customerId}</p>
-                                            <p><strong>Tên:</strong>
-                                                <c:out value="${left.customerName}" />
-                                            </p>
-                                            <p><strong>Điện thoại:</strong>
-                                                <c:out value="${left.phone}" />
-                                            </p>
-                                            <p><strong>Email:</strong>
-                                                <c:out value="${left.email}" />
-                                            </p>
-                                            <p><strong>Mã số thuế:</strong>
-                                                <c:out value="${left.taxCode}" />
-                                            </p>
-                                            <p><strong>Website:</strong>
-                                                <c:out value="${left.website}" />
-                                            </p>
-                                            <label style="display: block; margin-top: 10px; font-weight: bold;">
-                                                <input type="radio" name="primaryCustomerId" value="${left.customerId}"
-                                                    required>
-                                                Giữ làm khách hàng chính
-                                            </label>
+                            <c:if test="${not empty successMessage}">
+                                <div class="alert alert-success">
+                                    <c:out value="${successMessage}" />
+                                </div>
+                            </c:if>
+
+                            <div class="alert alert-warning merge-warning">
+                                <strong>Cảnh báo:</strong>
+                                Hành động gộp khách hàng không thể hoàn tác.
+                                Dữ liệu của khách hàng phụ sẽ được xử lý và chuyển sang
+                                khách hàng chính theo nghiệp vụ của hệ thống.
+                            </div>
+
+                            <form method="post" action="${pageContext.request.contextPath}/customers/merge">
+
+                                <div class="merge-compare">
+
+                                    <!-- PRIMARY CUSTOMER -->
+                                    <div class="merge-column">
+
+                                        <div class="card customer-card">
+
+                                            <div class="card-header">
+                                                <strong>Khách hàng CHÍNH</strong>
+                                                <span> — Được giữ lại</span>
+                                            </div>
+
+                                            <div class="card-body">
+
+                                                <div class="form-group">
+
+                                                    <label for="primaryId">
+                                                        ID khách hàng chính
+                                                    </label>
+
+                                                    <input id="primaryId" type="number" name="primaryId"
+                                                        class="form-control" value="<c:out value='${primaryId}' />"
+                                                        required min="1">
+
+                                                </div>
+
+                                                <c:if test="${not empty primaryCustomer}">
+
+                                                    <hr>
+
+                                                    <p>
+                                                        <strong>ID:</strong>
+                                                        <c:out value="${primaryCustomer.customerId}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Tên:</strong>
+                                                        <c:out value="${primaryCustomer.customerName}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Điện thoại:</strong>
+                                                        <c:out value="${primaryCustomer.phone}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Email:</strong>
+                                                        <c:out value="${primaryCustomer.email}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Mã số thuế:</strong>
+                                                        <c:out value="${primaryCustomer.taxCode}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Website:</strong>
+                                                        <c:out value="${primaryCustomer.website}" />
+                                                    </p>
+
+                                                    <c:if test="${not empty primaryCustomer.createdAt}">
+                                                        <p>
+                                                            <strong>Ngày tạo:</strong>
+                                                            <fmt:formatDate value="${primaryCustomer.createdAt}"
+                                                                pattern="dd/MM/yyyy HH:mm" />
+                                                        </p>
+                                                    </c:if>
+
+                                                </c:if>
+
+                                            </div>
+
                                         </div>
-                                        <div class="compare-col">
-                                            <h3>Khách hàng 2 (Right)</h3>
-                                            <p><strong>ID:</strong> ${right.customerId}</p>
-                                            <p><strong>Tên:</strong>
-                                                <c:out value="${right.customerName}" />
-                                            </p>
-                                            <p><strong>Điện thoại:</strong>
-                                                <c:out value="${right.phone}" />
-                                            </p>
-                                            <p><strong>Email:</strong>
-                                                <c:out value="${right.email}" />
-                                            </p>
-                                            <p><strong>Mã số thuế:</strong>
-                                                <c:out value="${right.taxCode}" />
-                                            </p>
-                                            <p><strong>Website:</strong>
-                                                <c:out value="${right.website}" />
-                                            </p>
-                                            <label style="display: block; margin-top: 10px; font-weight: bold;">
-                                                <input type="radio" name="primaryCustomerId" value="${right.customerId}"
-                                                    required>
-                                                Giữ làm khách hàng chính
-                                            </label>
-                                        </div>
+
                                     </div>
 
-                                    <input type="hidden" name="duplicateCustomerId" id="duplicateCustomerId" value="">
+                                    <!-- DIRECTION -->
+                                    <div class="merge-arrow">
 
-                                    <button type="submit" class="btn btn-primary" onclick="setDuplicateId()">Xác nhận
-                                        gộp</button>
-                                    <a class="btn btn-secondary" href="javascript:history.back()">Quay lại</a>
-                                </form>
+                                        <span class="badge badge-primary">
+                                            ← Gộp vào
+                                        </span>
 
-                                <script>
-                                    function setDuplicateId() {
-                                        const primaryRadios = document.getElementsByName('primaryCustomerId');
-                                        let primaryId = null;
-                                        for (let i = 0; i < primaryRadios.length; i++) {
-                                            if (primaryRadios[i].checked) {
-                                                primaryId = primaryRadios[i].value;
-                                                break;
-                                            }
-                                        }
-                                        if (primaryId) {
-                                            const leftId = '${left.customerId}';
-                                            const rightId = '${right.customerId}';
-                                            document.getElementById('duplicateCustomerId').value = (primaryId === leftId) ? rightId : leftId;
-                                        }
-                                    }
-                                </script>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="alert alert-info">Dữ liệu so sánh không hợp lệ. Vui lòng thử lại.</div>
-                                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/customers">Quay
-                                    lại danh sách</a>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </main>
-            </div>
-        </body>
+                                    </div>
 
-        </html>
+                                    <!-- SECONDARY CUSTOMER -->
+                                    <div class="merge-column">
+
+                                        <div class="card customer-card">
+
+                                            <div class="card-header">
+                                                <strong>Khách hàng PHỤ</strong>
+                                                <span> — Bị gộp</span>
+                                            </div>
+
+                                            <div class="card-body">
+
+                                                <div class="form-group">
+
+                                                    <label for="secondaryId">
+                                                        ID khách hàng phụ
+                                                    </label>
+
+                                                    <input id="secondaryId" type="number" name="secondaryId"
+                                                        class="form-control" value="<c:out value='${secondaryId}' />"
+                                                        required min="1">
+
+                                                </div>
+
+                                                <c:if test="${not empty secondaryCustomer}">
+
+                                                    <hr>
+
+                                                    <p>
+                                                        <strong>ID:</strong>
+                                                        <c:out value="${secondaryCustomer.customerId}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Tên:</strong>
+                                                        <c:out value="${secondaryCustomer.customerName}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Điện thoại:</strong>
+                                                        <c:out value="${secondaryCustomer.phone}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Email:</strong>
+                                                        <c:out value="${secondaryCustomer.email}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Mã số thuế:</strong>
+                                                        <c:out value="${secondaryCustomer.taxCode}" />
+                                                    </p>
+
+                                                    <p>
+                                                        <strong>Website:</strong>
+                                                        <c:out value="${secondaryCustomer.website}" />
+                                                    </p>
+
+                                                    <c:if test="${not empty secondaryCustomer.createdAt}">
+                                                        <p>
+                                                            <strong>Ngày tạo:</strong>
+                                                            <fmt:formatDate value="${secondaryCustomer.createdAt}"
+                                                                pattern="dd/MM/yyyy HH:mm" />
+                                                        </p>
+                                                    </c:if>
+
+                                                </c:if>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="merge-actions">
+
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm(
+                            'Bạn có chắc chắn muốn thực hiện gộp? Hành động này không thể hoàn tác!'
+                        );">
+                                        Xác nhận gộp
+                                    </button>
+
+                                    <a href="${pageContext.request.contextPath}/customers/duplicates"
+                                        class="btn btn-secondary">
+                                        Hủy
+                                    </a>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+                    </main>
+
+                </div>
+
+                <script>
+                    (function () {
+                        const primaryInput = document.getElementById('primaryId');
+                        const secondaryInput = document.getElementById('secondaryId');
+
+                        function reloadComparison() {
+                            const primaryId = primaryInput.value.trim();
+                            const secondaryId = secondaryInput.value.trim();
+
+                            if (!primaryId || !secondaryId) {
+                                return;
+                            }
+
+                            const contextPath = '${pageContext.request.contextPath}';
+
+                            window.location.href =
+                                contextPath +
+                                '/customers/merge?primaryId=' +
+                                encodeURIComponent(primaryId) +
+                                '&secondaryId=' +
+                                encodeURIComponent(secondaryId);
+                        }
+
+                        primaryInput.addEventListener('change', reloadComparison);
+                        secondaryInput.addEventListener('change', reloadComparison);
+                    })();
+                </script>
+
+            </body>
+
+            </html>

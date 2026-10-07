@@ -2,6 +2,7 @@ package com.crm.controller.account;
 
 import com.crm.dto.AccountUpdateRequest;
 import com.crm.model.Account;
+import com.crm.model.Role;
 import com.crm.service.AccountService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -90,13 +91,42 @@ public class AccountUpdateServlet extends HttpServlet {
         }
 
         Integer adminId = (Integer) req.getSession().getAttribute("userId");
+
+        Account oldAcc = accountService.getAccountDetail(accountId);
+        String oldRolesStr = (oldAcc != null && oldAcc.getRoleNames() != null && !oldAcc.getRoleNames().isEmpty())
+                ? String.join(", ", oldAcc.getRoleNames()) : "Không có vai trò";
+        String oldTeamStr = (oldAcc != null && oldAcc.getTeamName() != null)
+                ? oldAcc.getTeamName() : "Không có nhóm";
+
+        List<String> newRoleNames = new ArrayList<>();
+        if (roleIds != null) {
+            try {
+                List<Role> allRoles = roleDAO.findAll();
+                for (Integer rId : roleIds) {
+                    for (Role r : allRoles) {
+                        if (r.getId() == rId) {
+                            newRoleNames.add(r.getName());
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        String newRolesStr = newRoleNames.isEmpty() ? "Không có vai trò" : String.join(", ", newRoleNames);
+        String newTeamStr = "Không có nhóm";
+        if (teamId != null) {
+            try {
+                com.crm.model.Team t = teamDAO.findById(teamId);
+                if (t != null) newTeamStr = t.getName();
+            } catch (Exception ignored) {}
+        }
+
         com.crm.model.AuditLog auditLog = new com.crm.model.AuditLog();
         auditLog.setAction("USER_ROLE_UPDATE");
         auditLog.setUserId(adminId != null ? adminId : 0);
         auditLog.setTargetUserId(accountId);
-        auditLog.setDetails("Cập nhật thông tin và vai trò người dùng ID " + accountId);
-        auditLog.setOldValue("Account ID: " + accountId);
-        auditLog.setNewValue("Roles: " + roleIds.toString() + ", Team: " + teamId);
+        auditLog.setDetails("Cập nhật vai trò người dùng " + (oldAcc != null ? oldAcc.getFullName() : ("ID " + accountId)));
+        auditLog.setOldValue("Vai trò: [" + oldRolesStr + "], Nhóm: [" + oldTeamStr + "]");
+        auditLog.setNewValue("Vai trò: [" + newRolesStr + "], Nhóm: [" + newTeamStr + "]");
 
         AccountUpdateRequest updateReq = new AccountUpdateRequest(accountId, fullName, phone, teamId, roleIds);
         boolean success = accountService.updateAccount(updateReq, auditLog);

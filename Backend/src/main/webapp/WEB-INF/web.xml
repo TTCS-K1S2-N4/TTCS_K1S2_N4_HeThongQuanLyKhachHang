@@ -48,6 +48,8 @@
         <filter-name>AuthorizationFilter</filter-name>
         <url-pattern>/customers/*</url-pattern>
         <url-pattern>/customers</url-pattern>
+        <url-pattern>/contacts/*</url-pattern>
+        <url-pattern>/contacts</url-pattern>
         <url-pattern>/accounts/*</url-pattern>
         <url-pattern>/accounts</url-pattern>
         <url-pattern>/deals/*</url-pattern>

@@ -20,7 +20,26 @@ public class CustomerHierarchyService {
         if (parentId == childId) {
             return false;
         }
+        
+        // Cycle detection: check if childId is already an ancestor of parentId
+        if (isAncestor(childId, parentId, new java.util.HashSet<>())) {
+            return false;
+        }
+        
         return relationshipDAO.addRelationship(parentId, childId, type);
+    }
+    
+    private boolean isAncestor(int targetAncestorId, int currentId, java.util.Set<Integer> visited) {
+        if (targetAncestorId == currentId) return true;
+        if (!visited.add(currentId)) return false; // Prevent infinite loop if existing cycle
+        
+        List<CustomerRelationship> parents = getParents(currentId);
+        for (CustomerRelationship rel : parents) {
+            if (isAncestor(targetAncestorId, rel.getParentCustomerId(), visited)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     public boolean deleteRelationship(int relationshipId) {

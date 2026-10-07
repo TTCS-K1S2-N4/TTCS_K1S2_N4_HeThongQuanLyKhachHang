@@ -234,6 +234,8 @@ JOIN menu_items AS older
  AND newer.permission_code = older.permission_code
  AND newer.id > older.id;
 
+DELETE FROM menu_items WHERE url = '/audit/list' AND permission_code = 'USER_VIEW';
+
 INSERT INTO menu_items (title, url, icon, permission_code, display_order, parent_id) VALUES
 ('Khách hàng', '/customers', 'fa-users', 'ACCOUNT_VIEW', 1, 0),
 ('Cơ hội kinh doanh', '/deals', 'fa-chart-line', 'DEAL_VIEW', 2, 0),
