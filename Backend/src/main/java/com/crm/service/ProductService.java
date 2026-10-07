@@ -8,14 +8,9 @@ import com.crm.model.Account;
 import com.crm.model.Product;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
-
 public class ProductService {
-
-    private static final Logger LOGGER = Logger.getLogger(ProductService.class.getName());
 
     private final ProductDAO productDAO;
     private PermissionService permissionService;

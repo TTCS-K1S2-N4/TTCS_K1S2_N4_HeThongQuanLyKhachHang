@@ -1,6 +1,4 @@
 package com.crm.service;
-
-import com.crm.dao.CustomerDAO;
 import com.crm.model.Customer;
 import com.crm.util.DBConnection;
 
