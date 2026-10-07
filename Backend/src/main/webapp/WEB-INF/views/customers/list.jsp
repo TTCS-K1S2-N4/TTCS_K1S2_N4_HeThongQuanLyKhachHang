@@ -12,7 +12,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: var(--space-6);
+            margin-bottom: var(--space-4);
             flex-wrap: wrap;
         }
         .search-group-inline {
@@ -25,8 +25,7 @@
             border: 1px solid var(--color-border);
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             flex: 1;
-            min-width: 320px;
-            max-width: 480px;
+            min-width: 250px;
         }
         .search-group-inline .form-control {
             border: none;
@@ -68,6 +67,17 @@
                 flex: 1;
             }
         }
+        .pagination-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .page-link-custom {
+            padding: 4px 12px;
+        }
+        .page-link-inactive {
+            background: white;
+            border: 1px solid var(--color-border);
+        }
     </style>
 </head>
 <body>
@@ -100,6 +110,28 @@
                     <i class="fas fa-search search-icon"></i>
                     <input class="form-control" name="keyword" type="search" placeholder="Tìm khách hàng theo tên..." value="<c:out value='${keyword}'/>">
                 </div>
+                <select name="status" class="form-control" style="width: auto; min-width: 140px;">
+                    <option value="">- Trạng thái -</option>
+                    <option value="ACTIVE" ${param.status == 'ACTIVE' ? 'selected' : ''}>Active</option>
+                    <option value="INACTIVE" ${param.status == 'INACTIVE' ? 'selected' : ''}>Inactive</option>
+                </select>
+                <select name="industry" class="form-control" style="width: auto; min-width: 140px;">
+                    <option value="">- Ngành -</option>
+                    <option value="IT" ${param.industry == 'IT' ? 'selected' : ''}>IT</option>
+                    <option value="FINANCE" ${param.industry == 'FINANCE' ? 'selected' : ''}>Tài chính</option>
+                </select>
+                <select name="size" class="form-control" style="width: auto; min-width: 120px;">
+                    <option value="">- Quy mô -</option>
+                    <option value="SMALL" ${param.size == 'SMALL' ? 'selected' : ''}>Nhỏ</option>
+                    <option value="MEDIUM" ${param.size == 'MEDIUM' ? 'selected' : ''}>Vừa</option>
+                    <option value="LARGE" ${param.size == 'LARGE' ? 'selected' : ''}>Lớn</option>
+                </select>
+                <select name="region" class="form-control" style="width: auto; min-width: 120px;">
+                    <option value="">- Khu vực -</option>
+                    <option value="NORTH" ${param.region == 'NORTH' ? 'selected' : ''}>Miền Bắc</option>
+                    <option value="SOUTH" ${param.region == 'SOUTH' ? 'selected' : ''}>Miền Nam</option>
+                </select>
+                <input type="text" name="ownerId" class="form-control" value="<c:out value='${param.ownerId}'/>" placeholder="Owner ID" style="width: 100px;">
                 <c:if test="${not empty customFieldDefinitions}">
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <select name="filterFieldId" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px;">
@@ -112,12 +144,22 @@
                     </div>
                 </c:if>
                 <div class="filter-actions">
-                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Lọc</button>
-                    <c:if test="${not empty keyword or not empty filterFieldId}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Lọc / Tìm</button>
+                    <c:if test="${not empty keyword or not empty param.status or not empty param.industry or not empty param.size or not empty param.region or not empty param.ownerId or not empty filterFieldId}">
                         <a href="${pageContext.request.contextPath}/customers" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">Đặt lại</a>
                     </c:if>
                 </div>
             </form>
+
+            <div class="saved-filters-section mb-4 d-flex align-items-center" style="gap: 12px;">
+                <h4 style="font-size: 14px; margin: 0; color: var(--color-text-secondary);"><i class="fas fa-bookmark" style="margin-right: 4px;"></i> Bộ lọc đã lưu:</h4>
+                <a href="${pageContext.request.contextPath}/customers/filters" class="btn btn-info btn-sm" style="padding: 4px 12px; font-size: 13px;">Quản lý bộ lọc</a>
+                <form method="post" action="${pageContext.request.contextPath}/customers/filters" class="d-inline" style="margin: 0;">
+                    <input type="hidden" name="name" value="Current Filter">
+                    <input type="hidden" name="criteria" value="">
+                    <button type="submit" class="btn btn-success btn-sm" style="padding: 4px 12px; font-size: 13px;" disabled>Lưu bộ lọc hiện tại</button>
+                </form>
+            </div>
 
             <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <div class="card-header card-header-flex">
@@ -158,9 +200,9 @@
                                             <div class="empty-state">
                                                 <div class="empty-state-icon"><i class="fas fa-users-slash"></i></div>
                                                 <c:choose>
-                                                    <c:when test="${not empty keyword}">
+                                                    <c:when test="${not empty keyword or not empty param.status or not empty param.industry or not empty param.size or not empty param.region or not empty param.ownerId}">
                                                         <h3 style="font-size: 16px; margin-bottom: 8px; color: var(--color-gray-900);">Không tìm thấy khách hàng</h3>
-                                                        <p>Không có kết quả phù hợp với từ khóa "<c:out value='${keyword}'/>"</p>
+                                                        <p>Không có kết quả phù hợp với tiêu chí tìm kiếm và lọc</p>
                                                         <a href="${pageContext.request.contextPath}/customers" class="btn btn-secondary" style="margin-top: 16px;">Đặt lại tìm kiếm</a>
                                                     </c:when>
                                                     <c:otherwise>
@@ -181,16 +223,16 @@
                     <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding: 12px 24px;">
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Trang ${currentPage} / ${totalPages}</span>
                         <ul class="pagination" style="margin: 0; display: flex; gap: 4px; list-style: none; padding: 0;">
-                            <li class="page-item ${currentPage == 1 ? 'disabled' : ''}" style="opacity: ${currentPage == 1 ? '0.5' : '1'}; pointer-events: ${currentPage == 1 ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
+                            <li class="page-item ${currentPage == 1 ? 'disabled pagination-disabled' : ''}">
+                                <a class="page-link btn btn-secondary page-link-custom page-link-inactive" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
                             </li>
                             <c:forEach begin="${Math.max(1, currentPage - 2)}" end="${Math.min(totalPages, currentPage + 2)}" var="i">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                    <a class="page-link btn ${currentPage == i ? 'btn-primary' : 'btn-secondary'}" style="padding: 4px 12px; ${currentPage != i ? 'background: white; border: 1px solid var(--color-border);' : ''}" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
+                                    <a class="page-link btn ${currentPage == i ? 'btn-primary page-link-custom' : 'btn-secondary page-link-custom page-link-inactive'}" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
                                 </li>
                             </c:forEach>
-                            <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}" style="opacity: ${currentPage == totalPages ? '0.5' : '1'}; pointer-events: ${currentPage == totalPages ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage + 1}&keyword=<c:out value='${keyword}'/>">Sau ›</a>
+                            <li class="page-item ${currentPage == totalPages ? 'disabled pagination-disabled' : ''}">
+                                <a class="page-link btn btn-secondary page-link-custom page-link-inactive" href="?page=${currentPage + 1}&keyword=<c:out value='${keyword}'/>">Sau ›</a>
                             </li>
                         </ul>
                     </div>
