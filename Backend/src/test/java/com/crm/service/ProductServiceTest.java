@@ -69,4 +69,23 @@ public class ProductServiceTest {
 
         assertFalse(result);
     }
+
+    @Test
+    public void testValidateProduct_FloorPriceGreaterThanListPrice_ShouldThrowException() {
+        com.crm.dto.ProductRequest request = new com.crm.dto.ProductRequest();
+        request.setProductCode("SP001");
+        request.setProductName("Sản phẩm 001");
+        request.setProductType("ONE_TIME");
+        request.setUnit("Cái");
+        request.setListPrice(new java.math.BigDecimal("100"));
+        request.setFloorPrice(new java.math.BigDecimal("150"));
+
+        Account user = new Account();
+        user.setRoleIds(Collections.singletonList(1));
+        when(permissionService.hasPermissionForRoles(user.getRoleIds(), "PRODUCT_MANAGE")).thenReturn(true);
+
+        assertThrows(com.crm.exception.ValidationException.class, () -> {
+            productService.createProduct(request, user);
+        });
+    }
 }

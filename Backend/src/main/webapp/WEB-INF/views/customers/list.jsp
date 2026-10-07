@@ -86,8 +86,9 @@
                     <h1 class="page-title">Khách hàng</h1>
                     <p class="page-subtitle" style="color: var(--color-text-secondary); margin-top: 4px;">Quản lý và tra cứu danh sách khách hàng.</p>
                 </div>
-                <div class="page-actions">
-                    <a href="${pageContext.request.contextPath}/customers/export?keyword=<c:out value='${keyword}'/>" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">
+                <div class="page-actions" style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="openCustomerModal()"><i class="fas fa-plus"></i> Thêm khách hàng</button>
+                    <a href="${pageContext.request.contextPath}/customers/export?keyword=<c:out value='${keyword}'/>&filterFieldId=${filterFieldId}&filterFieldValue=<c:out value='${filterFieldValue}'/>" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">
                         <i class="fas fa-file-export"></i> Xuất CSV
                     </a>
                 </div>
@@ -120,9 +121,20 @@
                     <option value="SOUTH" ${param.region == 'SOUTH' ? 'selected' : ''}>Miền Nam</option>
                 </select>
                 <input type="text" name="ownerId" class="form-control" value="<c:out value='${param.ownerId}'/>" placeholder="Owner ID" style="width: 100px;">
+                <c:if test="${not empty customFieldDefinitions}">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select name="filterFieldId" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px;">
+                            <option value="">-- Lọc theo trường tùy chỉnh --</option>
+                            <c:forEach var="def" items="${customFieldDefinitions}">
+                                <option value="${def.fieldId}" ${filterFieldId == def.fieldId ? 'selected' : ''}><c:out value="${def.fieldLabel}"/></option>
+                            </c:forEach>
+                        </select>
+                        <input type="text" name="filterFieldValue" class="form-control" placeholder="Giá trị..." value="<c:out value='${filterFieldValue}'/>" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; max-width: 160px;">
+                    </div>
+                </c:if>
                 <div class="filter-actions">
                     <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Lọc / Tìm</button>
-                    <c:if test="${not empty keyword or not empty param.status or not empty param.industry or not empty param.size or not empty param.region or not empty param.ownerId}">
+                    <c:if test="${not empty keyword or not empty param.status or not empty param.industry or not empty param.size or not empty param.region or not empty param.ownerId or not empty filterFieldId}">
                         <a href="${pageContext.request.contextPath}/customers" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">Đặt lại</a>
                     </c:if>
                 </div>
@@ -218,5 +230,99 @@
         </div>
     </main>
 </div>
+
+<!-- Modal Create Customer -->
+<div id="customerModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: white; border-radius: 8px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 18px;">Thêm mới khách hàng</h3>
+            <button onclick="closeCustomerModal()" style="border: none; background: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form id="customerForm" onsubmit="saveCustomer(event)">
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Tên khách hàng <span style="color:red;">*</span></label>
+                <input type="text" id="custName" name="customerName" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Số điện thoại</label>
+                <input type="text" id="custPhone" name="phone" class="form-control" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+            </div>
+
+            <!-- Dynamic Custom Fields -->
+            <c:if test="${not empty customFieldDefinitions}">
+                <div style="border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 12px;">
+                    <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--color-primary);">Trường tùy chỉnh (Custom Fields)</h4>
+                    <c:forEach var="def" items="${customFieldDefinitions}">
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500;">
+                                <c:out value="${def.fieldLabel}"/>
+                                <c:if test="${def.required}"><span style="color:red;"> *</span></c:if>
+                            </label>
+                            <c:choose>
+                                <c:when test="${def.fieldType == 'SELECT'}">
+                                    <select name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                        <option value="">-- Chọn --</option>
+                                        <c:forEach var="opt" items="${def.options.split('[,;\\\\n]+')}">
+                                            <option value="${opt.trim()}"><c:out value="${opt.trim()}"/></option>
+                                        </c:forEach>
+                                    </select>
+                                </c:when>
+                                <c:when test="${def.fieldType == 'DATE'}">
+                                    <input type="date" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:when>
+                                <c:when test="${def.fieldType == 'NUMBER'}">
+                                    <input type="number" step="any" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:when>
+                                <c:otherwise>
+                                    <input type="text" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:if>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                <button type="button" onclick="closeCustomerModal()" class="btn btn-secondary" style="padding: 8px 16px;">Hủy</button>
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Lưu khách hàng</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCustomerModal() {
+        document.getElementById('customerForm').reset();
+        document.getElementById('customerModal').style.display = 'flex';
+    }
+
+    function closeCustomerModal() {
+        document.getElementById('customerModal').style.display = 'none';
+    }
+
+    function saveCustomer(e) {
+        e.preventDefault();
+        const form = document.getElementById('customerForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        fetch('${pageContext.request.contextPath}/customers/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: params
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ') + (data.details ? '\n- ' + data.details.join('\n- ') : ''));
+            } else {
+                closeCustomerModal();
+                window.location.reload();
+            }
+        })
+        .catch(err => alert('Lỗi kết nối máy chủ.'));
+    }
+</script>
 </body>
 </html>
+

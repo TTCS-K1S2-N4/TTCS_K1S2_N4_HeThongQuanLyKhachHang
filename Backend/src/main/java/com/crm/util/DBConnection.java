@@ -26,12 +26,12 @@ public class DBConnection {
             if (is != null) {
                 prop.load(is);
                 dbUrl = System.getProperty("db.url", prop.getProperty("db.url",
-                    "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"));
+                    "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"));
                 dbUser = System.getProperty("db.user", prop.getProperty("db.username", prop.getProperty("db.user", "root")));
                 dbPassword = System.getProperty("db.password", prop.getProperty("db.password", "root"));
                 dbDriver = System.getProperty("db.driver", prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
             } else {
-                dbUrl = System.getProperty("db.url", "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8");
+                dbUrl = System.getProperty("db.url", "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8");
                 dbUser = System.getProperty("db.user", "root");
                 dbPassword = System.getProperty("db.password", "root");
                 dbDriver = System.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");

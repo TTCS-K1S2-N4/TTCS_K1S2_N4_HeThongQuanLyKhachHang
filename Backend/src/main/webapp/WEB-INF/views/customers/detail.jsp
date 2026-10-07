@@ -56,6 +56,18 @@
                                 <p><fmt:formatDate value="${customer.createdAt}" pattern="dd/MM/yyyy HH:mm"/></p>
                             </div>
                         </c:if>
+
+                        <c:if test="${not empty customFieldValues}">
+                            <div style="margin-top: 24px; border-top: 1px solid var(--color-border); padding-top: 16px;">
+                                <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--color-primary);"><i class="fas fa-list-check"></i> Trường tùy chỉnh</h3>
+                                <c:forEach var="cf" items="${customFieldValues}">
+                                    <div class="form-group" style="margin-bottom: 12px;">
+                                        <label style="font-weight: 600; color: var(--color-text-secondary);"><c:out value="${cf.fieldLabel}"/></label>
+                                        <p style="margin: 4px 0 0 0; font-size: 15px;"><c:out value="${cf.fieldValue}"/></p>
+                                    </div>
+                                </c:forEach>
+                            </div>
+                        </c:if>
                     </div>
                 </div>
             </c:if>

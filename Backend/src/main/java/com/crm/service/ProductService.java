@@ -66,10 +66,21 @@ public class ProductService {
     public boolean isCostPriceAllowed(Account user) {
         if (user == null)
             return false;
+        List<Integer> roleIds = user.getRoleIds();
+        if (roleIds != null && !roleIds.isEmpty()) {
+            if (permissionService.canViewProductCost(roleIds)) {
+                return true;
+            }
+        }
+        if (user.getRoleId() != null && user.getRoleId() > 0) {
+            if (permissionService.hasPermission(user.getRoleId(), "PRODUCT_COST_VIEW")) {
+                return true;
+            }
+        }
         List<String> roleCodes = user.getRoleCodes();
         if (roleCodes != null && !roleCodes.isEmpty()) {
             for (String code : roleCodes) {
-                if ("DIRECTOR".equalsIgnoreCase(code)) {
+                if ("DIRECTOR".equalsIgnoreCase(code) || "ADMIN".equalsIgnoreCase(code)) {
                     return true;
                 }
             }
@@ -77,7 +88,7 @@ public class ProductService {
         // Legacy fallback check
         if (user.getRoleName() != null) {
             String roleNameUpper = user.getRoleName().toUpperCase();
-            if (roleNameUpper.contains("DIRECTOR") || roleNameUpper.contains("GIÁM ĐỐC KINH DOANH")) {
+            if (roleNameUpper.contains("DIRECTOR") || roleNameUpper.contains("GIÁM ĐỐC KINH DOANH") || roleNameUpper.contains("ADMIN")) {
                 return true;
             }
         }
@@ -176,13 +187,19 @@ public class ProductService {
         }
         product.setStatus(status);
 
+        Product oldProduct = productDAO.getById(product.getProductId(), true);
+
         com.crm.model.AuditLog log = new com.crm.model.AuditLog();
         log.setAction("DISCOUNT_UPDATE");
         log.setUserId(user != null ? user.getAccountId() : 0);
         log.setTargetUserId(product.getProductId());
         log.setDetails("Cập nhật chiết khấu/bảng giá cho sản phẩm mã " + product.getProductCode());
-        log.setOldValue("Product ID: " + product.getProductId());
-        log.setNewValue("ListPrice: " + product.getListPrice() + ", FloorPrice: " + product.getFloorPrice());
+        if (oldProduct != null) {
+            log.setOldValue("Giá niêm yết: " + oldProduct.getListPrice() + ", Giá sàn: " + oldProduct.getFloorPrice() + ", Trạng thái: " + oldProduct.getStatus());
+        } else {
+            log.setOldValue("Product ID: " + product.getProductId());
+        }
+        log.setNewValue("Giá niêm yết: " + product.getListPrice() + ", Giá sàn: " + product.getFloorPrice() + ", Trạng thái: " + product.getStatus());
 
         return productDAO.update(product, includeCostPrice, log);
     }
@@ -202,13 +219,15 @@ public class ProductService {
             throw new ValidationException("Trạng thái sản phẩm không hợp lệ (chỉ nhận ACTIVE hoặc INACTIVE).");
         }
 
+        Product oldProduct = productDAO.getById(productId, true);
+
         com.crm.model.AuditLog log = new com.crm.model.AuditLog();
         log.setAction("DISCOUNT_STATUS_CHANGE");
         log.setUserId(user != null ? user.getAccountId() : 0);
         log.setTargetUserId(productId);
-        log.setDetails("Thay đổi trạng thái kinh doanh/chiết khấu sản phẩm ID " + productId);
-        log.setOldValue("Product ID: " + productId);
-        log.setNewValue("Status: " + status.trim().toUpperCase());
+        log.setDetails("Thay đổi trạng thái kinh doanh/chiết khấu sản phẩm " + (oldProduct != null ? oldProduct.getProductName() : ("ID " + productId)));
+        log.setOldValue("Trạng thái: " + (oldProduct != null ? oldProduct.getStatus() : "N/A"));
+        log.setNewValue("Trạng thái: " + status.trim().toUpperCase());
 
         return productDAO.updateStatus(productId, status.trim().toUpperCase(), log);
     }
@@ -254,6 +273,12 @@ public class ProductService {
             throw new ValidationException("Giá sàn không hợp lệ và phải lớn hơn hoặc bằng 0.");
         }
 
+        if (request.getListPrice() != null && request.getFloorPrice() != null) {
+            if (request.getFloorPrice().compareTo(request.getListPrice()) > 0) {
+                throw new ValidationException("Giá sàn không được lớn hơn giá niêm yết.");
+            }
+        }
+
         if (includeCostPrice && request.getCostPrice() != null) {
             if (request.getCostPrice().compareTo(BigDecimal.ZERO) < 0) {
                 throw new ValidationException("Giá vốn không hợp lệ và phải lớn hơn hoặc bằng 0.");
@@ -266,5 +291,31 @@ public class ProductService {
             throw new ValidationException(
                     "Mã sản phẩm '" + request.getProductCode().trim() + "' đã tồn tại trong hệ thống.");
         }
+    }
+
+    public boolean deleteProduct(int productId, Account user) throws ValidationException, AuthorizationException {
+        if (!canManageProducts(user)) {
+            throw new AuthorizationException("Bạn không có quyền xóa sản phẩm/dịch vụ.");
+        }
+
+        if (productId <= 0 || !productDAO.exists(productId)) {
+            throw new ValidationException("Sản phẩm không tồn tại trong hệ thống.");
+        }
+
+        if (productDAO.isProductUsedInQuotes(productId)) {
+            throw new ValidationException("Sản phẩm đã xuất hiện trong báo giá, không thể xóa. Bạn chỉ có thể chuyển sang trạng thái Ngừng hoạt động (INACTIVE).");
+        }
+
+        Product oldProduct = productDAO.getById(productId, true);
+
+        com.crm.model.AuditLog log = new com.crm.model.AuditLog();
+        log.setAction("DISCOUNT_DELETE");
+        log.setUserId(user != null ? user.getAccountId() : 0);
+        log.setTargetUserId(productId);
+        log.setDetails("Xóa sản phẩm " + (oldProduct != null ? oldProduct.getProductName() : ("ID " + productId)));
+        log.setOldValue("Sản phẩm mã: " + (oldProduct != null ? oldProduct.getProductCode() : "N/A"));
+        log.setNewValue("Đã xóa khỏi hệ thống");
+
+        return productDAO.delete(productId, log);
     }
 }

@@ -28,11 +28,18 @@ public class CustomFieldServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = resp.getWriter();
-
         String entityType = req.getParameter("entityType");
         String entityIdStr = req.getParameter("entityId");
+        String acceptHeader = req.getHeader("Accept");
+
+        // Forward to HTML view if requested from browser page navigation
+        if (entityType == null && entityIdStr == null && acceptHeader != null && acceptHeader.contains("text/html")) {
+            req.getRequestDispatcher("/WEB-INF/views/customfields/list.jsp").forward(req, resp);
+            return;
+        }
+
+        resp.setContentType("application/json;charset=UTF-8");
+        PrintWriter out = resp.getWriter();
         String status = req.getParameter("status");
 
         if (entityIdStr != null && !entityIdStr.trim().isEmpty()) {

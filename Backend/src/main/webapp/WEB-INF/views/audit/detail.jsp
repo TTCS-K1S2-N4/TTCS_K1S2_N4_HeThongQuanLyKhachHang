@@ -25,7 +25,7 @@
 
             if (auditLog != null) {
                 performer = auditLog.getPerformedByName() != null ? auditLog.getPerformedByName() : (auditLog.getUserId() > 0 ? "Mã " + auditLog.getUserId() : "-");
-                timeStr = auditLog.getCreatedAt() != null ? auditLog.getCreatedAt().toString() : "-";
+                timeStr = auditLog.getFormattedCreatedAt();
 
                 if (auditLog.getOldValue() != null && !auditLog.getOldValue().trim().isEmpty() && !"null".equalsIgnoreCase(auditLog.getOldValue().trim())) {
                     oldValueStr = auditLog.getOldValue();

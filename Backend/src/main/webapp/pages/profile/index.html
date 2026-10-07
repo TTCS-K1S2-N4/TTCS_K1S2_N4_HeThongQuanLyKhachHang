@@ -37,6 +37,16 @@
                     Quản lý thông tin cá nhân và ảnh đại diện của bạn.
                 </p>
             </div>
+
+            <div>
+                <a href="../../index.jsp" id="backButton" class="btn btn-secondary" title="Quay lại trang trước" onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Quay lại
+                </a>
+            </div>
         </header>
 
 
@@ -50,10 +60,6 @@
             <section class="profile-card profile-form-section">
 
                 <div class="card-heading">
-                    <div class="heading-icon">
-                        <span>♙</span>
-                    </div>
-
                     <div>
                         <h2 class="section-title">
                             Thông tin cơ bản
@@ -197,7 +203,6 @@
                             id="saveProfileButton"
                             class="btn btn-primary"
                         >
-                            <span class="button-icon">✓</span>
                             Lưu thông tin
                         </button>
                     </div>
@@ -223,10 +228,6 @@
             <aside class="profile-card profile-avatar-section">
 
                 <div class="avatar-heading">
-                    <div class="heading-icon">
-                        <span>✦</span>
-                    </div>
-
                     <h2 class="section-title">
                         Ảnh đại diện
                     </h2>
@@ -240,7 +241,7 @@
                 <!-- AVATAR PREVIEW -->
                 <div class="avatar-preview-container">
 
-                    <div class="avatar-frame">
+                    <div class="avatar-frame" id="avatarFrame" title="Nhấp để thay đổi ảnh đại diện">
 
                         <img
                             id="avatarPreview"
@@ -255,11 +256,17 @@
                             class="avatar-fallback"
                             aria-label="Ảnh đại diện mặc định"
                         >
-                            <span>👤</span>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="avatar-fallback-svg">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
                         </div>
 
-                        <div class="avatar-edit-badge" aria-hidden="true">
-                            ✎
+                        <div class="avatar-edit-badge" id="avatarEditBadge" title="Chỉnh sửa ảnh đại diện" role="button" tabindex="0" aria-label="Thay đổi ảnh đại diện">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
                         </div>
 
                     </div>
@@ -268,6 +275,10 @@
                         <span class="status-dot"></span>
                         Ảnh đại diện tài khoản
                     </div>
+
+                    <small id="avatarHint" class="upload-hint" style="margin-top: 10px; text-align: center;">
+                        Định dạng JPG, PNG · Dung lượng tối đa 2MB
+                    </small>
 
                 </div>
 
@@ -281,49 +292,18 @@
                     class="avatar-form"
                 >
 
-                    <div class="avatar-upload-box">
-
-                        <div class="upload-icon" aria-hidden="true">
-                            ↑
-                        </div>
-
-                        <label
-                            for="avatarInput"
-                            class="upload-title"
-                        >
-                            Chọn ảnh đại diện
-                        </label>
-
-                        <p class="upload-description">
-                            Chọn ảnh từ thiết bị của bạn
-                        </p>
-
-                        <input
-                            type="file"
-                            id="avatarInput"
-                            name="avatar"
-                            accept="image/jpeg,image/png"
-                            required
-                            aria-describedby="avatarHint"
-                        >
-
-                        <small id="avatarHint" class="upload-hint">
-                            JPG hoặc PNG · Tối đa 2MB
-                        </small>
-
-                    </div>
-
-
-                    <button
-                        type="submit"
-                        id="uploadAvatarButton"
-                        class="btn btn-avatar-upload"
+                    <!-- Input file ẩn -->
+                    <input
+                        type="file"
+                        id="avatarInput"
+                        name="avatar"
+                        accept="image/jpeg,image/png"
+                        required
+                        aria-describedby="avatarHint"
+                        style="display: none;"
                     >
-                        <span aria-hidden="true">↑</span>
-                        Tải ảnh lên
-                    </button>
 
-
+                    <!-- Thông báo trạng thái -->
                     <div
                         id="avatarMessage"
                         class="toast-message"
@@ -356,6 +336,8 @@ const avatarInput = document.getElementById('avatarInput');
 const avatarPreview = document.getElementById('avatarPreview');
 const avatarFallback = document.getElementById('avatarFallback');
 const avatarMessage = document.getElementById('avatarMessage');
+const avatarEditBadge = document.getElementById('avatarEditBadge');
+const avatarFrame = document.getElementById('avatarFrame');
 
 const saveProfileButton =
     document.getElementById('saveProfileButton');
@@ -364,6 +346,30 @@ const uploadAvatarButton =
     document.getElementById('uploadAvatarButton');
 
 let previewImageUrl = null;
+
+
+/* =========================================
+   PENCIL & AVATAR CLICK TRIGGER FILE PICKER
+========================================= */
+
+if (avatarEditBadge) {
+    avatarEditBadge.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (avatarInput) avatarInput.click();
+    });
+    avatarEditBadge.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (avatarInput) avatarInput.click();
+        }
+    });
+}
+
+if (avatarFrame) {
+    avatarFrame.addEventListener('click', function() {
+        if (avatarInput) avatarInput.click();
+    });
+}
 
 
 /* =========================================
@@ -388,15 +394,36 @@ function hideMessage(element) {
 ========================================= */
 
 async function readResponse(res) {
+    const contentType = res.headers.get('content-type') || '';
     const text = await res.text();
 
-    try {
-        return text ? JSON.parse(text) : {};
-    } catch (error) {
+    if (!contentType.includes('application/json')) {
+        console.error('Unexpected response:', {
+            status: res.status,
+            contentType,
+            body: text
+        });
+
         throw new Error(
-            'Backend trả về dữ liệu không đúng định dạng JSON.'
+            `Backend không trả JSON (HTTP ${res.status}).`
         );
     }
+
+    let data;
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (e) {
+        console.error('Invalid JSON:', text);
+        throw new Error('Backend trả về JSON không hợp lệ.');
+    }
+
+    if (!res.ok) {
+        throw new Error(
+            data.message || data.error || `Yêu cầu thất bại (${res.status})`
+        );
+    }
+
+    return data;
 }
 
 
@@ -404,17 +431,15 @@ async function readResponse(res) {
    LOAD PROFILE
 ========================================= */
 
-fetch('../../profile')
+fetch('../../profile', {
+    headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+})
 
     .then(async res => {
         const data = await readResponse(res);
-
-        if (!res.ok) {
-            throw new Error(
-                data.error || data.message || 'Không thể tải hồ sơ.'
-            );
-        }
-
         return data;
     })
 
@@ -483,7 +508,7 @@ profileForm.addEventListener('submit', function(e) {
 
     hideMessage(profileMessage);
 
-    saveProfileButton.disabled = true;
+    if (saveProfileButton) saveProfileButton.disabled = true;
 
     showMessage(
         profileMessage,
@@ -543,7 +568,7 @@ profileForm.addEventListener('submit', function(e) {
     })
 
     .finally(() => {
-        saveProfileButton.disabled = false;
+        if (saveProfileButton) saveProfileButton.disabled = false;
     });
 
 });
@@ -565,7 +590,7 @@ avatarPreview.addEventListener('load', function() {
 
 
 /* =========================================
-   AVATAR PREVIEW
+   AVATAR PREVIEW & AUTO UPLOAD
 ========================================= */
 
 avatarInput.addEventListener('change', function() {
@@ -617,6 +642,13 @@ avatarInput.addEventListener('change', function() {
     avatarPreview.style.display = 'block';
     avatarFallback.style.display = 'none';
 
+    // Tự động gửi form upload avatar sau khi chọn file hợp lệ
+    if (typeof avatarForm.requestSubmit === 'function') {
+        avatarForm.requestSubmit();
+    } else {
+        avatarForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+
 });
 
 
@@ -667,7 +699,7 @@ avatarForm.addEventListener('submit', function(e) {
 
     const formData = new FormData(this);
 
-    uploadAvatarButton.disabled = true;
+    if (uploadAvatarButton) uploadAvatarButton.disabled = true;
 
     showMessage(
         avatarMessage,
@@ -677,21 +709,16 @@ avatarForm.addEventListener('submit', function(e) {
 
     fetch(this.action, {
         method: this.method,
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
 
     .then(async res => {
-
         const data = await readResponse(res);
-
-        if (!res.ok) {
-            throw new Error(
-                data.error || data.message || 'Không thể tải ảnh lên.'
-            );
-        }
-
         return data;
-
     })
 
     .then(data => {
@@ -738,7 +765,7 @@ avatarForm.addEventListener('submit', function(e) {
     })
 
     .finally(() => {
-        uploadAvatarButton.disabled = false;
+        if (uploadAvatarButton) uploadAvatarButton.disabled = false;
     });
 
 });

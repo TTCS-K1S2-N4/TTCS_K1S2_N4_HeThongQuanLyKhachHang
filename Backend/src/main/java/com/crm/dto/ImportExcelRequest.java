@@ -1,6 +1,7 @@
 package com.crm.dto;
 
 public class ImportExcelRequest {
+    private int rowIndex;
     private String fullName;
     private String email;
     private String phone;
@@ -10,6 +11,14 @@ public class ImportExcelRequest {
     private String error;
 
     public ImportExcelRequest() {}
+
+    public int getRowIndex() {
+        return rowIndex;
+    }
+
+    public void setRowIndex(int rowIndex) {
+        this.rowIndex = rowIndex;
+    }
 
     public String getFullName() {
         return fullName;
@@ -52,6 +61,6 @@ public class ImportExcelRequest {
     }
     
     public boolean isValid() {
-        return error == null || error.isEmpty();
+        return error == null || error.trim().isEmpty();
     }
 }

@@ -43,6 +43,9 @@ public class AccountDAO {
             while (rs.next()) {
                 list.add(mapResultSetToAccount(rs));
             }
+            for (Account account : list) {
+                loadRoles(conn, account);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -98,6 +101,23 @@ public class AccountDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, avatarUrl);
             ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateUserTeam(int userId, Integer newTeamId) {
+        String sql = "UPDATE users SET team_id = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (newTeamId != null && newTeamId > 0) {
+                ps.setInt(1, newTeamId);
+            } else {
+                ps.setNull(1, Types.INTEGER);
+            }
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -644,14 +664,29 @@ public class AccountDAO {
                 }
             }
 
+            String lockedName = "ID #" + lockedAccountId;
+            String receiverName = receiverAccountId != null ? "ID #" + receiverAccountId : "N/A";
+            try (PreparedStatement psUser = conn.prepareStatement("SELECT user_id, full_name FROM users WHERE user_id IN (?, ?)")) {
+                psUser.setInt(1, lockedAccountId);
+                psUser.setInt(2, receiverAccountId != null ? receiverAccountId : 0);
+                try (ResultSet rsUser = psUser.executeQuery()) {
+                    while (rsUser.next()) {
+                        int uId = rsUser.getInt("user_id");
+                        String name = rsUser.getString("full_name");
+                        if (uId == lockedAccountId) lockedName = name + " (ID: " + lockedAccountId + ")";
+                        if (receiverAccountId != null && uId == receiverAccountId) receiverName = name + " (ID: " + receiverAccountId + ")";
+                    }
+                }
+            } catch (SQLException ignored) {}
+
             String logSql = "INSERT INTO audit_logs (action_type, performed_by, target_user_id, description, old_value, new_value) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(logSql)) {
                 ps.setString(1, "DATA_OWNERSHIP_TRANSFER");
                 ps.setInt(2, performedByAdminId);
                 ps.setInt(3, lockedAccountId);
-                ps.setString(4, "Khóa tài khoản " + lockedAccountId + ", bàn giao dữ liệu cho " + receiverAccountId + ". Lý do: " + reason);
-                ps.setString(5, "Owner: User #" + lockedAccountId);
-                ps.setString(6, "Owner: User #" + receiverAccountId);
+                ps.setString(4, "Khóa tài khoản và chuyển giao quyền sở hữu dữ liệu sang " + receiverName + ". Lý do: " + reason);
+                ps.setString(5, "Chủ sở hữu cũ: " + lockedName);
+                ps.setString(6, "Chủ sở hữu mới: " + receiverName);
                 ps.executeUpdate();
             }
 

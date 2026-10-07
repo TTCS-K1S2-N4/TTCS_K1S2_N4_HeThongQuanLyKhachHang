@@ -20,7 +20,7 @@
             
             <div class="card">
                 <div class="card-body">
-                    <form id="createForm" action="/products/create" method="POST">
+                    <form id="createForm" action="../../products/create" method="POST">
                         <div class="form-group">
                             <label>Mã SP (*)</label>
                             <input type="text" name="productCode" class="form-control" required>
@@ -42,15 +42,15 @@
                         </div>
                         <div class="form-group">
                             <label>Giá niêm yết (*)</label>
-                            <input type="number" name="listPrice" class="form-control" required min="0">
+                            <input type="number" step="0.01" name="listPrice" id="createListPrice" class="form-control" required min="0">
                         </div>
                         <div class="form-group">
                             <label>Giá sàn</label>
-                            <input type="number" name="floorPrice" class="form-control" min="0">
+                            <input type="number" step="0.01" name="floorPrice" id="createFloorPrice" class="form-control" min="0">
                         </div>
                         <div class="form-group">
-                            <label>Giá vốn</label>
-                            <input type="number" name="costPrice" class="form-control" min="0">
+                            <label>Giá vốn (Chỉ Giám đốc kinh doanh)</label>
+                            <input type="number" step="0.01" name="costPrice" class="form-control" min="0">
                         </div>
                         
                         <div class="form-actions mt-3">
@@ -70,34 +70,42 @@
             messageDiv.style.display = 'block';
             
             const formData = new FormData(this);
-            // Validation example
             const listPrice = parseFloat(formData.get('listPrice'));
+            const floorPriceVal = formData.get('floorPrice');
             if(isNaN(listPrice) || listPrice < 0) {
                 messageDiv.textContent = 'Giá niêm yết không hợp lệ.';
                 messageDiv.className = 'toast-message error';
                 return;
             }
+
+            if(floorPriceVal !== '' && !isNaN(parseFloat(floorPriceVal)) && parseFloat(floorPriceVal) > listPrice) {
+                messageDiv.textContent = 'Giá sàn không được lớn hơn giá niêm yết.';
+                messageDiv.className = 'toast-message error';
+                return;
+            }
             
-            // convert formData to urlencoded for standard form POST if needed, but the prompt says just Request Parameters. 
-            // We use urlencoded to match typical API if not multipart
             const urlEncodedData = new URLSearchParams(formData).toString();
             
             fetch(this.action, {
                 method: this.method,
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 body: urlEncodedData
             })
-            .then(res => {
-                if(!res.ok) throw new Error('API Error');
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     messageDiv.textContent = 'Tạo mới thành công!';
                     messageDiv.className = 'toast-message success';
                     this.reset();
+                    setTimeout(() => {
+                        window.location.href = 'list.html';
+                    }, 1000);
                 } else {
-                    messageDiv.textContent = data.errors ? data.errors.join(', ') : 'Lỗi tạo mới.';
+                    messageDiv.textContent = data.errors ? data.errors.join(', ') : (data.message || 'Lỗi tạo mới.');
                     messageDiv.className = 'toast-message error';
                 }
             })

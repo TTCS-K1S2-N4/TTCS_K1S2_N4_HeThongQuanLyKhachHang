@@ -58,6 +58,9 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/delete", "ACCOUNT_DELETE");
         protectedUrlMap.put("/customers/export", "ACCOUNT_EXPORT");
+        protectedUrlMap.put("/customers/duplicates", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/merge", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/hierarchy", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/detail", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers", "ACCOUNT_VIEW");
 
@@ -87,6 +90,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/products/create", "PRODUCT_MANAGE");
         protectedUrlMap.put("/products/edit", "PRODUCT_MANAGE");
         protectedUrlMap.put("/products/status", "PRODUCT_MANAGE");
+        protectedUrlMap.put("/products/delete", "PRODUCT_MANAGE");
         protectedUrlMap.put("/products/detail", "PRODUCT_VIEW");
         protectedUrlMap.put("/products", "PRODUCT_VIEW");
 
@@ -274,7 +278,7 @@ public class AuthorizationFilter implements Filter {
         // Tài nguyên tĩnh & trang lỗi
         if (lower.startsWith("/assets/") || lower.startsWith("/css/") || lower.startsWith("/js/") ||
             lower.startsWith("/images/") || lower.startsWith("/icons/") || lower.startsWith("/uploads/") ||
-            lower.startsWith("/error/") || lower.startsWith("/errors/") || lower.equals("/index.jsp")) {
+            lower.startsWith("/pages/") || lower.startsWith("/error/") || lower.startsWith("/errors/") || lower.equals("/index.jsp")) {
             return true;
         }
 

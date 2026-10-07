@@ -100,25 +100,79 @@ public class PermissionDAO {
      * @param userId ID người dùng
      * @return Danh sách account_id cùng team
      */
+    public List<Integer> getTeamAndSubTeamIds(int rootTeamId) {
+        List<Integer> result = new ArrayList<>();
+        if (rootTeamId <= 0) return result;
+        result.add(rootTeamId);
+        int index = 0;
+        while (index < result.size()) {
+            int currentTeamId = result.get(index++);
+            String sql = "SELECT team_id FROM teams WHERE parent_team_id = ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, currentTeamId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        int childId = rs.getInt("team_id");
+                        if (!result.contains(childId)) {
+                            result.add(childId);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.SEVERE, "Lỗi khi tìm sub-teams cho teamId = " + currentTeamId, e);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Truy vấn danh sách account_id thuộc cùng Team và các nhóm con (sub-teams) với một userId.
+     * Phục vụ cho tính năng lọc dữ liệu phạm vi TEAM (Bao gồm nhóm hiện tại và các nhóm con theo cây tổ chức).
+     *
+     * @param userId ID người dùng
+     * @return Danh sách account_id thuộc nhóm và các nhóm con
+     */
     public List<Integer> findTeamMemberUserIdsByUserId(int userId) {
         List<Integer> memberIds = new ArrayList<>();
-        String sql = "SELECT user_id AS account_id FROM users " +
-                     "WHERE team_id = (SELECT team_id FROM users WHERE user_id = ? AND team_id IS NOT NULL)";
+        Integer userTeamId = findTeamIdByUserId(userId);
+        if (userTeamId == null || userTeamId <= 0) {
+            memberIds.add(userId);
+            return memberIds;
+        }
+
+        List<Integer> teamIds = getTeamAndSubTeamIds(userTeamId);
+        if (teamIds.isEmpty()) {
+            memberIds.add(userId);
+            return memberIds;
+        }
+
+        StringBuilder sql = new StringBuilder("SELECT user_id AS account_id FROM users WHERE team_id IN (");
+        for (int i = 0; i < teamIds.size(); i++) {
+            sql.append(i > 0 ? ",?" : "?");
+        }
+        sql.append(")");
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
 
-            ps.setInt(1, userId);
+            for (int i = 0; i < teamIds.size(); i++) {
+                ps.setInt(i + 1, teamIds.get(i));
+            }
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    memberIds.add(rs.getInt("account_id"));
+                    int accId = rs.getInt("account_id");
+                    if (!memberIds.contains(accId)) {
+                        memberIds.add(accId);
+                    }
                 }
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi truy vấn danh sách thành viên team cho userId = " + userId, e);
         }
 
-        if (memberIds.isEmpty()) {
+        if (!memberIds.contains(userId)) {
             memberIds.add(userId);
         }
         return memberIds;
