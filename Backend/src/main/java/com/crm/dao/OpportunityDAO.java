@@ -9,6 +9,24 @@ import java.util.List;
 
 public class OpportunityDAO {
 
+    public OpportunityDAO() {
+        ensureSchema();
+    }
+
+    private void ensureSchema() {
+        String alterSql = "ALTER TABLE opportunities " +
+                "ADD COLUMN IF NOT EXISTS customer_id INT NULL, " +
+                "ADD COLUMN IF NOT EXISTS stage VARCHAR(100) NULL, " +
+                "ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE', " +
+                "ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;";
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            try { stmt.executeUpdate(alterSql); } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            // connection might be unavailable in static context
+        }
+    }
+
     private Opportunity mapResultSetToOpportunity(ResultSet rs) throws SQLException {
         Opportunity obj = new Opportunity();
         obj.setOpportunityid(rs.getInt("opportunity_id"));
@@ -53,6 +71,16 @@ public class OpportunityDAO {
         } catch (SQLException ignored) {}
 
         obj.setCreatedAt(rs.getTimestamp("created_at"));
+
+        try {
+            int cid = rs.getInt("customer_id");
+            if (!rs.wasNull()) obj.setCustomerId(cid);
+        } catch (SQLException ignored) {}
+
+        try { obj.setStage(rs.getString("stage")); } catch (SQLException ignored) {}
+        try { obj.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
+        try { obj.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
+
         return obj;
     }
 
@@ -233,8 +261,86 @@ public class OpportunityDAO {
         return null;
     }
 
+    public List<Opportunity> getOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+                     "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "WHERE o.customer_id = ? ORDER BY o.opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Opportunity> getOpenOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+                     "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "WHERE o.customer_id = ? AND (o.stage IS NULL OR (o.stage NOT LIKE '%WON%' AND o.stage NOT LIKE '%LOST%' AND o.stage NOT LIKE '%CLOSED%')) ORDER BY o.opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Opportunity> getClosedOpportunitiesByCustomerId(int customerId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
+                     "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "WHERE o.customer_id = ? AND (o.stage LIKE '%WON%' OR o.stage LIKE '%LOST%' OR o.stage LIKE '%CLOSED%') ORDER BY o.opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSetToOpportunity(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public double calculateTotalOpenAmount(int customerId) {
+        String sql = "SELECT SUM(amount) FROM opportunities WHERE customer_id = ? AND (stage IS NULL OR (stage NOT LIKE '%WON%' AND stage NOT LIKE '%LOST%' AND stage NOT LIKE '%CLOSED%'))";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
     public boolean insert(Opportunity opp) {
-        String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date, customer_id, stage, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, opp.getTitle());
@@ -245,6 +351,9 @@ public class OpportunityDAO {
             ps.setObject(6, opp.getWinLossReasonId());
             ps.setObject(7, opp.getCompetitorId());
             ps.setTimestamp(8, opp.getCloseDate());
+            ps.setObject(9, opp.getCustomerId() > 0 ? opp.getCustomerId() : null);
+            ps.setString(10, opp.getStage());
+            ps.setString(11, opp.getStatus() != null ? opp.getStatus() : "ACTIVE");
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -261,7 +370,7 @@ public class OpportunityDAO {
     }
 
     public boolean update(Opportunity opp) {
-        String sql = "UPDATE opportunities SET title = ?, amount = ?, owner_id = ?, pipeline_stage_id = ?, probability = ?, win_loss_reason_id = ?, competitor_id = ?, close_date = ? WHERE opportunity_id = ?";
+        String sql = "UPDATE opportunities SET title = ?, amount = ?, owner_id = ?, pipeline_stage_id = ?, probability = ?, win_loss_reason_id = ?, competitor_id = ?, close_date = ?, customer_id = ?, stage = ?, status = ? WHERE opportunity_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, opp.getTitle());
@@ -272,7 +381,10 @@ public class OpportunityDAO {
             ps.setObject(6, opp.getWinLossReasonId());
             ps.setObject(7, opp.getCompetitorId());
             ps.setTimestamp(8, opp.getCloseDate());
-            ps.setInt(9, opp.getOpportunityId());
+            ps.setObject(9, opp.getCustomerId() > 0 ? opp.getCustomerId() : null);
+            ps.setString(10, opp.getStage());
+            ps.setString(11, opp.getStatus());
+            ps.setInt(12, opp.getOpportunityId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -317,4 +429,3 @@ public class OpportunityDAO {
         }
     }
 }
-
