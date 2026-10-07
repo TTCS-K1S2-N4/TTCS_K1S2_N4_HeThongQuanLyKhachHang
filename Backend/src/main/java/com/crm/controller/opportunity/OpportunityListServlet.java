@@ -35,17 +35,45 @@ public class OpportunityListServlet extends HttpServlet {
         
         List<Integer> ownerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roleIds != null && !roleIds.isEmpty() ? roleIds : java.util.Collections.singletonList(roleId), "DEAL");
 
-        List<Opportunity> list = dao.getList(keyword, ownerIds, page, pageSize);
-        int total = dao.count(keyword, ownerIds);
+        String filterFieldIdStr = req.getParameter("filterFieldId");
+        String filterFieldValue = req.getParameter("filterFieldValue");
+        Integer filterFieldId = null;
+        if (filterFieldIdStr != null && !filterFieldIdStr.trim().isEmpty()) {
+            try { filterFieldId = Integer.parseInt(filterFieldIdStr.trim()); } catch (Exception ignored) {}
+        }
+
+        com.crm.service.CustomFieldService customFieldService = new com.crm.service.CustomFieldService();
+        List<com.crm.model.CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("OPPORTUNITY", "ACTIVE");
+
+        com.crm.dao.PipelineStageDAO stageDAO = new com.crm.dao.PipelineStageDAO();
+        com.crm.dao.WinLossReasonDAO reasonDAO = new com.crm.dao.WinLossReasonDAO();
+        com.crm.dao.CompetitorDAO competitorDAO = new com.crm.dao.CompetitorDAO();
+
+        List<com.crm.model.PipelineStage> pipelineStages = stageDAO.findAll();
+        List<com.crm.model.WinLossReason> winReasons = reasonDAO.findAll("WIN");
+        List<com.crm.model.WinLossReason> lossReasons = reasonDAO.findAll("LOSS");
+        List<com.crm.model.Competitor> competitors = competitorDAO.findAll();
+
+        List<Opportunity> list = dao.getList(keyword, ownerIds, filterFieldId, filterFieldValue, page, pageSize);
+        int total = dao.count(keyword, ownerIds, filterFieldId, filterFieldValue);
         int totalPages = (int) Math.ceil((double) total / pageSize);
 
         req.setAttribute("list", list);
         req.setAttribute("currentPage", page);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("keyword", keyword);
+        req.setAttribute("customFieldDefinitions", customFieldDefs);
+        req.setAttribute("filterFieldId", filterFieldId);
+        req.setAttribute("filterFieldValue", filterFieldValue);
+
+        req.setAttribute("pipelineStages", pipelineStages);
+        req.setAttribute("winReasons", winReasons);
+        req.setAttribute("lossReasons", lossReasons);
+        req.setAttribute("competitors", competitors);
 
         req.getRequestDispatcher("/WEB-INF/views/deals/list.jsp").forward(req, resp);
     }
 }
+
 
 

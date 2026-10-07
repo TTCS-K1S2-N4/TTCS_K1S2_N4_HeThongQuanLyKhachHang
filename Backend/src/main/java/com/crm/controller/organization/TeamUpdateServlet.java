@@ -55,6 +55,62 @@ public class TeamUpdateServlet extends HttpServlet {
 
         List<String> errors = new ArrayList<>();
 
+        String action = req.getParameter("action");
+        if ("transferUser".equals(action) || req.getParameter("transferUserId") != null) {
+            String sourceTeamIdStr = req.getParameter("sourceTeamId");
+            Integer sourceTeamId = null;
+            if (sourceTeamIdStr != null && !sourceTeamIdStr.trim().isEmpty()) {
+                try {
+                    sourceTeamId = Integer.parseInt(sourceTeamIdStr.trim());
+                } catch (NumberFormatException e) {
+                    errors.add("ID nhóm hiện tại (sourceTeamId) không hợp lệ.");
+                }
+            }
+
+            String transferUserIdStr = req.getParameter("transferUserId");
+            if (transferUserIdStr == null) transferUserIdStr = req.getParameter("userId");
+            int transferUserId = 0;
+            if (transferUserIdStr != null && !transferUserIdStr.trim().isEmpty()) {
+                try {
+                    transferUserId = Integer.parseInt(transferUserIdStr.trim());
+                } catch (NumberFormatException e) {
+                    errors.add("Mã người dùng chuyển nhóm (transferUserId) không hợp lệ.");
+                }
+            } else {
+                errors.add("Vui lòng chọn người dùng cần chuyển nhóm.");
+            }
+
+            String targetTeamIdStr = req.getParameter("targetTeamId");
+            if (targetTeamIdStr == null) targetTeamIdStr = req.getParameter("newTeamId");
+            Integer targetTeamId = null;
+            if (targetTeamIdStr != null && !targetTeamIdStr.trim().isEmpty() && !"0".equals(targetTeamIdStr.trim())) {
+                try {
+                    targetTeamId = Integer.parseInt(targetTeamIdStr.trim());
+                } catch (NumberFormatException e) {
+                    errors.add("Mã nhóm đích (targetTeamId) không hợp lệ.");
+                }
+            }
+
+            if (!errors.isEmpty()) {
+                handleErrorResponse(req, resp, errors, null);
+                return;
+            }
+
+            boolean transferred = organizationService.transferUserToTeam(transferUserId, sourceTeamId, targetTeamId, errors);
+            if (transferred) {
+                if (isAjaxRequest(req)) {
+                    resp.setContentType("application/json;charset=UTF-8");
+                    PrintWriter out = resp.getWriter();
+                    out.print("{\"success\": true, \"message\": \"Chuyển nhân viên sang nhóm mới thành công.\"}");
+                    out.flush();
+                } else {
+                    resp.sendRedirect(req.getContextPath() + "/organization/teams?success=transfer");
+                }
+            } else {
+                handleErrorResponse(req, resp, errors, null);
+            }
+            return;
+        }
         String teamIdStr = req.getParameter("teamId");
         int teamId = 0;
         if (teamIdStr != null && !teamIdStr.trim().isEmpty()) {
@@ -145,6 +201,9 @@ public class TeamUpdateServlet extends HttpServlet {
         } else {
             req.setAttribute("errors", errors);
             req.setAttribute("team", team);
+            req.setAttribute("teams", organizationService.getAllTeams());
+            req.setAttribute("users", organizationService.getAllActiveUsers());
+            req.setAttribute("leaderCandidates", organizationService.getLeaderCandidateUsers());
             req.getRequestDispatcher("/WEB-INF/views/organization/teams.jsp").forward(req, resp);
         }
     }

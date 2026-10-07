@@ -4,6 +4,7 @@ import com.crm.dto.CustomerFilterRequest;
 import com.crm.model.Customer;
 import com.crm.model.SavedFilter;
 import com.crm.service.CustomerFilterService;
+import com.crm.service.CustomFieldService;
 import com.crm.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
@@ -19,6 +20,7 @@ import java.util.List;
 @WebServlet("/customers")
 public class CustomerListServlet extends HttpServlet {
     private CustomerFilterService filterService = new CustomerFilterService();
+    private CustomFieldService customFieldService = new CustomFieldService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -52,6 +54,15 @@ public class CustomerListServlet extends HttpServlet {
             try { filterReq.setOwnerId(Integer.parseInt(oidStr.trim())); } catch (NumberFormatException ignored) {}
         }
 
+        String filterFieldIdStr = req.getParameter("filterFieldId");
+        String filterFieldValue = req.getParameter("filterFieldValue");
+        Integer filterFieldId = null;
+        if (filterFieldIdStr != null && !filterFieldIdStr.trim().isEmpty()) {
+            try { filterFieldId = Integer.parseInt(filterFieldIdStr.trim()); } catch (Exception ignored) {}
+        }
+        filterReq.setFilterFieldId(filterFieldId);
+        filterReq.setFilterFieldValue(filterFieldValue);
+
         int page = 1;
         try { page = Integer.parseInt(req.getParameter("page")); } catch (Exception ignored) {}
         filterReq.setPage(page);
@@ -66,6 +77,7 @@ public class CustomerListServlet extends HttpServlet {
         if (totalPages <= 0) totalPages = 1;
 
         List<SavedFilter> savedFilters = filterService.getSavedFilters(userId);
+        List<com.crm.model.CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("CUSTOMER", "ACTIVE");
 
         boolean isJson = "json".equalsIgnoreCase(req.getParameter("format")) ||
                 (req.getHeader("Accept") != null && req.getHeader("Accept").contains("application/json")) ||
@@ -91,6 +103,9 @@ public class CustomerListServlet extends HttpServlet {
             req.setAttribute("ownerId", filterReq.getOwnerId());
             req.setAttribute("savedFilters", savedFilters);
             req.setAttribute("filterRequest", filterReq);
+            req.setAttribute("customFieldDefinitions", customFieldDefs);
+            req.setAttribute("filterFieldId", filterFieldId);
+            req.setAttribute("filterFieldValue", filterFieldValue);
 
             req.getRequestDispatcher("/WEB-INF/views/customers/list.jsp").forward(req, resp);
         }
@@ -126,4 +141,5 @@ public class CustomerListServlet extends HttpServlet {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
+
 }

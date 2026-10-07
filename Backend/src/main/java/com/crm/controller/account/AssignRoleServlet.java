@@ -142,13 +142,39 @@ public class AssignRoleServlet extends HttpServlet {
                 return;
             }
 
+            Account oldAcc = accountDAO.getAccountById(accountId);
+            String oldRolesStr = (oldAcc != null && oldAcc.getRoleNames() != null && !oldAcc.getRoleNames().isEmpty())
+                    ? String.join(", ", oldAcc.getRoleNames()) : "Không có vai trò";
+            String oldTeamStr = (oldAcc != null && oldAcc.getTeamName() != null)
+                    ? oldAcc.getTeamName() : "Không có nhóm";
+
+            List<String> newRoleNames = new ArrayList<>();
+            List<Role> allRoles = roleService.getAllRoles();
+            for (Integer rId : roleIds) {
+                for (Role r : allRoles) {
+                    if (r.getId() == rId) {
+                        newRoleNames.add(r.getName());
+                    }
+                }
+            }
+            String newRolesStr = newRoleNames.isEmpty() ? "Không có vai trò" : String.join(", ", newRoleNames);
+            String newTeamStr = "Không có nhóm";
+            if (teamId != null) {
+                for (com.crm.model.Team t : roleService.getAllTeams()) {
+                    if (t.getId() == teamId) {
+                        newTeamStr = t.getName();
+                        break;
+                    }
+                }
+            }
+
             com.crm.model.AuditLog auditLog = new com.crm.model.AuditLog();
             auditLog.setAction("ASSIGN_ROLE");
             auditLog.setUserId(loggedUserId != null ? loggedUserId : 0);
             auditLog.setTargetUserId(accountId);
-            auditLog.setDetails("Gán vai trò và phòng ban cho tài khoản ID " + accountId);
-            auditLog.setOldValue("Account ID: " + accountId);
-            auditLog.setNewValue("Roles: " + roleIds.toString() + ", Team: " + teamId);
+            auditLog.setDetails("Gán vai trò và phòng ban cho tài khoản " + (oldAcc != null ? oldAcc.getFullName() : ("ID " + accountId)));
+            auditLog.setOldValue("Vai trò: [" + oldRolesStr + "], Nhóm: [" + oldTeamStr + "]");
+            auditLog.setNewValue("Vai trò: [" + newRolesStr + "], Nhóm: [" + newTeamStr + "]");
 
             boolean updated = accountDAO.updateRoleAndTeam(
                     accountId,

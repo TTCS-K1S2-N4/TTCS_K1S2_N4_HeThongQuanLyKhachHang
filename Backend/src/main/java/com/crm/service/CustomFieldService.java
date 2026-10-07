@@ -93,4 +93,51 @@ public class CustomFieldService {
     public boolean deleteValuesByEntity(String entityType, int entityId) {
         return valueDAO.deleteValuesByEntity(entityType, entityId);
     }
+
+    public List<String> validateSubmittedCustomFields(String entityType, Map<Integer, String> fieldValues) {
+        List<String> errors = new java.util.ArrayList<>();
+        List<CustomFieldDefinition> definitions = getDefinitions(entityType, "ACTIVE");
+        if (definitions == null || definitions.isEmpty()) {
+            return errors;
+        }
+
+        for (CustomFieldDefinition def : definitions) {
+            String val = fieldValues != null ? fieldValues.get(def.getFieldId()) : null;
+            boolean isEmpty = (val == null || val.trim().isEmpty());
+
+            if (def.isRequired() && isEmpty) {
+                errors.add("Trường [" + def.getFieldLabel() + "] là bắt buộc.");
+                continue;
+            }
+
+            if (!isEmpty && val != null) {
+                String type = def.getFieldType() != null ? def.getFieldType().toUpperCase() : "TEXT";
+                if ("NUMBER".equals(type)) {
+                    try {
+                        Double.parseDouble(val.trim());
+                    } catch (NumberFormatException e) {
+                        errors.add("Trường [" + def.getFieldLabel() + "] phải là số hợp lệ.");
+                    }
+                } else if ("DATE".equals(type)) {
+                    if (!val.trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                        errors.add("Trường [" + def.getFieldLabel() + "] phải có định dạng YYYY-MM-DD.");
+                    }
+                } else if ("SELECT".equals(type) && def.getOptions() != null && !def.getOptions().trim().isEmpty()) {
+                    String[] allowedOpts = def.getOptions().split("[,;\\n]+");
+                    boolean match = false;
+                    for (String opt : allowedOpts) {
+                        if (opt.trim().equalsIgnoreCase(val.trim())) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match) {
+                        errors.add("Trường [" + def.getFieldLabel() + "] chứa giá trị không hợp lệ.");
+                    }
+                }
+            }
+        }
+        return errors;
+    }
 }
+

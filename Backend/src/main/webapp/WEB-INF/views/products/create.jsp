@@ -59,10 +59,6 @@
                                 <option value="INACTIVE">Ngừng hoạt động</option>
                             </select>
                         </div>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label>Mô tả</label>
-                            <textarea name="description" class="form-control" rows="3" style="width: 100%;"></textarea>
-                        </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
                             <a href="${pageContext.request.contextPath}/products" class="btn btn-secondary">Hủy</a>

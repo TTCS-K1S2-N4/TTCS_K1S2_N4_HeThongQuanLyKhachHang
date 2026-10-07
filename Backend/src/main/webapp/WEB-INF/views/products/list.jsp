@@ -80,6 +80,9 @@
                                     <td>
                                         <a href="${pageContext.request.contextPath}/products/detail?productId=${p.productId}" class="btn btn-sm btn-secondary">Chi tiết</a>
                                         <a href="${pageContext.request.contextPath}/products/edit?productId=${p.productId}" class="btn btn-sm btn-primary">Sửa</a>
+                                        <button type="button" onclick="toggleStatus(${p.productId}, '${p.status}')" class="btn btn-sm ${p.status == 'ACTIVE' ? 'btn-warning' : 'btn-success'}">
+                                            ${p.status == 'ACTIVE' ? 'Khóa' : 'Mở khóa'}
+                                        </button>
                                     </td>
                                 </tr>
                             </c:forEach>
@@ -102,5 +105,32 @@
         </div>
     </main>
 </div>
+<script>
+    function toggleStatus(productId, currentStatus) {
+        var newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        var actionName = newStatus === 'INACTIVE' ? 'khóa (ngừng hoạt động)' : 'mở khóa (kích hoạt)';
+        if (!confirm('Bạn có chắc chắn muốn ' + actionName + ' sản phẩm này?')) {
+            return;
+        }
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '${pageContext.request.contextPath}/products/status';
+        
+        var inputId = document.createElement('input');
+        inputId.type = 'hidden';
+        inputId.name = 'productId';
+        inputId.value = productId;
+        form.appendChild(inputId);
+
+        var inputStatus = document.createElement('input');
+        inputStatus.type = 'hidden';
+        inputStatus.name = 'status';
+        inputStatus.value = newStatus;
+        form.appendChild(inputStatus);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
 </body>
 </html>

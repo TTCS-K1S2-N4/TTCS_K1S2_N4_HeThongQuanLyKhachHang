@@ -62,15 +62,21 @@ CREATE TABLE IF NOT EXISTS customers (
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
 
--- 6. Bảng Cơ hội bán hàng (Có trường owner_id phục vụ S1-10)
+-- 6. Bảng Cơ hội bán hàng (Có trường owner_id phục vụ S1-10, S2-09, S2-10)
 CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) DEFAULT 0,
     owner_id INT NOT NULL,
+    pipeline_stage_id INT NULL,
+    probability DECIMAL(5, 2) DEFAULT 0,
+    win_loss_reason_id INT NULL,
+    competitor_id INT NULL,
+    close_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
+
 
 -- 6.1. Bảng Hoạt động (Activities)
 CREATE TABLE IF NOT EXISTS activities (
@@ -246,3 +252,65 @@ CREATE TABLE IF NOT EXISTS customer_merges (
     FOREIGN KEY (primary_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (merged_by) REFERENCES users(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 17. Bảng Người liên hệ (S3-02 / S30-03)
+CREATE TABLE IF NOT EXISTS contacts (
+    contact_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    title VARCHAR(100) NULL,
+    email VARCHAR(150) NULL,
+    phone VARCHAR(20) NULL,
+    buying_role ENUM('DECIDER', 'INFLUENCER', 'END_USER', 'BLOCKER') NOT NULL DEFAULT 'END_USER',
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 18. Bảng Lịch sử chuyển công ty của Người liên hệ (S3-02 / S30-03)
+CREATE TABLE IF NOT EXISTS contact_company_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    contact_id INT NOT NULL,
+    from_customer_id INT NOT NULL,
+    to_customer_id INT NOT NULL,
+    transferred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT NULL,
+    transferred_by INT NULL,
+    FOREIGN KEY (contact_id) REFERENCES contacts(contact_id) ON DELETE CASCADE,
+    FOREIGN KEY (from_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (to_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (transferred_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 19. Bảng Yêu cầu hỗ trợ sau bán (S3-08 / S30-09)
+CREATE TABLE IF NOT EXISTS support_requests (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    priority ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT') NOT NULL DEFAULT 'MEDIUM',
+    status ENUM('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED') NOT NULL DEFAULT 'OPEN',
+    assignee_id INT NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 20. Bảng Chăm sóc khách hàng định kỳ (S3-09 / S30-10)
+CREATE TABLE IF NOT EXISTS customer_care (
+    care_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NULL UNIQUE,
+    last_contacted_at TIMESTAMP NULL,
+    last_contacted_by INT NULL,
+    inactive_threshold_days INT DEFAULT 30,
+    note TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (last_contacted_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

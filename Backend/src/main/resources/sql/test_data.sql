@@ -120,19 +120,20 @@ INSERT INTO customers (customer_id, customer_name, phone, owner_id) VALUES
 (110, 'Cﾃｴng ty C盻・ph蘯ｧn Th蘯ｿ Gi盻嬖 Di ﾄ雪ｻ冢g', '02838125960', 5)
 ON DUPLICATE KEY UPDATE customer_name = VALUES(customer_name), phone = VALUES(phone), owner_id = VALUES(owner_id);
 
--- 7. Cﾆ H盻露 Bﾃ¨ HﾃNG (opportunities) - Phﾃ｢n b盻・cho user_id 4 vﾃ user_id 5
-INSERT INTO opportunities (opportunity_id, title, amount, owner_id) VALUES
-(201, 'Tri盻ハ khai CRM Enterprise cho FPT Global', 170000000.00, 4),
-(202, 'Nﾃ｢ng c蘯･p H盻・th盻創g Qu蘯｣n lﾃｽ Khﾃ｡ch hﾃng Vinhomes', 120000000.00, 4),
-(203, 'Tﾆｰ v蘯･n gi蘯｣i phﾃ｡p Chﾄノ sﾃｳc Khﾃ｡ch hﾃng Techcombank', 98000000.00, 4),
-(204, 'Gﾃｳi CRM Standard cho Masan Retail', 48000000.00, 4),
-(205, 'ﾄ静o t蘯｡o & Chuy盻ハ giao H盻・th盻創g Dﾆｰ盻｣c H蘯ｭu Giang', 15000000.00, 4),
-(206, 'S盻・hﾃｳa quy trﾃｬnh Sales Vinamilk Mi盻］ Nam', 200000000.00, 5),
-(207, 'Tri盻ハ khai CRM cho T蘯ｭp ﾄ双ﾃn Hﾃｲa Phﾃ｡t', 150000000.00, 5),
-(208, 'H盻｣p ﾄ黛ｻ渡g Gﾃｳi H盻・tr盻｣ K盻ｹ thu蘯ｭt 24/7 MISA', 30000000.00, 5),
-(209, 'Tﾆｰ v蘯･n CRM Qu蘯｣n lﾃｽ ﾄ雪ｺｷt ch盻・Vietnam Airlines', 250000000.00, 5),
-(210, 'Trang b盻・Ph蘯ｧn m盻［ CRM cho Th蘯ｿ Gi盻嬖 Di ﾄ雪ｻ冢g', 180000000.00, 5)
-ON DUPLICATE KEY UPDATE title = VALUES(title), amount = VALUES(amount), owner_id = VALUES(owner_id);
+-- 7. CƠ HỘI BÁN HÀNG (opportunities) - Phân bổ cho user_id 4 và user_id 5
+INSERT INTO opportunities (opportunity_id, title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id) VALUES
+(201, 'Triển khai CRM Enterprise cho FPT Global', 170000000.00, 4, 1, 10.00, NULL, NULL),
+(202, 'Nâng cấp Hệ thống Quản lý Khách hàng Vinhomes', 120000000.00, 4, 2, 30.00, NULL, NULL),
+(203, 'Tư vấn giải pháp Chăm sóc Khách hàng Techcombank', 98000000.00, 4, 3, 50.00, NULL, NULL),
+(204, 'Gói CRM Standard cho Masan Retail', 48000000.00, 4, 4, 80.00, NULL, NULL),
+(205, 'Đào tạo & Chuyển giao Hệ thống Dược Hậu Giang', 15000000.00, 4, 5, 100.00, 1, NULL),
+(206, 'Số hóa quy trình Sales Vinamilk Miền Nam', 200000000.00, 5, 6, 0.00, 5, 1),
+(207, 'Triển khai CRM cho Tập đoàn Hòa Phát', 150000000.00, 5, 1, 10.00, NULL, NULL),
+(208, 'Hợp đồng Gói Hỗ trợ Kỹ thuật 24/7 MISA', 30000000.00, 5, 2, 30.00, NULL, NULL),
+(209, 'Tư vấn CRM Quản lý Đặt chỗ Vietnam Airlines', 250000000.00, 5, 3, 50.00, NULL, NULL),
+(210, 'Trang bị Phần mềm CRM cho Thế Giới Di Động', 180000000.00, 5, 5, 100.00, 2, NULL)
+ON DUPLICATE KEY UPDATE title = VALUES(title), amount = VALUES(amount), owner_id = VALUES(owner_id), pipeline_stage_id = VALUES(pipeline_stage_id), probability = VALUES(probability), win_loss_reason_id = VALUES(win_loss_reason_id), competitor_id = VALUES(competitor_id);
+
 
 -- 8. HO蘯T ﾄ雪ｻ朗G (activities) - Phﾃ｢n b盻・cho user_id 4 vﾃ user_id 5
 INSERT INTO activities (activity_id, title, description, owner_id) VALUES

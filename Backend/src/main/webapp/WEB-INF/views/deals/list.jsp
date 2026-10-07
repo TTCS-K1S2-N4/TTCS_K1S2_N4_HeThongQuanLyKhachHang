@@ -88,6 +88,12 @@
                     <h1 class="page-title">Cơ hội kinh doanh</h1>
                     <p class="page-subtitle" style="color: var(--color-text-secondary); margin-top: 4px;">Quản lý danh sách các cơ hội bán hàng.</p>
                 </div>
+                <div class="page-actions" style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary" onclick="openOppModal()"><i class="fas fa-plus"></i> Thêm cơ hội</button>
+                    <a href="${pageContext.request.contextPath}/deals/export?keyword=<c:out value='${keyword}'/>&filterFieldId=${filterFieldId}&filterFieldValue=<c:out value='${filterFieldValue}'/>" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">
+                        <i class="fas fa-file-export"></i> Xuất CSV
+                    </a>
+                </div>
             </div>
 
             <form action="${pageContext.request.contextPath}/deals" method="get" class="deals-toolbar">
@@ -95,9 +101,20 @@
                     <i class="fas fa-search search-icon"></i>
                     <input class="form-control" name="keyword" type="search" placeholder="Tìm theo tiêu đề..." value="<c:out value='${keyword}'/>">
                 </div>
+                <c:if test="${not empty customFieldDefinitions}">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select name="filterFieldId" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px;">
+                            <option value="">-- Lọc theo trường tùy chỉnh --</option>
+                            <c:forEach var="def" items="${customFieldDefinitions}">
+                                <option value="${def.fieldId}" ${filterFieldId == def.fieldId ? 'selected' : ''}><c:out value="${def.fieldLabel}"/></option>
+                            </c:forEach>
+                        </select>
+                        <input type="text" name="filterFieldValue" class="form-control" placeholder="Giá trị..." value="<c:out value='${filterFieldValue}'/>" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; max-width: 160px;">
+                    </div>
+                </c:if>
                 <div class="filter-actions">
-                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
-                    <c:if test="${not empty keyword}">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Lọc</button>
+                    <c:if test="${not empty keyword or not empty filterFieldId}">
                         <a href="${pageContext.request.contextPath}/deals" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">Đặt lại</a>
                     </c:if>
                 </div>
@@ -112,11 +129,13 @@
                     <table class="table">
                         <thead style="background: #f8fafc;">
                             <tr>
-                                <th style="width: 80px; color: var(--color-text-secondary); font-weight: 600; text-transform: none;">ID</th>
-                                <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none;">Tiêu đề</th>
+                                <th style="width: 70px; color: var(--color-text-secondary); font-weight: 600; text-transform: none;">ID</th>
+                                <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none;">Tiêu đề cơ hội</th>
                                 <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none;">Giá trị</th>
+                                <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none;">Giai đoạn Pipeline</th>
+                                <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none; text-align: center;">Xác suất %</th>
                                 <th style="color: var(--color-text-secondary); font-weight: 600; text-transform: none;">Ngày tạo</th>
-                                <th style="width: 120px; color: var(--color-text-secondary); font-weight: 600; text-transform: none; text-align: center;">Thao tác</th>
+                                <th style="width: 100px; color: var(--color-text-secondary); font-weight: 600; text-transform: none; text-align: center;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -127,9 +146,23 @@
                                             <td style="color: var(--color-text-secondary);">${item.opportunityId}</td>
                                             <td>
                                                 <div style="font-weight: 500; color: var(--color-gray-900);"><c:out value="${item.title}"/></div>
+                                                <c:if test="${not empty item.reasonName}">
+                                                    <span style="font-size: 12px; color: var(--color-text-secondary);"><i class="fas fa-tag"></i> <c:out value="${item.reasonName}"/></span>
+                                                </c:if>
                                             </td>
                                             <td>
                                                 <strong style="color: var(--color-gray-900);"><fmt:formatNumber value="${item.amount}" type="currency" currencySymbol="₫"/></strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge" style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: ${item.probability >= 100 ? '#dcfce7' : item.probability <= 0 ? '#fee2e2' : '#e0f2fe'}; color: ${item.probability >= 100 ? '#166534' : item.probability <= 0 ? '#991b1b' : '#0369a1'};">
+                                                    <c:choose>
+                                                        <c:when test="${not empty item.stageName}"><c:out value="${item.stageName}"/></c:when>
+                                                        <c:otherwise>Chưa chọn stage</c:otherwise>
+                                                    </c:choose>
+                                                </span>
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <strong style="color: var(--color-primary);">${item.probability}%</strong>
                                             </td>
                                             <td><fmt:formatDate value="${item.createdAt}" pattern="dd/MM/yyyy HH:mm"/></td>
                                             <td style="text-align: center;">
@@ -140,7 +173,7 @@
                                 </c:when>
                                 <c:otherwise>
                                     <tr>
-                                        <td colspan="5">
+                                        <td colspan="7">
                                             <div class="empty-state">
                                                 <div class="empty-state-icon"><i class="fas fa-folder-open"></i></div>
                                                 <c:choose>
@@ -185,5 +218,204 @@
         </div>
     </main>
 </div>
+
+<!-- Modal Create Opportunity -->
+<div id="oppModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="modal-content" style="background: white; border-radius: 8px; width: 100%; max-width: 580px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; font-size: 18px;">Thêm mới cơ hội kinh doanh</h3>
+            <button onclick="closeOppModal()" style="border: none; background: none; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <form id="oppForm" onsubmit="saveOpportunity(event)">
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Tiêu đề cơ hội <span style="color:red;">*</span></label>
+                <input type="text" id="oppTitle" name="title" class="form-control" required style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Giá trị dự kiến (VNĐ)</label>
+                <input type="number" step="any" id="oppAmount" name="amount" class="form-control" value="0" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+            </div>
+
+            <!-- Pipeline Stage (S2-09) -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Giai đoạn Pipeline</label>
+                <select id="oppStageSelect" name="pipelineStageId" class="form-control" onchange="onStageChange(this)" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                    <option value="" data-prob="0" data-condition="">-- Chọn giai đoạn --</option>
+                    <c:forEach var="st" items="${pipelineStages}">
+                        <option value="${st.pipelineStageId}" data-prob="${st.defaultProbability}" data-condition="<c:out value='${st.exitCondition}'/>" data-name="<c:out value='${st.stageName}'/>">
+                            <c:out value="${st.stageName}"/> (${st.defaultProbability}%)
+                        </option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <!-- Win Probability Realtime (S2-09) -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Xác suất thành công (%) (Realtime)</label>
+                <input type="number" step="0.1" min="0" max="100" id="oppProbability" name="probability" class="form-control" value="0" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px; background: #f8fafc;">
+            </div>
+
+            <!-- Exit Condition Notice Banner -->
+            <div id="stageExitNotice" style="display: none; background: #eff6ff; border: 1px solid #93c5fd; color: #1e40af; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 13px;">
+                <i class="fas fa-info-circle"></i> <strong>Yêu cầu chuyển giai đoạn:</strong> <span id="stageExitText"></span>
+            </div>
+
+            <!-- Win Reason Dropdown (S2-10 - WIN) -->
+            <div id="winReasonGroup" class="form-group" style="display: none; margin-bottom: 16px; background: #f0fdf4; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #166534;">Lý do THẮNG (Win Reason) <span style="color:red;">*</span></label>
+                <select id="winReasonSelect" name="winLossReasonId" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #86efac; border-radius: 6px;">
+                    <option value="">-- Chọn lý do thắng từ CSDL --</option>
+                    <c:forEach var="w" items="${winReasons}">
+                        <option value="${w.reasonId}"><c:out value="${w.reasonName}"/></option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <!-- Loss Reason & Competitor Group (S2-10 - LOSS) -->
+            <div id="lossReasonGroup" class="form-group" style="display: none; margin-bottom: 16px; background: #fef2f2; padding: 12px; border-radius: 6px; border: 1px solid #fecaca;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #991b1b;">Lý do THUA (Loss Reason) <span style="color:red;">*</span></label>
+                <select id="lossReasonSelect" name="winLossReasonId" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #fca5a5; border-radius: 6px; margin-bottom: 12px;">
+                    <option value="">-- Chọn lý do thua từ CSDL --</option>
+                    <c:forEach var="l" items="${lossReasons}">
+                        <option value="${l.reasonId}"><c:out value="${l.reasonName}"/></option>
+                    </c:forEach>
+                </select>
+
+                <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #991b1b;">Đối thủ cạnh tranh</label>
+                <select id="competitorSelect" name="competitorId" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #fca5a5; border-radius: 6px;">
+                    <option value="">-- Chọn đối thủ cạnh tranh --</option>
+                    <c:forEach var="c" items="${competitors}">
+                        <option value="${c.competitorId}"><c:out value="${c.competitorName}"/></option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <!-- Dynamic Custom Fields -->
+            <c:if test="${not empty customFieldDefinitions}">
+                <div style="border-top: 1px solid var(--color-border); padding-top: 12px; margin-top: 12px;">
+                    <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--color-primary);">Trường tùy chỉnh (Custom Fields)</h4>
+                    <c:forEach var="def" items="${customFieldDefinitions}">
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500;">
+                                <c:out value="${def.fieldLabel}"/>
+                                <c:if test="${def.required}"><span style="color:red;"> *</span></c:if>
+                            </label>
+                            <c:choose>
+                                <c:when test="${def.fieldType == 'SELECT'}">
+                                    <select name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                        <option value="">-- Chọn --</option>
+                                        <c:forEach var="opt" items="${def.options.split('[,;\\\\n]+')}">
+                                            <option value="${opt.trim()}"><c:out value="${opt.trim()}"/></option>
+                                        </c:forEach>
+                                    </select>
+                                </c:when>
+                                <c:when test="${def.fieldType == 'DATE'}">
+                                    <input type="date" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:when>
+                                <c:when test="${def.fieldType == 'NUMBER'}">
+                                    <input type="number" step="any" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:when>
+                                <c:otherwise>
+                                    <input type="text" name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:if>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                <button type="button" onclick="closeOppModal()" class="btn btn-secondary" style="padding: 8px 16px;">Hủy</button>
+                <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Lưu cơ hội</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openOppModal() {
+        document.getElementById('oppForm').reset();
+        document.getElementById('winReasonGroup').style.display = 'none';
+        document.getElementById('lossReasonGroup').style.display = 'none';
+        document.getElementById('stageExitNotice').style.display = 'none';
+        document.getElementById('oppModal').style.display = 'flex';
+    }
+
+    function closeOppModal() {
+        document.getElementById('oppModal').style.display = 'none';
+    }
+
+    function onStageChange(selectElem) {
+        const selectedOption = selectElem.options[selectElem.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+            document.getElementById('oppProbability').value = 0;
+            document.getElementById('stageExitNotice').style.display = 'none';
+            document.getElementById('winReasonGroup').style.display = 'none';
+            document.getElementById('lossReasonGroup').style.display = 'none';
+            return;
+        }
+
+        const prob = parseFloat(selectedOption.getAttribute('data-prob') || '0');
+        const condition = selectedOption.getAttribute('data-condition') || '';
+        const stageName = (selectedOption.getAttribute('data-name') || '').toLowerCase();
+
+        // Realtime probability update (S2-09)
+        document.getElementById('oppProbability').value = prob;
+
+        // Show Exit Condition Notice if present (S2-09)
+        if (condition && condition.trim() !== '') {
+            document.getElementById('stageExitText').innerText = condition;
+            document.getElementById('stageExitNotice').style.display = 'block';
+        } else {
+            document.getElementById('stageExitNotice').style.display = 'none';
+        }
+
+        // Show Won / Lost reasons (S2-10)
+        const winSelect = document.getElementById('winReasonSelect');
+        const lossSelect = document.getElementById('lossReasonSelect');
+
+        if (prob >= 100 || stageName.includes('won') || stageName.includes('thành công')) {
+            document.getElementById('winReasonGroup').style.display = 'block';
+            document.getElementById('lossReasonGroup').style.display = 'none';
+            winSelect.name = 'winLossReasonId';
+            lossSelect.removeAttribute('name');
+        } else if (prob <= 0 || stageName.includes('lost') || stageName.includes('thất bại')) {
+            document.getElementById('winReasonGroup').style.display = 'none';
+            document.getElementById('lossReasonGroup').style.display = 'block';
+            lossSelect.name = 'winLossReasonId';
+            winSelect.removeAttribute('name');
+        } else {
+            document.getElementById('winReasonGroup').style.display = 'none';
+            document.getElementById('lossReasonGroup').style.display = 'none';
+            winSelect.removeAttribute('name');
+            lossSelect.removeAttribute('name');
+        }
+    }
+
+    function saveOpportunity(e) {
+        e.preventDefault();
+        const form = document.getElementById('oppForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        fetch('${pageContext.request.contextPath}/deals/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: params
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ') + (data.details ? '\n- ' + data.details.join('\n- ') : ''));
+            } else {
+                closeOppModal();
+                window.location.reload();
+            }
+        })
+        .catch(err => alert('Lỗi kết nối máy chủ.'));
+    }
+</script>
+
 </body>
 </html>
+

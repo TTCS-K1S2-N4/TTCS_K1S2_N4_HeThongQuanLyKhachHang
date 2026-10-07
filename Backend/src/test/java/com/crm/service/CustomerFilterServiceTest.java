@@ -43,7 +43,7 @@ public class CustomerFilterServiceTest {
         c.setOwnerId(4);
 
         // Scope MY returns accessible owner ID = [4]
-        when(permissionService.getAccessibleAccountIdsForRoles(eq(4), anyList(), eq("ACCOUNT")))
+        when(permissionService.getAccessibleAccountIdsForRoles(eq(4), org.mockito.ArgumentMatchers.<List<Integer>>any(), eq("ACCOUNT")))
                 .thenReturn(Collections.singletonList(4));
         when(customerDAO.getList(eq(req), eq(Collections.singletonList(4))))
                 .thenReturn(Collections.singletonList(c));
@@ -61,7 +61,7 @@ public class CustomerFilterServiceTest {
         req.setOwnerId(5); // Requesting owner 5
 
         // User 4 only has access to owner [4]
-        when(permissionService.getAccessibleAccountIdsForRoles(eq(4), anyList(), eq("ACCOUNT")))
+        when(permissionService.getAccessibleAccountIdsForRoles(eq(4), org.mockito.ArgumentMatchers.<List<Integer>>any(), eq("ACCOUNT")))
                 .thenReturn(Collections.singletonList(4));
         when(customerDAO.getList(eq(req), eq(Collections.emptyList())))
                 .thenReturn(Collections.emptyList());
