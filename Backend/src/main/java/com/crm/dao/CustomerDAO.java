@@ -178,6 +178,39 @@ public class CustomerDAO {
         return null;
     }
 
+    public Customer findDuplicateCustomer(String taxCode, String phone, String customerName) {
+        List<String> conditions = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        if (phone != null && !phone.trim().isEmpty()) {
+            conditions.add("phone = ?");
+            params.add(phone.trim());
+        }
+        if (customerName != null && !customerName.trim().isEmpty()) {
+            conditions.add("customer_name = ?");
+            params.add(customerName.trim());
+        }
+
+        if (conditions.isEmpty()) {
+            return null;
+        }
+
+        String sql = "SELECT * FROM customers WHERE " + String.join(" OR ", conditions) + " LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToCustomer(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public boolean insert(Customer customer) {
         String sql = "INSERT INTO customers (customer_name, phone, owner_id) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -200,6 +233,10 @@ public class CustomerDAO {
         return false;
     }
 
+    public boolean insertCustomer(Customer customer) {
+        return insert(customer);
+    }
+
     public boolean update(Customer customer) {
         String sql = "UPDATE customers SET customer_name = ?, phone = ?, owner_id = ? WHERE customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -215,6 +252,10 @@ public class CustomerDAO {
         return false;
     }
 
+    public boolean updateCustomer(Customer customer) {
+        return update(customer);
+    }
+
     public boolean delete(int customerId) {
         String sql = "DELETE FROM customers WHERE customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -227,4 +268,5 @@ public class CustomerDAO {
         return false;
     }
 }
+
 
