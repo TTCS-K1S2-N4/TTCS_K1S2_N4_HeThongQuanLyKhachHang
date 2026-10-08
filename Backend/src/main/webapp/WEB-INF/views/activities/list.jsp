@@ -189,7 +189,7 @@
                             <li class="page-item ${currentPage == 1 ? 'disabled page-item-disabled' : ''}">
                                 <a class="page-link btn btn-secondary page-link-inactive" style="padding: 4px 12px;" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
                             </li>
-                            <c:forEach begin="${Math.max(1, currentPage - 2)}" end="${Math.min(totalPages, currentPage + 2)}" var="i">
+                            <c:forEach begin="${currentPage - 2 > 1 ? currentPage - 2 : 1}" end="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" var="i">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
                                     <a class="page-link btn ${currentPage == i ? 'btn-primary' : 'btn-secondary page-link-inactive'}" style="padding: 4px 12px;" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
                                 </li>

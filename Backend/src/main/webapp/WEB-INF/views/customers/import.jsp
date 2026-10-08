@@ -12,7 +12,12 @@
     <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/>
     <main class="main-content">
         <div class="content-container">
-            <h1 class="page-title">Nhập dữ liệu khách hàng</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 class="page-title" style="margin: 0;">Nhập dữ liệu khách hàng từ Excel</h1>
+                <a href="${pageContext.request.contextPath}/customers" class="btn btn-secondary" style="background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; color: #334155; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách khách hàng
+                </a>
+            </div>
             
             <c:if test="${not empty error}">
                 <div class="alert alert-danger">${error}</div>

@@ -38,7 +38,9 @@
                 }
                 boolean isActive = false;
                 if (!isDashboardActive && itemUrl != null) {
-                    if (itemUrl.startsWith("/customers") && relativePath.startsWith("/customers")) {
+                    if (itemUrl.equals("/customers") && relativePath.startsWith("/customers") && !relativePath.startsWith("/customers/care")) {
+                        isActive = true;
+                    } else if (itemUrl.startsWith("/customers/care") && relativePath.startsWith("/customers/care")) {
                         isActive = true;
                     } else if ((itemUrl.startsWith("/deals") || itemUrl.startsWith("/opportunities")) && (relativePath.startsWith("/deals") || relativePath.startsWith("/opportunities"))) {
                         isActive = true;
@@ -64,6 +66,17 @@
                 <a class="nav-item <%= isActive ? "active" : "" %>" href="${pageContext.request.contextPath}<%= item.getUrl() %>">
                     <span class="nav-icon" aria-hidden="true"><i class="fa-solid <%= item.getIcon() %>"></i></span>
                     <span><%= item.getTitle() %></span>
+                </a>
+            <% } %>
+
+            <%-- Static fallback for Customer Care if it has no menu item in DB --%>
+            <% 
+               if (menuItems.stream().noneMatch(m -> m.getUrl().contains("/customers/care"))) { 
+                   boolean isCareActive = !isDashboardActive && relativePath.startsWith("/customers/care");
+            %>
+                <a class="nav-item <%= isCareActive ? "active" : "" %>" href="${pageContext.request.contextPath}/customers/care">
+                    <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>
+                    <span>Chăm sóc định kỳ</span>
                 </a>
             <% } %>
             

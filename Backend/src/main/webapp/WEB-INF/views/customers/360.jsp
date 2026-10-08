@@ -33,6 +33,20 @@
             <c:set var="signedVal" value="${signedValue != null ? signedValue : customer360.signedValue}"/>
             <c:set var="openVal" value="${openOpportunityValue != null ? openOpportunityValue : (totalOpenOpportunityValue != null ? totalOpenOpportunityValue : customer360.totalOpenOpportunityValue)}"/>
             <c:set var="attachmentList" value="${not empty attachments ? attachments : customer360.attachments}"/>
+            <c:set var="subsidiaryList" value="${not empty subsidiaries ? subsidiaries : customer360.subsidiaries}"/>
+            <c:set var="groupTotal" value="${groupContractTotal != null ? groupContractTotal : customer360.groupContractTotal}"/>
+            <c:set var="riskObj" value="${customerRisk != null ? customerRisk : customer360.customerRisk}"/>
+            <c:set var="srList" value="${not empty supportRequests ? supportRequests : customer360.supportRequests}"/>
+
+            <c:if test="${riskObj != null && riskObj.riskFlag}">
+                <div class="alert alert-danger" style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 28px; color: #dc2626;"></i>
+                    <div>
+                        <h4 style="margin: 0 0 4px 0; font-size: 16px; font-weight: bold; color: #991b1b;">CẢNH BÁO: KHÁCH HÀNG CÓ NGUY CƠ RỜI BỎ (CHURN RISK DETECTED)</h4>
+                        <p style="margin: 0; font-size: 14px;"><c:out value="${riskObj.riskReason}"/></p>
+                    </div>
+                </div>
+            </c:if>
 
             <!-- Customer 360 Grid -->
             <div class="customer-360-container" id="customer360App">
@@ -187,6 +201,62 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- Support Requests Section -->
+                    <section class="card c360-section" id="customer-support-requests">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title"><i class="fa-solid fa-headset" style="color: #0284c7; margin-right: 6px;"></i> Yêu cầu hỗ trợ sau bán</h2>
+                            <a href="${pageContext.request.contextPath}/customers/support?customerId=${customer != null ? (customer.customerId > 0 ? customer.customerId : customer.customerid) : ''}" class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; text-decoration: none;">Tạo yêu cầu mới</a>
+                        </div>
+                        <div class="card-body">
+                            <c:choose>
+                                <c:when test="${not empty srList}">
+                                    <table class="table" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 50px;">ID</th>
+                                                <th>Tiêu đề</th>
+                                                <th>Ưu tiên</th>
+                                                <th>Trạng thái</th>
+                                                <th>Người xử lý</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="sr" items="${srList}">
+                                                <tr>
+                                                    <td>#${sr.requestId}</td>
+                                                    <td style="font-weight: 500;"><c:out value="${sr.title}"/></td>
+                                                    <td>
+                                                        <c:choose>
+                                                            <c:when test="${sr.priority == 'URGENT'}"><span class="badge" style="background:#fee2e2; color:#dc2626; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Urgent</span></c:when>
+                                                            <c:when test="${sr.priority == 'HIGH'}"><span class="badge" style="background:#fef3c7; color:#d97706; padding: 2px 8px; border-radius: 12px; font-size: 11px;">High</span></c:when>
+                                                            <c:when test="${sr.priority == 'MEDIUM'}"><span class="badge" style="background:#e0f2fe; color:#0284c7; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Medium</span></c:when>
+                                                            <c:otherwise><span class="badge" style="background:#f1f5f9; color:#475569; padding: 2px 8px; border-radius: 12px; font-size: 11px;"><c:out value="${sr.priority}"/></span></c:otherwise>
+                                                        </c:choose>
+                                                    </td>
+                                                    <td>
+                                                        <c:choose>
+                                                            <c:when test="${sr.status == 'OPEN'}"><span class="badge" style="background:#e0f2fe; color:#0284c7; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Open</span></c:when>
+                                                            <c:when test="${sr.status == 'IN_PROGRESS'}"><span class="badge" style="background:#fef08a; color:#ca8a04; padding: 2px 8px; border-radius: 12px; font-size: 11px;">In Progress</span></c:when>
+                                                            <c:when test="${sr.status == 'RESOLVED'}"><span class="badge" style="background:#dcfce7; color:#16a34a; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Resolved</span></c:when>
+                                                            <c:otherwise><span class="badge" style="background:#f3f4f6; color:#4b5563; padding: 2px 8px; border-radius: 12px; font-size: 11px;"><c:out value="${sr.status}"/></span></c:otherwise>
+                                                        </c:choose>
+                                                    </td>
+                                                    <td><c:out value="${not empty sr.assigneeName ? sr.assigneeName : (sr.assigneeId != null ? sr.assigneeId : 'Chưa phân công')}"/></td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="c360-empty-state">
+                                        <i class="fa-solid fa-headset"></i>
+                                        <p>Chưa có yêu cầu hỗ trợ nào cho khách hàng này.</p>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="customer-360-sidebar">
@@ -209,7 +279,49 @@
                                         <fmt:formatNumber value="${openVal != null ? openVal : 0}" type="currency" currencySymbol="VND"/>
                                     </span>
                                 </div>
+                                <div class="c360-value-item" style="border-top: 2px dashed #4f46e5; margin-top: 10px; padding-top: 10px;">
+                                    <span class="c360-value-label" style="font-weight: bold; color: #4f46e5;">Tổng giá trị hợp đồng tập đoàn</span>
+                                    <span class="c360-value-amount" style="color: #4f46e5; font-weight: bold; font-size: 1.2rem;">
+                                        <fmt:formatNumber value="${groupTotal != null ? groupTotal : (signedVal != null ? signedVal : 0)}" type="currency" currencySymbol="VND"/>
+                                    </span>
+                                </div>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- Subsidiaries Section -->
+                    <section class="card c360-section" id="customer-subsidiaries">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title"><i class="fa-solid fa-sitemap"></i> Công ty con (Subsidiaries)</h2>
+                            <a href="${pageContext.request.contextPath}/customers/hierarchy?id=${customer != null ? (customer.customerId > 0 ? customer.customerId : customer.customerid) : ''}" class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 4px 8px;">Khai báo quan hệ</a>
+                        </div>
+                        <div class="card-body">
+                            <c:choose>
+                                <c:when test="${not empty subsidiaryList}">
+                                    <ul class="c360-list" style="list-style: none; padding-left: 0;">
+                                        <c:forEach var="sub" items="${subsidiaryList}">
+                                            <li class="c360-list-item" style="padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                                                <div class="c360-contact-info">
+                                                    <strong>
+                                                        <a href="${pageContext.request.contextPath}/customers/360?id=${sub.customerId}" style="color: #2563eb; text-decoration: none;">
+                                                            <c:out value="${sub.customerName}"/>
+                                                        </a>
+                                                    </strong>
+                                                    <div class="text-sm text-gray" style="font-size: 0.85rem; color: #666;">
+                                                        ID: <c:out value="${sub.customerId}"/> | MST: <c:out value="${not empty sub.taxCode ? sub.taxCode : '---'}"/>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </c:forEach>
+                                    </ul>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="c360-empty-state">
+                                        <i class="fa-solid fa-building-user"></i>
+                                        <p>Chưa có công ty con nào được khai báo.</p>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </section>
                     

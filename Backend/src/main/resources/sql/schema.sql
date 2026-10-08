@@ -57,14 +57,18 @@ CREATE TABLE IF NOT EXISTS customers (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(200) NOT NULL,
     phone VARCHAR(20),
-    tax_code VARCHAR(50) UNIQUE,
+    tax_code VARCHAR(50),
+    email VARCHAR(150),
+    status VARCHAR(50) DEFAULT 'Tiềm năng',
     industry VARCHAR(100),
+    company_size VARCHAR(50),
     size VARCHAR(50),
     website VARCHAR(255),
-    address VARCHAR(255),
-    status VARCHAR(50) DEFAULT 'Tiềm năng',
+    address TEXT,
+    region VARCHAR(100),
     owner_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
 );
 

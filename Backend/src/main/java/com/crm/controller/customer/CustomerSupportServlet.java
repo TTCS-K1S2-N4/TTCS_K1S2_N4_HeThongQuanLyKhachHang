@@ -88,6 +88,8 @@ public class CustomerSupportServlet extends HttpServlet {
             } else {
                 req.setAttribute("supportRequests", list);
                 req.setAttribute("customerId", customerId);
+                req.setAttribute("customer", new com.crm.dao.CustomerDAO().findById(customerId));
+                req.setAttribute("owners", new com.crm.dao.AccountDAO().getAllActiveAccounts());
                 req.getRequestDispatcher("/WEB-INF/views/customers/support.jsp").forward(req, resp);
             }
         } catch (ValidationException e) {

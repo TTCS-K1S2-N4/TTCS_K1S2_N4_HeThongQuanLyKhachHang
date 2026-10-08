@@ -19,6 +19,14 @@ public class Customer360Response {
     private int totalActivities = 0;
     private List<Map<String, Object>> attachments = new ArrayList<>();
 
+    // Subsidiary and Group Contract Total fields for S30-06
+    private List<Customer> subsidiaries = new ArrayList<>();
+    private double groupContractTotal = 0.0;
+
+    // Support Requests and Churn Risk for S30-09
+    private List<SupportRequestDto> supportRequests = new ArrayList<>();
+    private com.crm.model.CustomerRisk customerRisk;
+
     public Customer getCustomer() { return customer; }
     public void setCustomer(Customer customer) { this.customer = customer; }
 
@@ -45,4 +53,17 @@ public class Customer360Response {
 
     public List<Map<String, Object>> getAttachments() { return attachments; }
     public void setAttachments(List<Map<String, Object>> attachments) { this.attachments = attachments; }
+
+    public List<Customer> getSubsidiaries() { return subsidiaries; }
+    public void setSubsidiaries(List<Customer> subsidiaries) { this.subsidiaries = subsidiaries; }
+
+    public double getGroupContractTotal() { return groupContractTotal; }
+    public void setGroupContractTotal(double groupContractTotal) { this.groupContractTotal = groupContractTotal; }
+
+    public List<SupportRequestDto> getSupportRequests() { return supportRequests; }
+    public void setSupportRequests(List<SupportRequestDto> supportRequests) { this.supportRequests = supportRequests; }
+
+    public com.crm.model.CustomerRisk getCustomerRisk() { return customerRisk; }
+    public void setCustomerRisk(com.crm.model.CustomerRisk customerRisk) { this.customerRisk = customerRisk; }
 }
+

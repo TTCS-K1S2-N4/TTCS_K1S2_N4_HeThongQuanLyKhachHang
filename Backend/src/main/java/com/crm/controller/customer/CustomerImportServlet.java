@@ -139,12 +139,18 @@ public class CustomerImportServlet extends HttpServlet {
                 if (isJsonRequest(request)) {
                     writeJsonResponse(response, result);
                 } else {
+                    request.setAttribute("allRows", rows);
+                    request.setAttribute("validRowsCount", result.get("validRowsCount"));
+                    request.setAttribute("invalidRowsCount", result.get("invalidRowsCount"));
+                    @SuppressWarnings("unchecked")
+                    List<?> dups = (List<?>) result.get("duplicates");
+                    request.setAttribute("duplicateRowsCount", dups != null ? dups.size() : 0);
                     request.setAttribute("validRows", result.get("validRows"));
                     request.setAttribute("invalidRows", result.get("invalidRows"));
                     request.setAttribute("duplicates", result.get("duplicates"));
                     request.setAttribute("rowErrors", result.get("rowErrors"));
                     request.setAttribute("totalRows", result.get("totalRows"));
-                    request.getRequestDispatcher("/WEB-INF/views/customers/import.jsp").forward(request, response);
+                    request.getRequestDispatcher("/WEB-INF/views/customers/import-preview.jsp").forward(request, response);
                 }
             } catch (Exception e) {
                 writeErrorJsonOrForward(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi khi xử lý đọc file Excel: " + e.getMessage());
@@ -171,13 +177,14 @@ public class CustomerImportServlet extends HttpServlet {
             if (isJsonRequest(request)) {
                 writeJsonResponse(response, result);
             } else {
+                request.setAttribute("executed", true);
                 request.setAttribute("total", result.get("totalRows"));
                 request.setAttribute("success", result.get("successCount"));
                 request.setAttribute("failed", result.get("failedCount"));
                 request.setAttribute("skipped", result.get("skippedCount"));
                 request.setAttribute("errors", result.get("errors"));
-                request.setAttribute("message", "Thực thi import hoàn tất. Thành công: " + result.get("successCount") + ", Thất bại: " + result.get("failedCount"));
-                request.getRequestDispatcher("/WEB-INF/views/customers/import.jsp").forward(request, response);
+                request.setAttribute("message", "Thực thi import hoàn tất. Thành công: " + result.get("successCount") + ", Bỏ qua / Thất bại: " + result.get("failedCount"));
+                request.getRequestDispatcher("/WEB-INF/views/customers/import-preview.jsp").forward(request, response);
             }
 
         } else {

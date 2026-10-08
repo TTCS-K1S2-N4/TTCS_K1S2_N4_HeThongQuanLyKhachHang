@@ -66,9 +66,14 @@
 
                                     <div style="margin-bottom: 15px;">
                                         <label style="display: block; font-weight: bold; margin-bottom: 5px;">Người phụ
-                                            trách (Assignee ID):</label>
-                                        <input type="number" name="assigneeId"
+                                            trách:</label>
+                                        <select name="assigneeId"
                                             style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                                            <option value="">-- Chưa phân công --</option>
+                                            <c:forEach var="acc" items="${owners}">
+                                                <option value="${acc.accountId}"><c:out value="${acc.fullName}"/></option>
+                                            </c:forEach>
+                                        </select>
                                     </div>
 
                                     <div style="margin-bottom: 15px;">
@@ -105,7 +110,7 @@
                                         <c:when test="${not empty supportRequests}">
                                             <c:forEach var="req" items="${supportRequests}">
                                                 <tr style="border-bottom: 1px solid #eee;">
-                                                    <td style="padding: 10px;">${req.id}</td>
+                                                    <td style="padding: 10px;">#${req.requestId}</td>
                                                     <td style="padding: 10px;">
                                                         <c:out value="${req.title}" />
                                                     </td>
@@ -121,7 +126,7 @@
                                                             <c:out value="${req.status}" />
                                                         </span>
                                                     </td>
-                                                    <td style="padding: 10px;">${req.assigneeId}</td>
+                                                    <td style="padding: 10px;"><c:out value="${not empty req.assigneeName ? req.assigneeName : (req.assigneeId != null ? req.assigneeId : 'Chưa phân công')}"/></td>
                                                 </tr>
                                             </c:forEach>
                                         </c:when>
