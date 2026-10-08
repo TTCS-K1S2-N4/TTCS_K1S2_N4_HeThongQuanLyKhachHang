@@ -1,14 +1,12 @@
 package com.crm;
 
 import com.crm.dao.AccountDAO;
-import com.crm.dao.AuditLogDAO;
 import com.crm.dao.OpportunityDAO;
 import com.crm.dao.ProductDAO;
 import com.crm.model.Account;
 import com.crm.model.AuditLog;
 import com.crm.model.Product;
 import com.crm.dto.ProductRequest;
-import com.crm.service.AccountService;
 import com.crm.service.AuditLogService;
 import com.crm.service.ProductService;
 import com.crm.util.DBConnection;
@@ -35,21 +33,17 @@ public class AuditLogEndToEndTest {
     private static final String BASE_URL = "http://localhost:8080/CRM";
 
     private AccountDAO accountDAO;
-    private AccountService accountService;
     private ProductService productService;
     private ProductDAO productDAO;
     private OpportunityDAO opportunityDAO;
-    private AuditLogDAO auditLogDAO;
     private AuditLogService auditLogService;
 
     @BeforeEach
     void setUp() {
         accountDAO = new AccountDAO();
-        accountService = new AccountService();
         productService = new ProductService();
         productDAO = new ProductDAO();
         opportunityDAO = new OpportunityDAO();
-        auditLogDAO = new AuditLogDAO();
         auditLogService = new AuditLogService();
     }
 

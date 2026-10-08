@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.CookieManager;
-import java.net.HttpCookie;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

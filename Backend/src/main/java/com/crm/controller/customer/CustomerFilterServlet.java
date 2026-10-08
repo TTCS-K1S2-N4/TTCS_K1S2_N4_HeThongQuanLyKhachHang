@@ -2,8 +2,6 @@ package com.crm.controller.customer;
 
 import com.crm.model.SavedFilter;
 import com.crm.service.CustomerFilterService;
-import com.crm.util.ValidationUtil;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
