@@ -102,6 +102,7 @@ public class CustomerListServlet extends HttpServlet {
             req.setAttribute("region", filterReq.getRegion());
             req.setAttribute("ownerId", filterReq.getOwnerId());
             req.setAttribute("savedFilters", savedFilters);
+            req.setAttribute("owners", new com.crm.dao.AccountDAO().getAllActiveAccounts());
             req.setAttribute("filterRequest", filterReq);
             req.setAttribute("customFieldDefinitions", customFieldDefs);
             req.setAttribute("filterFieldId", filterFieldId);

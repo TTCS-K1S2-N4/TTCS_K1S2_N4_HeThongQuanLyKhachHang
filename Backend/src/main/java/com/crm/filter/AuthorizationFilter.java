@@ -73,6 +73,8 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/risk", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/care/config", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/care", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/360", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/customers/timeline", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers", "ACCOUNT_VIEW");
 
         // Alias URL ngắn gọn nếu có

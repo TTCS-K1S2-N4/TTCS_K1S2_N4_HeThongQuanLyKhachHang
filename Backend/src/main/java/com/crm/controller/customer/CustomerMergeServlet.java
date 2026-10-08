@@ -10,17 +10,22 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-@WebServlet("/customers/merge")
+@WebServlet(urlPatterns = {"/customers/merge", "/customers/duplicates/compare"})
 public class CustomerMergeServlet extends HttpServlet {
 
     private CustomerMergeService mergeService = new CustomerMergeService();
-
     private com.crm.dao.CustomerDAO customerDAO = new com.crm.dao.CustomerDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String primaryIdStr = request.getParameter("primaryId");
+        if (primaryIdStr == null || primaryIdStr.isEmpty()) {
+            primaryIdStr = request.getParameter("leftId");
+        }
         String secondaryIdStr = request.getParameter("secondaryId");
+        if (secondaryIdStr == null || secondaryIdStr.isEmpty()) {
+            secondaryIdStr = request.getParameter("rightId");
+        }
         
         request.setAttribute("primaryId", primaryIdStr);
         request.setAttribute("secondaryId", secondaryIdStr);
@@ -39,10 +44,19 @@ public class CustomerMergeServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String primaryParam = request.getParameter("primaryId");
+        if (primaryParam == null || primaryParam.isEmpty()) {
+            primaryParam = request.getParameter("leftId");
+        }
+        String secondaryParam = request.getParameter("secondaryId");
+        if (secondaryParam == null || secondaryParam.isEmpty()) {
+            secondaryParam = request.getParameter("rightId");
+        }
+
         try {
-            int primaryId = Integer.parseInt(request.getParameter("primaryId"));
-            int secondaryId = Integer.parseInt(request.getParameter("secondaryId"));
-            
+            int primaryId = Integer.parseInt(primaryParam);
+            int secondaryId = Integer.parseInt(secondaryParam);
+
             HttpSession session = request.getSession();
             Integer userId = (Integer) session.getAttribute("userId");
             if (userId == null) {
@@ -52,12 +66,20 @@ public class CustomerMergeServlet extends HttpServlet {
             
             com.crm.model.Account account = (com.crm.model.Account) session.getAttribute("currentUser");
             if (account == null) {
+                account = new com.crm.dao.AccountDAO().getAccountById(userId);
+            }
+            if (account == null) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Không tìm thấy thông tin tài khoản");
                 return;
             }
-            java.util.List<String> roleCodes = account.getRoleCodes();
-            if (roleCodes == null || (!roleCodes.contains("TEAM_LEAD") && !roleCodes.contains("DIRECTOR") && !roleCodes.contains("ADMIN"))) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Trưởng nhóm trở lên mới có quyền gộp khách hàng");
+
+            if (primaryId == secondaryId) {
+                request.setAttribute("errorMessage", "Không thể gộp một khách hàng vào chính nó.");
+                request.setAttribute("primaryId", primaryId);
+                request.setAttribute("secondaryId", secondaryId);
+                request.setAttribute("primaryCustomer", customerDAO.findById(primaryId));
+                request.setAttribute("secondaryCustomer", customerDAO.findById(secondaryId));
+                request.getRequestDispatcher("/WEB-INF/views/customers/merge.jsp").forward(request, response);
                 return;
             }
             
@@ -65,7 +87,10 @@ public class CustomerMergeServlet extends HttpServlet {
             com.crm.model.Customer secondaryCustomer = customerDAO.findById(secondaryId);
             
             if (primaryCustomer == null || secondaryCustomer == null) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID khách hàng không tồn tại");
+                request.setAttribute("errorMessage", "ID khách hàng không tồn tại trong hệ thống.");
+                request.setAttribute("primaryId", primaryId);
+                request.setAttribute("secondaryId", secondaryId);
+                request.getRequestDispatcher("/WEB-INF/views/customers/merge.jsp").forward(request, response);
                 return;
             }
             
@@ -80,18 +105,23 @@ public class CustomerMergeServlet extends HttpServlet {
                 permissionService.validateDataAccessForRoles(userId, rIds, "ACCOUNT", primaryCustomer.getOwnerId());
                 permissionService.validateDataAccessForRoles(userId, rIds, "ACCOUNT", secondaryCustomer.getOwnerId());
             } catch (Exception e) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền gộp khách hàng ngoài phạm vi dữ liệu của mình (IDOR prevention).");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền gộp khách hàng ngoài phạm vi dữ liệu của mình.");
                 return;
             }
             
             boolean success = mergeService.mergeCustomers(primaryId, secondaryId, userId);
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/customers/detail?id=" + primaryId);
+                response.sendRedirect(request.getContextPath() + "/customers/detail?id=" + primaryId + "&merged=true");
             } else {
-                response.sendRedirect(request.getContextPath() + "/customers/duplicates?error=1");
+                request.setAttribute("errorMessage", "Thao tác gộp khách hàng thất bại do lỗi hệ thống hoặc dữ liệu không hợp lệ.");
+                request.setAttribute("primaryId", primaryId);
+                request.setAttribute("secondaryId", secondaryId);
+                request.setAttribute("primaryCustomer", primaryCustomer);
+                request.setAttribute("secondaryCustomer", secondaryCustomer);
+                request.getRequestDispatcher("/WEB-INF/views/customers/merge.jsp").forward(request, response);
             }
         } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID khách hàng không hợp lệ.");
         }
     }
 }

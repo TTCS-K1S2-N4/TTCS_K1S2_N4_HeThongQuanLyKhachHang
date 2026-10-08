@@ -107,6 +107,27 @@ public class CustomerImportService {
             return result;
         }
 
+        java.sql.Connection conn = null;
+        try {
+            conn = com.crm.util.DBConnection.getConnection();
+        } catch (Exception e) {
+            conn = null;
+        }
+
+        return executeImportWithConnection(conn, rows, duplicateAction, currentUserId, accessibleOwnerIds);
+    }
+
+    public Map<String, Object> executeImportWithConnection(java.sql.Connection conn, List<CustomerImportRequest> rows, String duplicateAction, int currentUserId, List<Integer> accessibleOwnerIds) {
+        if (rows == null || rows.isEmpty()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalRows", 0);
+            result.put("successCount", 0);
+            result.put("failedCount", 0);
+            result.put("skippedCount", 0);
+            result.put("errors", Collections.singletonList("Không có dữ liệu để import."));
+            return result;
+        }
+
         String action = (duplicateAction != null && duplicateAction.equalsIgnoreCase("UPDATE")) ? "UPDATE" : "SKIP";
 
         int successCount = 0;
@@ -114,65 +135,157 @@ public class CustomerImportService {
         int skippedCount = 0;
         List<String> errors = new ArrayList<>();
 
-        for (CustomerImportRequest row : rows) {
-            // 1. Nếu dòng bị lỗi cú pháp / validate cơ bản -> Thất bại
-            if (!row.isValid()) {
-                failedCount++;
-                errors.add("Dòng " + row.getRowIndex() + ": " + (row.getError() != null ? row.getError() : "Dữ liệu không hợp lệ"));
-                continue;
+        boolean isTransactionMode = (conn != null);
+        boolean previousAutoCommit = true;
+
+        try {
+            if (isTransactionMode) {
+                previousAutoCommit = conn.getAutoCommit();
+                conn.setAutoCommit(false);
             }
 
-            // 2. Re-verify trùng lặp trước khi ghi DB
-            Customer existingCustomer = (row.getExistingCustomerId() != null)
-                    ? customerDAO.findById(row.getExistingCustomerId())
-                    : customerDAO.findDuplicateCustomer(row.getTaxCode(), row.getPhone(), row.getCustomerName());
+            boolean rollbackNeeded = false;
 
-            if (existingCustomer != null) {
-                row.setDuplicate(true);
-                row.setExistingCustomerId(existingCustomer.getCustomerId());
-
-                if ("SKIP".equals(action)) {
-                    skippedCount++;
-                    errors.add("Dòng " + row.getRowIndex() + ": Bỏ qua bản ghi trùng (Khách hàng ID " + existingCustomer.getCustomerId() + ")");
+            for (CustomerImportRequest row : rows) {
+                // 1. Nếu dòng bị lỗi cú pháp / validate cơ bản -> Thất bại
+                if (!row.isValid()) {
+                    failedCount++;
+                    errors.add("Dòng " + row.getRowIndex() + ": " + (row.getError() != null ? row.getError() : "Dữ liệu không hợp lệ"));
                     continue;
-                } else if ("UPDATE".equals(action)) {
-                    // Kiểm tra Data Scope cho bản ghi trùng
-                    boolean canUpdate = (accessibleOwnerIds == null || accessibleOwnerIds.contains(existingCustomer.getOwnerId()));
-                    if (!canUpdate) {
-                        failedCount++;
-                        errors.add("Dòng " + row.getRowIndex() + ": Không có quyền cập nhật khách hàng ID " + existingCustomer.getCustomerId() + " (ngoài phạm vi Data Scope)");
+                }
+
+                // 2. Re-verify trùng lặp trước khi ghi DB
+                Customer existingCustomer = null;
+                try {
+                    if (conn != null) {
+                        existingCustomer = (row.getExistingCustomerId() != null)
+                                ? customerDAO.findById(conn, row.getExistingCustomerId())
+                                : customerDAO.findDuplicateCustomer(conn, row.getTaxCode(), row.getPhone(), row.getCustomerName());
+                    } else {
+                        existingCustomer = (row.getExistingCustomerId() != null)
+                                ? customerDAO.findById(row.getExistingCustomerId())
+                                : customerDAO.findDuplicateCustomer(row.getTaxCode(), row.getPhone(), row.getCustomerName());
+                    }
+                } catch (Exception e) {
+                    existingCustomer = null;
+                }
+
+                if (existingCustomer != null) {
+                    row.setDuplicate(true);
+                    row.setExistingCustomerId(existingCustomer.getCustomerId());
+
+                    if ("SKIP".equals(action)) {
+                        skippedCount++;
+                        errors.add("Dòng " + row.getRowIndex() + ": Bỏ qua bản ghi trùng (Khách hàng ID " + existingCustomer.getCustomerId() + ")");
+                        continue;
+                    } else if ("UPDATE".equals(action)) {
+                        // Kiểm tra Data Scope cho bản ghi trùng
+                        boolean canUpdate = (accessibleOwnerIds == null || accessibleOwnerIds.contains(existingCustomer.getOwnerId()));
+                        if (!canUpdate) {
+                            failedCount++;
+                            errors.add("Dòng " + row.getRowIndex() + ": Không có quyền cập nhật khách hàng ID " + existingCustomer.getCustomerId() + " (ngoài phạm vi Data Scope)");
+                            continue;
+                        }
+
+                        // Cập nhật thông tin khách hàng hiện có
+                        if (row.getCustomerName() != null && !row.getCustomerName().trim().isEmpty()) {
+                            existingCustomer.setCustomerName(row.getCustomerName());
+                        }
+                        if (row.getPhone() != null && !row.getPhone().trim().isEmpty()) {
+                            existingCustomer.setPhone(row.getPhone());
+                        }
+                        if (row.getTaxCode() != null && !row.getTaxCode().trim().isEmpty()) {
+                            existingCustomer.setTaxCode(row.getTaxCode());
+                        }
+                        if (row.getIndustry() != null && !row.getIndustry().trim().isEmpty()) {
+                            existingCustomer.setIndustry(row.getIndustry());
+                        }
+                        if (row.getSize() != null && !row.getSize().trim().isEmpty()) {
+                            existingCustomer.setSize(row.getSize());
+                        }
+                        if (row.getWebsite() != null && !row.getWebsite().trim().isEmpty()) {
+                            existingCustomer.setWebsite(row.getWebsite());
+                        }
+                        if (row.getAddress() != null && !row.getAddress().trim().isEmpty()) {
+                            existingCustomer.setAddress(row.getAddress());
+                        }
+                        if (row.getStatus() != null && !row.getStatus().trim().isEmpty()) {
+                            existingCustomer.setStatus(row.getStatus());
+                        }
+
+                        boolean updated = false;
+                        try {
+                            updated = (conn != null) ? customerDAO.updateCustomer(conn, existingCustomer) : customerDAO.updateCustomer(existingCustomer);
+                        } catch (Exception e) {
+                            updated = false;
+                        }
+
+                        if (updated) {
+                            successCount++;
+                        } else {
+                            failedCount++;
+                            rollbackNeeded = true;
+                            errors.add("Dòng " + row.getRowIndex() + ": Cập nhật thất bại cho khách hàng ID " + existingCustomer.getCustomerId());
+                        }
                         continue;
                     }
+                }
 
-                    // Cập nhật thông tin khách hàng hiện có
-                    existingCustomer.setCustomerName(row.getCustomerName());
-                    if (row.getPhone() != null && !row.getPhone().trim().isEmpty()) {
-                        existingCustomer.setPhone(row.getPhone());
-                    }
+                // 3. Tạo mới bản ghi khách hàng
+                Customer newCustomer = new Customer();
+                newCustomer.setCustomerName(row.getCustomerName());
+                newCustomer.setPhone(row.getPhone());
+                newCustomer.setTaxCode(row.getTaxCode());
+                newCustomer.setIndustry(row.getIndustry());
+                newCustomer.setSize(row.getSize());
+                newCustomer.setWebsite(row.getWebsite());
+                newCustomer.setAddress(row.getAddress());
+                newCustomer.setStatus(row.getStatus() != null && !row.getStatus().trim().isEmpty() ? row.getStatus() : "ACTIVE");
+                newCustomer.setOwnerId(currentUserId);
 
-                    boolean updated = customerDAO.updateCustomer(existingCustomer);
-                    if (updated) {
-                        successCount++;
-                    } else {
-                        failedCount++;
-                        errors.add("Dòng " + row.getRowIndex() + ": Cập nhật thất bại cho khách hàng ID " + existingCustomer.getCustomerId());
-                    }
-                    continue;
+                boolean inserted = false;
+                try {
+                    inserted = (conn != null) ? customerDAO.insertCustomer(conn, newCustomer) : customerDAO.insertCustomer(newCustomer);
+                } catch (Exception e) {
+                    inserted = false;
+                }
+
+                if (inserted) {
+                    successCount++;
+                } else {
+                    failedCount++;
+                    rollbackNeeded = true;
+                    errors.add("Dòng " + row.getRowIndex() + ": Không thể lưu khách hàng '" + row.getCustomerName() + "' vào CSDL.");
                 }
             }
 
-            // 3. Tạo mới bản ghi khách hàng
-            Customer newCustomer = new Customer();
-            newCustomer.setCustomerName(row.getCustomerName());
-            newCustomer.setPhone(row.getPhone());
-            newCustomer.setOwnerId(currentUserId);
-
-            boolean inserted = customerDAO.insertCustomer(newCustomer);
-            if (inserted) {
-                successCount++;
-            } else {
-                failedCount++;
-                errors.add("Dòng " + row.getRowIndex() + ": Không thể lưu khách hàng '" + row.getCustomerName() + "' vào CSDL.");
+            if (isTransactionMode) {
+                if (rollbackNeeded && successCount > 0) {
+                    conn.rollback();
+                    errors.add(0, "Xảy ra lỗi CSDL khi ghi nhận dữ liệu. Toàn bộ giao dịch đã được khôi phục (Rollback).");
+                    failedCount += successCount;
+                    successCount = 0;
+                } else {
+                    conn.commit();
+                }
+            }
+        } catch (Exception e) {
+            if (isTransactionMode) {
+                try {
+                    conn.rollback();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+            errors.add("Lỗi giao dịch CSDL: " + e.getMessage());
+        } finally {
+            if (isTransactionMode) {
+                try {
+                    conn.setAutoCommit(previousAutoCommit);
+                    conn.close();
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }
 

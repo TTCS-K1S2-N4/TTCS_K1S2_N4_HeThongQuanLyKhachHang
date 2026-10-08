@@ -22,6 +22,38 @@ public class CustomerSaveServlet extends HttpServlet {
     private final CustomFieldService customFieldService = new CustomFieldService();
 
     @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String uri = req.getRequestURI();
+        Integer userId = (Integer) req.getSession().getAttribute("userId");
+        if (userId == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            return;
+        }
+
+        if (uri.endsWith("/edit")) {
+            String idStr = req.getParameter("id");
+            if (idStr == null || idStr.trim().isEmpty()) {
+                idStr = req.getParameter("customerId");
+            }
+            if (idStr != null && !idStr.trim().isEmpty()) {
+                try {
+                    int id = Integer.parseInt(idStr.trim());
+                    Customer customer = customerDAO.findById(id);
+                    if (customer != null) {
+                        req.setAttribute("customer", customer);
+                        req.getRequestDispatcher("/WEB-INF/views/customers/edit.jsp").forward(req, resp);
+                        return;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+            resp.sendRedirect(req.getContextPath() + "/customers");
+            return;
+        }
+
+        resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "HTTP method GET is not supported by this URL");
+    }
+
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String uri = req.getRequestURI();
         Integer userId = (Integer) req.getSession().getAttribute("userId");
@@ -40,8 +72,9 @@ public class CustomerSaveServlet extends HttpServlet {
     }
 
     private void handleSave(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setContentType("application/json;charset=UTF-8");
-        PrintWriter out = resp.getWriter();
+        boolean isJsonRequest = req.getRequestURI().contains("/api/")
+                || "XMLHttpRequest".equals(req.getHeader("X-Requested-With"))
+                || (req.getHeader("Accept") != null && req.getHeader("Accept").contains("application/json"));
 
         String idStr = req.getParameter("customerId");
         if (idStr == null || idStr.trim().isEmpty()) {
@@ -61,44 +94,46 @@ public class CustomerSaveServlet extends HttpServlet {
         String status = req.getParameter("status");
         String ownerIdStr = req.getParameter("ownerId");
 
-        if (customerName == null || customerName.trim().isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"error\":\"Tên khách hàng không được để trống\"}");
-            return;
-        }
-
         Integer customerId = null;
         boolean isEdit = (idStr != null && !idStr.trim().isEmpty());
         if (isEdit) {
             try {
                 customerId = Integer.parseInt(idStr.trim());
             } catch (NumberFormatException e) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print("{\"error\":\"ID khách hàng không hợp lệ\"}");
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "ID khách hàng không hợp lệ", isEdit, isJsonRequest);
                 return;
             }
+        }
+
+        if (customerName == null || customerName.trim().isEmpty()) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Tên khách hàng không được để trống", isEdit, isJsonRequest);
+            return;
         }
 
         // Validate taxCode (UNIQUE)
         if (taxCode != null && !taxCode.trim().isEmpty()) {
             taxCode = taxCode.trim();
             if (customerDAO.isTaxCodeExists(taxCode, customerId)) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print("{\"error\":\"Mã số thuế đã tồn tại trong hệ thống\"}");
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Mã số thuế đã tồn tại trong hệ thống", isEdit, isJsonRequest);
                 return;
             }
         }
 
-        // Validate status (4 valid statuses: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác)
-        List<String> validStatuses = List.of("Tiềm năng", "Đang giao dịch", "Khách hàng", "Ngừng hợp tác");
+        // Validate status (Valid statuses: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác, POTENTIAL, DEALING, CUSTOMER, STOPPED, ACTIVE)
+        List<String> validStatuses = List.of("Tiềm năng", "Đang giao dịch", "Khách hàng", "Ngừng hợp tác", "POTENTIAL", "DEALING", "CUSTOMER", "STOPPED", "ACTIVE");
         if (status == null || status.trim().isEmpty()) {
-            status = "Tiềm năng";
+            status = "POTENTIAL";
         } else {
             status = status.trim();
             if (!validStatuses.contains(status)) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.print("{\"error\":\"Trạng thái khách hàng không hợp lệ. Các trạng thái hợp lệ: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác\"}");
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Trạng thái khách hàng không hợp lệ. Các trạng thái hợp lệ: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác", isEdit, isJsonRequest);
                 return;
+            }
+            switch (status) {
+                case "Tiềm năng": status = "POTENTIAL"; break;
+                case "Đang giao dịch": status = "DEALING"; break;
+                case "Khách hàng": status = "CUSTOMER"; break;
+                case "Ngừng hợp tác": status = "STOPPED"; break;
             }
         }
 
@@ -121,14 +156,19 @@ public class CustomerSaveServlet extends HttpServlet {
         // Backend Required & Data Type Validation
         List<String> validationErrors = customFieldService.validateSubmittedCustomFields("CUSTOMER", customFieldValues);
         if (!validationErrors.isEmpty()) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            StringBuilder sb = new StringBuilder("{\"error\":\"Validation failed\", \"details\":[");
-            for (int i = 0; i < validationErrors.size(); i++) {
-                sb.append("\"").append(escapeJson(validationErrors.get(i))).append("\"");
-                if (i < validationErrors.size() - 1) sb.append(",");
+            if (isJsonRequest) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.setContentType("application/json;charset=UTF-8");
+                StringBuilder sb = new StringBuilder("{\"error\":\"Validation failed\", \"details\":[");
+                for (int i = 0; i < validationErrors.size(); i++) {
+                    sb.append("\"").append(escapeJson(validationErrors.get(i))).append("\"");
+                    if (i < validationErrors.size() - 1) sb.append(",");
+                }
+                sb.append("]}");
+                resp.getWriter().print(sb.toString());
+            } else {
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, validationErrors.get(0), isEdit, false);
             }
-            sb.append("]}");
-            out.print(sb.toString());
             return;
         }
 
@@ -153,11 +193,27 @@ public class CustomerSaveServlet extends HttpServlet {
 
         if (success) {
             customFieldService.saveBatchValues("CUSTOMER", customer.getCustomerId(), customFieldValues);
-            resp.setStatus(isEdit ? HttpServletResponse.SC_OK : HttpServletResponse.SC_CREATED);
-            out.print("{\"message\":\"Lưu khách hàng thành công\", \"customerId\":" + customer.getCustomerId() + "}");
+            if (isJsonRequest) {
+                resp.setContentType("application/json;charset=UTF-8");
+                resp.setStatus(isEdit ? HttpServletResponse.SC_OK : HttpServletResponse.SC_CREATED);
+                resp.getWriter().print("{\"message\":\"Lưu khách hàng thành công\", \"customerId\":" + customer.getCustomerId() + "}");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/customers");
+            }
         } else {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            out.print("{\"error\":\"Không thể lưu khách hàng vào cơ sở dữ liệu\"}");
+            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể lưu khách hàng vào cơ sở dữ liệu", isEdit, isJsonRequest);
+        }
+    }
+
+    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message, boolean isEdit, boolean isJsonRequest) throws ServletException, IOException {
+        resp.setStatus(statusCode);
+        String forwardPath = isEdit ? "/WEB-INF/views/customers/edit.jsp" : "/WEB-INF/views/customers/create.jsp";
+        if (isJsonRequest || req.getRequestDispatcher(forwardPath) == null) {
+            resp.setContentType("application/json;charset=UTF-8");
+            resp.getWriter().print("{\"error\":\"" + escapeJson(message) + "\"}");
+        } else {
+            req.setAttribute("message", message);
+            req.getRequestDispatcher(forwardPath).forward(req, resp);
         }
     }
 

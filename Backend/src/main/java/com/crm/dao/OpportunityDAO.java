@@ -339,6 +339,29 @@ public class OpportunityDAO {
         return 0.0;
     }
 
+    public double calculateTotalSignedAmount(int customerId) {
+        String sql = "SELECT SUM(o.amount) FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "WHERE o.customer_id = ? AND (" +
+                     "  o.stage LIKE '%WON%' OR " +
+                     "  o.stage LIKE '%CLOSED_WON%' OR " +
+                     "  ps.stage_name LIKE '%Won%' OR " +
+                     "  ps.stage_name LIKE '%thành công%' OR " +
+                     "  ps.default_probability = 100" +
+                     ")";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
     public boolean insert(Opportunity opp) {
         String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date, customer_id, stage, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();

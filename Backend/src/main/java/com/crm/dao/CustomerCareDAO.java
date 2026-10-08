@@ -112,7 +112,18 @@ public class CustomerCareDAO {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT c.customer_id, c.customer_name, c.phone, c.owner_id, u.full_name AS owner_name, ")
            .append("cc.last_contacted_at, ")
-           .append("TIMESTAMPDIFF(DAY, COALESCE(cc.last_contacted_at, c.created_at), CURRENT_TIMESTAMP) AS days_inactive ")
+           .append("TIMESTAMPDIFF(DAY, COALESCE(cc.last_contacted_at, c.created_at), CURRENT_TIMESTAMP) AS days_inactive, ")
+           .append("COALESCE(( ")
+           .append("    SELECT SUM(o.amount) FROM opportunities o ")
+           .append("    LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id ")
+           .append("    WHERE o.customer_id = c.customer_id AND ( ")
+           .append("        o.stage LIKE '%WON%' OR ")
+           .append("        o.stage LIKE '%CLOSED_WON%' OR ")
+           .append("        ps.stage_name LIKE '%Won%' OR ")
+           .append("        ps.stage_name LIKE '%thành công%' OR ")
+           .append("        ps.default_probability = 100 ")
+           .append("    ) ")
+           .append("), 0.0) AS contract_value ")
            .append("FROM customers c ")
            .append("LEFT JOIN users u ON c.owner_id = u.user_id ")
            .append("LEFT JOIN customer_care cc ON c.customer_id = cc.customer_id ")
@@ -123,7 +134,7 @@ public class CustomerCareDAO {
             sql.append("AND c.owner_id IN (").append(inClause).append(") ");
         }
 
-        sql.append("ORDER BY days_inactive DESC, c.customer_id ASC ");
+        sql.append("ORDER BY contract_value DESC, days_inactive DESC, c.customer_id ASC ");
         sql.append("LIMIT ? OFFSET ?");
 
         try (Connection conn = DBConnection.getConnection();
@@ -152,7 +163,7 @@ public class CustomerCareDAO {
                     resp.setOwnerName(rs.getString("owner_name"));
                     resp.setLastContactedAt(rs.getTimestamp("last_contacted_at"));
                     resp.setDaysInactive(rs.getLong("days_inactive"));
-                    resp.setContractValue(0.0);
+                    resp.setContractValue(rs.getDouble("contract_value"));
                     resp.setCareStatus(resp.getDaysInactive() > inactiveDays ? "CẦN CHĂM SÓC" : "ĐẾN HẠN");
                     list.add(resp);
                 }

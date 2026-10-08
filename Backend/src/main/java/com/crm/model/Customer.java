@@ -15,6 +15,7 @@ public class Customer {
     private String address;
     private String region;
     private int ownerId;
+    private String ownerName;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -62,9 +63,21 @@ public class Customer {
     public int getOwnerId() { return ownerId; }
     public void setOwnerId(int ownerId) { this.ownerId = ownerId; }
 
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
 
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    private boolean riskFlag;
+    private String riskReason;
+
+    public boolean isRiskFlag() { return riskFlag; }
+    public void setRiskFlag(boolean riskFlag) { this.riskFlag = riskFlag; }
+
+    public String getRiskReason() { return riskReason; }
+    public void setRiskReason(String riskReason) { this.riskReason = riskReason; }
 }

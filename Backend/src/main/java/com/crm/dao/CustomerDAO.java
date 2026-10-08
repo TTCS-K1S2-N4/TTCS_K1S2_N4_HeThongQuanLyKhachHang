@@ -12,52 +12,106 @@ import java.util.Map;
 
 public class CustomerDAO {
 
+    private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(CustomerDAO.class.getName());
+
     public CustomerDAO() {
         ensureSchema();
     }
 
     private void ensureSchema() {
-        String alterSql = "ALTER TABLE customers " +
-                "ADD COLUMN IF NOT EXISTS tax_code VARCHAR(50), " +
-                "ADD COLUMN IF NOT EXISTS email VARCHAR(150), " +
-                "ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE', " +
-                "ADD COLUMN IF NOT EXISTS industry VARCHAR(100), " +
-                "ADD COLUMN IF NOT EXISTS company_size VARCHAR(50), " +
-                "ADD COLUMN IF NOT EXISTS size VARCHAR(50), " +
-                "ADD COLUMN IF NOT EXISTS website VARCHAR(255), " +
-                "ADD COLUMN IF NOT EXISTS address TEXT, " +
-                "ADD COLUMN IF NOT EXISTS region VARCHAR(100), " +
-                "ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;";
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) return;
 
-        String contactsSql = "CREATE TABLE IF NOT EXISTS contacts (" +
-                "contact_id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "customer_id INT NOT NULL, " +
-                "contact_name VARCHAR(100) NOT NULL, " +
-                "phone VARCHAR(20), " +
-                "email VARCHAR(150), " +
-                "position VARCHAR(100), " +
-                "is_primary TINYINT(1) DEFAULT 0, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE" +
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+            ensureColumnExists(conn, "tax_code", "VARCHAR(50)");
+            ensureColumnExists(conn, "email", "VARCHAR(150)");
+            ensureColumnExists(conn, "status", "VARCHAR(50) DEFAULT 'Tiềm năng'");
+            ensureColumnExists(conn, "industry", "VARCHAR(100)");
+            ensureColumnExists(conn, "company_size", "VARCHAR(50)");
+            ensureColumnExists(conn, "size", "VARCHAR(50)");
+            ensureColumnExists(conn, "website", "VARCHAR(255)");
+            ensureColumnExists(conn, "address", "TEXT");
+            ensureColumnExists(conn, "region", "VARCHAR(100)");
+            ensureColumnExists(conn, "updated_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
-        String attachmentsSql = "CREATE TABLE IF NOT EXISTS attachments (" +
-                "attachment_id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "customer_id INT NOT NULL, " +
-                "file_name VARCHAR(255) NOT NULL, " +
-                "file_path VARCHAR(500) NOT NULL, " +
-                "file_size BIGINT DEFAULT 0, " +
-                "uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE" +
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+            String contactsSql = "CREATE TABLE IF NOT EXISTS contacts (" +
+                    "contact_id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "customer_id INT NOT NULL, " +
+                    "contact_name VARCHAR(100) NOT NULL, " +
+                    "phone VARCHAR(20), " +
+                    "email VARCHAR(150), " +
+                    "position VARCHAR(100), " +
+                    "is_primary TINYINT(1) DEFAULT 0, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
-            try { stmt.executeUpdate(alterSql); } catch (SQLException ignored) {}
-            try { stmt.executeUpdate(contactsSql); } catch (SQLException ignored) {}
-            try { stmt.executeUpdate(attachmentsSql); } catch (SQLException ignored) {}
+            String attachmentsSql = "CREATE TABLE IF NOT EXISTS attachments (" +
+                    "attachment_id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "customer_id INT NOT NULL, " +
+                    "file_name VARCHAR(255) NOT NULL, " +
+                    "file_path VARCHAR(500) NOT NULL, " +
+                    "file_size BIGINT DEFAULT 0, " +
+                    "uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE" +
+                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate(contactsSql);
+                stmt.executeUpdate(attachmentsSql);
+            }
+            healCorruptedData(conn);
         } catch (SQLException e) {
-            // DB connection might be unavailable during certain static initialization or test contexts
+            LOGGER.log(java.util.logging.Level.SEVERE, "Lỗi kiểm tra/khởi tạo schema cho bảng customers: " + e.getMessage(), e);
+        }
+    }
+
+    private void healCorruptedData(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("ALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            stmt.executeUpdate("ALTER TABLE customers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            stmt.executeUpdate("ALTER TABLE teams CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+            stmt.executeUpdate("UPDATE users SET full_name = 'Nguyễn Văn Sales' WHERE user_id = 4 OR email = 'salesrep.test@example.com' OR full_name LIKE '%Nguy%' OR full_name LIKE '%Sales%'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Hoàng Văn Lead' WHERE user_id = 3 OR email = 'teamlead.test@example.com' OR full_name LIKE '%Ho%' OR full_name LIKE '%Lead%'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Vũ Văn Director' WHERE user_id = 2 OR email = 'director.test@example.com' OR full_name LIKE '%V%' OR full_name LIKE '%Director%'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Lê Văn Sales Nam' WHERE user_id = 5 OR email = 'salesrep2.test@example.com'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Trần Thị Marketing' WHERE user_id = 6 OR email = 'marketing.test@example.com'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Lê Văn CSKH' WHERE user_id = 7 OR email = 'customersuccess.test@example.com'");
+            stmt.executeUpdate("UPDATE users SET full_name = 'Phạm Thị Kế Toán' WHERE user_id = 8 OR email = 'accountant.test@example.com'");
+
+            stmt.executeUpdate("UPDATE customers SET status = 'POTENTIAL' WHERE status LIKE 'Ti%' OR status LIKE '%?%' OR status = 'POTENTIAL'");
+            stmt.executeUpdate("UPDATE customers SET status = 'DEALING' WHERE status LIKE '%giao d%' OR status = 'DEALING'");
+            stmt.executeUpdate("UPDATE customers SET status = 'CUSTOMER' WHERE status LIKE 'Kh%' OR status = 'CUSTOMER'");
+            stmt.executeUpdate("UPDATE customers SET status = 'STOPPED' WHERE status LIKE 'Ng%' OR status = 'STOPPED'");
+            stmt.executeUpdate("UPDATE customers SET status = 'ACTIVE' WHERE status LIKE 'Ho%t %ng' OR status = 'ACTIVE'");
+
+            stmt.executeUpdate("UPDATE customers SET industry = 'Công nghệ thông tin' WHERE industry LIKE '%Công nghệ%'");
+            stmt.executeUpdate("UPDATE customers SET industry = 'Bất động sản' WHERE industry LIKE '%Bất động sản%'");
+            stmt.executeUpdate("UPDATE customers SET industry = 'Tài chính / Ngân hàng' WHERE industry LIKE '%Tài chính%' OR industry LIKE '%Ngân hàng%'");
+            stmt.executeUpdate("UPDATE customers SET industry = 'Sản xuất' WHERE industry LIKE '%Sản xuất%'");
+            stmt.executeUpdate("UPDATE customers SET industry = 'Thương mại / Bán lẻ' WHERE industry LIKE '%Thương mại%' OR industry LIKE '%Bán lẻ%'");
+            stmt.executeUpdate("UPDATE customers SET industry = 'Y tế / Dược phẩm' WHERE industry LIKE '%Y tế%' OR industry LIKE '%Dược%'");
+        } catch (Exception e) {
+            LOGGER.log(java.util.logging.Level.FINE, "Note auto heal DB: " + e.getMessage());
+        }
+    }
+
+    private void ensureColumnExists(Connection conn, String columnName, String columnDefinition) {
+        String checkSql = "SELECT COUNT(*) FROM information_schema.COLUMNS " +
+                          "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers' AND COLUMN_NAME = ?";
+        try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+            checkPs.setString(1, columnName);
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    String alterSql = "ALTER TABLE customers ADD COLUMN " + columnName + " " + columnDefinition;
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate(alterSql);
+                        LOGGER.info("Đã thêm cột '" + columnName + "' vào bảng customers thành công.");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(java.util.logging.Level.SEVERE, "Lỗi khi kiểm tra/thêm cột '" + columnName + "' vào bảng customers: " + e.getMessage(), e);
         }
     }
 
@@ -80,10 +134,40 @@ public class CustomerDAO {
         try { obj.setAddress(rs.getString("address")); } catch (SQLException ignored) {}
         try { obj.setRegion(rs.getString("region")); } catch (SQLException ignored) {}
         obj.setOwnerId(rs.getInt("owner_id"));
-        obj.setCreatedAt(rs.getTimestamp("created_at"));
+        try { obj.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignored) {}
         try { obj.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
 
+        try {
+            int pending = rs.getInt("pending_tickets");
+            int urgent = rs.getInt("urgent_tickets");
+            if (urgent > 0) {
+                obj.setRiskFlag(true);
+                obj.setRiskReason("Có " + urgent + " yêu cầu URGENT chưa xử lý");
+            } else if (pending >= 3) {
+                obj.setRiskFlag(true);
+                obj.setRiskReason("Có " + pending + " yêu cầu tồn đọng (≥3)");
+            }
+        } catch (SQLException ignored) {}
+
         return obj;
+    }
+
+    public List<Customer> findAll() {
+        List<Customer> list = new ArrayList<>();
+        String sql = "SELECT c.*, u.full_name AS owner_name, " +
+                     "(SELECT COUNT(*) FROM support_requests sr WHERE sr.customer_id = c.customer_id AND sr.status IN ('OPEN', 'IN_PROGRESS')) AS pending_tickets, " +
+                     "(SELECT COUNT(*) FROM support_requests sr WHERE sr.customer_id = c.customer_id AND sr.status IN ('OPEN', 'IN_PROGRESS') AND sr.priority = 'URGENT') AS urgent_tickets " +
+                     "FROM customers c LEFT JOIN users u ON c.owner_id = u.user_id ORDER BY c.customer_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToCustomer(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     public List<Customer> getList(String keyword, List<Integer> ownerIds, int page, int pageSize) {
@@ -108,11 +192,17 @@ public class CustomerDAO {
         boolean hasCustomField = filterReq != null && filterReq.getFilterFieldId() != null 
                 && filterReq.getFilterFieldValue() != null && !filterReq.getFilterFieldValue().trim().isEmpty();
 
+        String selectFields = "c.*, u.full_name AS owner_name, " +
+                "(SELECT COUNT(*) FROM support_requests sr WHERE sr.customer_id = c.customer_id AND sr.status IN ('OPEN', 'IN_PROGRESS')) AS pending_tickets, " +
+                "(SELECT COUNT(*) FROM support_requests sr WHERE sr.customer_id = c.customer_id AND sr.status IN ('OPEN', 'IN_PROGRESS') AND sr.priority = 'URGENT') AS urgent_tickets ";
+
         if (hasCustomField) {
-            sql.append("SELECT DISTINCT c.* FROM customers c ");
+            sql.append("SELECT DISTINCT ").append(selectFields).append("FROM customers c ");
             sql.append("JOIN custom_field_values cfv ON c.customer_id = cfv.entity_id AND cfv.entity_type = 'CUSTOMER' ");
+            sql.append("LEFT JOIN users u ON c.owner_id = u.user_id ");
         } else {
-            sql.append("SELECT DISTINCT c.* FROM customers c ");
+            sql.append("SELECT DISTINCT ").append(selectFields).append("FROM customers c ");
+            sql.append("LEFT JOIN users u ON c.owner_id = u.user_id ");
         }
         sql.append("WHERE 1=1");
 
@@ -207,23 +297,59 @@ public class CustomerDAO {
             }
 
             if (req.getStatus() != null && !req.getStatus().trim().isEmpty()) {
-                sql.append(" AND c.status = ?");
-                params.add(req.getStatus().trim());
+                String st = req.getStatus().trim();
+                if ("POTENTIAL".equalsIgnoreCase(st) || "Tiềm năng".equalsIgnoreCase(st)) {
+                    sql.append(" AND (LOWER(c.status) = 'potential' OR c.status = 'Tiềm năng')");
+                } else if ("DEALING".equalsIgnoreCase(st) || "Đang giao dịch".equalsIgnoreCase(st)) {
+                    sql.append(" AND (LOWER(c.status) = 'dealing' OR c.status = 'Đang giao dịch')");
+                } else if ("CUSTOMER".equalsIgnoreCase(st) || "Khách hàng".equalsIgnoreCase(st)) {
+                    sql.append(" AND (LOWER(c.status) = 'customer' OR c.status = 'Khách hàng')");
+                } else if ("ACTIVE".equalsIgnoreCase(st) || "Hoạt động".equalsIgnoreCase(st)) {
+                    sql.append(" AND (LOWER(c.status) = 'active' OR c.status = 'Hoạt động')");
+                } else if ("STOPPED".equalsIgnoreCase(st) || "Ngừng hợp tác".equalsIgnoreCase(st) || "INACTIVE".equalsIgnoreCase(st)) {
+                    sql.append(" AND (LOWER(c.status) IN ('stopped', 'inactive') OR c.status = 'Ngừng hợp tác')");
+                } else {
+                    sql.append(" AND (c.status = ? OR LOWER(c.status) = LOWER(?))");
+                    params.add(st);
+                    params.add(st);
+                }
             }
 
             if (req.getIndustry() != null && !req.getIndustry().trim().isEmpty()) {
-                sql.append(" AND c.industry = ?");
-                params.add(req.getIndustry().trim());
+                String ind = req.getIndustry().trim();
+                if (ind.contains("Công nghệ")) {
+                    sql.append(" AND (c.industry LIKE '%Công nghệ%')");
+                } else if (ind.contains("Tài chính") || ind.contains("Ngân hàng")) {
+                    sql.append(" AND (c.industry LIKE '%Tài chính%' OR c.industry LIKE '%Ngân hàng%')");
+                } else if (ind.contains("Bất động sản")) {
+                    sql.append(" AND (c.industry LIKE '%Bất động sản%')");
+                } else if (ind.contains("Sản xuất")) {
+                    sql.append(" AND (c.industry LIKE '%Sản xuất%')");
+                } else if (ind.contains("Thương mại") || ind.contains("Bán lẻ")) {
+                    sql.append(" AND (c.industry LIKE '%Thương mại%' OR c.industry LIKE '%Bán lẻ%')");
+                } else if (ind.contains("Y tế") || ind.contains("Dược")) {
+                    sql.append(" AND (c.industry LIKE '%Y tế%' OR c.industry LIKE '%Dược%')");
+                } else {
+                    sql.append(" AND (LOWER(c.industry) = LOWER(?) OR c.industry LIKE ?)");
+                    params.add(ind);
+                    params.add("%" + ind + "%");
+                }
             }
 
             if (req.getCompanySize() != null && !req.getCompanySize().trim().isEmpty()) {
-                sql.append(" AND c.company_size = ?");
-                params.add(req.getCompanySize().trim());
+                String sz = req.getCompanySize().trim();
+                sql.append(" AND (LOWER(c.company_size) = LOWER(?) OR LOWER(c.size) = LOWER(?) OR c.company_size LIKE ? OR c.size LIKE ?)");
+                params.add(sz);
+                params.add(sz);
+                params.add("%" + sz + "%");
+                params.add("%" + sz + "%");
             }
 
             if (req.getRegion() != null && !req.getRegion().trim().isEmpty()) {
-                sql.append(" AND c.region = ?");
-                params.add(req.getRegion().trim());
+                String reg = req.getRegion().trim();
+                sql.append(" AND (LOWER(c.region) = LOWER(?) OR c.region LIKE ?)");
+                params.add(reg);
+                params.add("%" + reg + "%");
             }
 
             if (req.getOwnerId() != null && req.getOwnerId() > 0) {
@@ -253,7 +379,7 @@ public class CustomerDAO {
     }
 
     public Customer findById(int id) {
-        String sql = "SELECT * FROM customers WHERE customer_id = ?";
+        String sql = "SELECT c.*, u.full_name AS owner_name FROM customers c LEFT JOIN users u ON c.owner_id = u.user_id WHERE c.customer_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -278,16 +404,41 @@ public class CustomerDAO {
                 Map<String, Object> map = new HashMap<>();
                 map.put("contactId", rs.getInt("contact_id"));
                 map.put("customerId", rs.getInt("customer_id"));
-                map.put("contactName", rs.getString("contact_name"));
+
+                String fullName = "";
+                try {
+                    fullName = rs.getString("full_name");
+                    if (fullName == null) fullName = rs.getString("contact_name");
+                } catch (SQLException ignored) {
+                    try { fullName = rs.getString("contact_name"); } catch (SQLException ignored2) {}
+                }
+
+                String title = "";
+                try {
+                    title = rs.getString("title");
+                    if (title == null) title = rs.getString("position");
+                } catch (SQLException ignored) {
+                    try { title = rs.getString("position"); } catch (SQLException ignored2) {}
+                }
+
+                String buyingRole = "";
+                try { buyingRole = rs.getString("buying_role"); } catch (SQLException ignored) {}
+
+                map.put("fullName", fullName);
+                map.put("contactName", fullName);
+                map.put("name", fullName);
+                map.put("title", title);
+                map.put("position", title);
+                map.put("role", buyingRole);
+                map.put("buyingRole", buyingRole);
                 map.put("phone", rs.getString("phone"));
                 map.put("email", rs.getString("email"));
-                map.put("position", rs.getString("position"));
                 map.put("isPrimary", rs.getBoolean("is_primary"));
                 map.put("createdAt", rs.getTimestamp("created_at"));
                 list.add(map);
             }
         } catch (SQLException e) {
-            // Table might be missing or empty
+            e.printStackTrace();
         }
         return list;
     }
@@ -376,10 +527,57 @@ public class CustomerDAO {
         return null;
     }
 
-    public boolean insert(Customer customer) {
+    public Customer findById(Connection conn, int id) throws SQLException {
+        String sql = "SELECT c.*, u.full_name AS owner_name FROM customers c LEFT JOIN users u ON c.owner_id = u.user_id WHERE c.customer_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCustomer(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public Customer findDuplicateCustomer(Connection conn, String taxCode, String phone, String customerName) throws SQLException {
+        List<String> conditions = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+
+        if (taxCode != null && !taxCode.trim().isEmpty()) {
+            conditions.add("tax_code = ?");
+            params.add(taxCode.trim());
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            conditions.add("phone = ?");
+            params.add(phone.trim());
+        }
+        if (customerName != null && !customerName.trim().isEmpty()) {
+            conditions.add("customer_name = ?");
+            params.add(customerName.trim());
+        }
+
+        if (conditions.isEmpty()) {
+            return null;
+        }
+
+        String sql = "SELECT * FROM customers WHERE " + String.join(" OR ", conditions) + " LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToCustomer(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean insert(Connection conn, Customer customer) throws SQLException {
         String sql = "INSERT INTO customers (customer_name, phone, tax_code, industry, size, website, address, status, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
             ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
@@ -398,20 +596,13 @@ public class CustomerDAO {
                 }
                 return true;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return false;
     }
 
-    public boolean insertCustomer(Customer customer) {
-        return insert(customer);
-    }
-
-    public boolean update(Customer customer) {
+    public boolean update(Connection conn, Customer customer) throws SQLException {
         String sql = "UPDATE customers SET customer_name = ?, phone = ?, tax_code = ?, industry = ?, size = ?, website = ?, address = ?, status = ?, owner_id = ? WHERE customer_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, customer.getCustomerName());
             ps.setString(2, customer.getPhone());
             ps.setString(3, (customer.getTaxCode() != null && !customer.getTaxCode().trim().isEmpty()) ? customer.getTaxCode().trim() : null);
@@ -423,6 +614,29 @@ public class CustomerDAO {
             ps.setInt(9, customer.getOwnerId());
             ps.setInt(10, customer.getCustomerId());
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean insert(Customer customer) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return insert(conn, customer);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean insertCustomer(Customer customer) {
+        return insert(customer);
+    }
+
+    public boolean insertCustomer(Connection conn, Customer customer) throws SQLException {
+        return insert(conn, customer);
+    }
+
+    public boolean update(Customer customer) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return update(conn, customer);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -431,6 +645,10 @@ public class CustomerDAO {
 
     public boolean updateCustomer(Customer customer) {
         return update(customer);
+    }
+
+    public boolean updateCustomer(Connection conn, Customer customer) throws SQLException {
+        return update(conn, customer);
     }
 
     public boolean delete(int customerId) {

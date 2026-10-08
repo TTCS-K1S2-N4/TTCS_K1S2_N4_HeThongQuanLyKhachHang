@@ -28,7 +28,9 @@
                     <h1 class="page-title">Chi tiết khách hàng</h1>
                 </div>
                 <div class="page-actions">
+                    <a class="btn btn-primary" style="background: #0284c7; border-color: #0284c7;" href="${pageContext.request.contextPath}/customers/360?id=${customer.customerId}"><i class="fas fa-user-check"></i> Hồ sơ 360°</a>
                     <a class="btn btn-primary" href="${pageContext.request.contextPath}/customers/edit?id=${customer.customerId}"><i class="fas fa-edit"></i> Sửa</a>
+                    <a class="btn btn-warning" style="background: #eab308; color: white; border: none;" href="${pageContext.request.contextPath}/customers/merge?primaryId=${customer.customerId}"><i class="fas fa-compress-alt"></i> Gộp KH</a>
                     <a class="btn btn-info" href="${pageContext.request.contextPath}/customers/hierarchy?id=${customer.customerId}"><i class="fas fa-sitemap"></i> Cây quan hệ</a>
                     <a class="btn btn-secondary" href="${pageContext.request.contextPath}/customers"><i class="fas fa-arrow-left"></i> Quay lại</a>
                 </div>
@@ -83,7 +85,7 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 12px;">
                                 <label style="font-weight: 600; color: var(--color-text-secondary);">Người sở hữu</label>
-                                <p style="margin: 4px 0 0 0;"><c:out value="${customer.ownerId}"/></p>
+                                <p style="margin: 4px 0 0 0;"><c:out value="${not empty customer.ownerName ? customer.ownerName : customer.ownerId}"/></p>
                             </div>
                             <div class="form-group" style="margin-bottom: 12px;">
                                 <label style="font-weight: 600; color: var(--color-text-secondary);">Trạng thái</label>

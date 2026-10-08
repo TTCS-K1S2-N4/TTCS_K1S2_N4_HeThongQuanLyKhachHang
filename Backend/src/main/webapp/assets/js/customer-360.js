@@ -35,15 +35,17 @@ function loadTimeline(customerId, page) {
     const contextPath = contextPathInput ? contextPathInput.value : '';
     const container = document.getElementById('c360-timeline-container');
     
-    // API endpoint is proposed
-    const apiUrl = `${contextPath}/customers/${customerId}/timeline?page=${page}`;
+    const apiUrl = `${contextPath}/customers/timeline?customerId=${customerId}&page=${page}`;
     
-    // Simulating fetch since backend API might not exist yet
-    // Using fetch but catching error to show NOT VERIFIED / BLOCKED state gracefully
-    fetch(apiUrl)
+    fetch(apiUrl, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
         .then(response => {
             if (!response.ok) {
-                throw new Error("API not ready or returned error");
+                throw new Error("API timeline returned status " + response.status);
             }
             return response.json();
         })
@@ -51,8 +53,8 @@ function loadTimeline(customerId, page) {
             renderTimelineData(data, page);
         })
         .catch(error => {
-            console.warn("Backend API for timeline is not ready or failed:", error);
-            renderTimelineError("Chưa thể tải dữ liệu timeline (Backend chưa sẵn sàng).");
+            console.warn("Backend API for timeline failed:", error);
+            renderTimelineError("Chưa thể tải dữ liệu timeline.");
         });
 }
 

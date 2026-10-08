@@ -102,4 +102,74 @@ public class Customer360ServiceTest {
         assertEquals(1, list.size());
         assertEquals(301, list.get(0).getActivityId());
     }
+
+    @Test
+    public void testPerformanceWith500Activities() throws Exception {
+        Customer c = new Customer();
+        c.setCustomerId(101);
+        c.setOwnerId(4);
+        when(customerDAO.findById(101)).thenReturn(c);
+
+        List<Activity> mock500List = new java.util.ArrayList<>();
+        for (int i = 1; i <= 500; i++) {
+            Activity act = new Activity();
+            act.setActivityId(i);
+            act.setTitle("Activity " + i);
+            act.setCustomerId(101);
+            mock500List.add(act);
+        }
+
+        when(activityDAO.getActivitiesByCustomerId(eq(101), anyInt(), anyInt())).thenReturn(mock500List.subList(0, 10));
+        when(activityDAO.countByCustomerId(101)).thenReturn(500);
+
+        long start = System.currentTimeMillis();
+        Customer360Response res = customer360Service.getCustomer360(101, 4, Collections.singletonList(1));
+        long duration = System.currentTimeMillis() - start;
+
+        assertNotNull(res);
+        assertEquals(500, res.getTotalActivities());
+        assertTrue(duration < 1500, "Performance test failed: took " + duration + " ms (limit 1500 ms)");
+    }
+
+    @Test
+    public void testGroupContractTotalCalculationWithSubsidiaries() throws Exception {
+        Customer parent = new Customer();
+        parent.setCustomerId(100);
+        parent.setCustomerName("ABC Parent Corp");
+        parent.setOwnerId(1);
+
+        Customer child1 = new Customer();
+        child1.setCustomerId(101);
+        child1.setCustomerName("ABC Tech");
+
+        Customer child2 = new Customer();
+        child2.setCustomerId(102);
+        child2.setCustomerName("ABC Trading");
+
+        com.crm.dao.CustomerRelationshipDAO relDAO = mock(com.crm.dao.CustomerRelationshipDAO.class);
+        Customer360Service serviceWithRelDAO = new Customer360Service(customerDAO, opportunityDAO, activityDAO, permissionService, relDAO);
+
+        com.crm.model.CustomerRelationship rel1 = new com.crm.model.CustomerRelationship();
+        rel1.setParentCustomerId(100);
+        rel1.setChildCustomerId(101);
+        rel1.setChildCustomer(child1);
+
+        com.crm.model.CustomerRelationship rel2 = new com.crm.model.CustomerRelationship();
+        rel2.setParentCustomerId(100);
+        rel2.setChildCustomerId(102);
+        rel2.setChildCustomer(child2);
+
+        when(customerDAO.findById(100)).thenReturn(parent);
+        when(relDAO.getChildren(100)).thenReturn(Arrays.asList(rel1, rel2));
+        when(opportunityDAO.calculateTotalSignedAmount(100)).thenReturn(500000000.0); // Parent: 500M
+        when(opportunityDAO.calculateTotalSignedAmount(101)).thenReturn(200000000.0); // Child1: 200M
+        when(opportunityDAO.calculateTotalSignedAmount(102)).thenReturn(300000000.0); // Child2: 300M
+
+        Customer360Response response = serviceWithRelDAO.getCustomer360(100, 1, Collections.singletonList(1));
+
+        assertNotNull(response);
+        assertEquals(2, response.getSubsidiaries().size());
+        assertEquals(500000000.0, response.getSignedValue());
+        assertEquals(1000000000.0, response.getGroupContractTotal(), "Group total should equal parent (500M) + child1 (200M) + child2 (300M) = 1B");
+    }
 }

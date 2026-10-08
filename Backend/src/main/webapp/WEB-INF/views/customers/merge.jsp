@@ -287,12 +287,18 @@
                     (function () {
                         const primaryInput = document.getElementById('primaryId');
                         const secondaryInput = document.getElementById('secondaryId');
+                        const form = document.querySelector('form');
 
                         function reloadComparison() {
                             const primaryId = primaryInput.value.trim();
                             const secondaryId = secondaryInput.value.trim();
 
                             if (!primaryId || !secondaryId) {
+                                return;
+                            }
+
+                            if (primaryId === secondaryId) {
+                                alert('Khách hàng chính và khách hàng phụ không được trùng ID nhau!');
                                 return;
                             }
 
@@ -306,8 +312,18 @@
                                 encodeURIComponent(secondaryId);
                         }
 
-                        primaryInput.addEventListener('change', reloadComparison);
-                        secondaryInput.addEventListener('change', reloadComparison);
+                        if (primaryInput) primaryInput.addEventListener('change', reloadComparison);
+                        if (secondaryInput) secondaryInput.addEventListener('change', reloadComparison);
+                        if (form) {
+                            form.addEventListener('submit', function(e) {
+                                const p = primaryInput.value.trim();
+                                const s = secondaryInput.value.trim();
+                                if (p && s && p === s) {
+                                    e.preventDefault();
+                                    alert('Không thể gộp một khách hàng vào chính nó!');
+                                }
+                            });
+                        }
                     })();
                 </script>
 
