@@ -142,7 +142,6 @@ public class CustomerImportServlet extends HttpServlet {
                     request.setAttribute("allRows", rows);
                     request.setAttribute("validRowsCount", result.get("validRowsCount"));
                     request.setAttribute("invalidRowsCount", result.get("invalidRowsCount"));
-                    @SuppressWarnings("unchecked")
                     List<?> dups = (List<?>) result.get("duplicates");
                     request.setAttribute("duplicateRowsCount", dups != null ? dups.size() : 0);
                     request.setAttribute("validRows", result.get("validRows"));

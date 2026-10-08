@@ -1,35 +1,17 @@
 package com.crm;
 
 import com.crm.dao.ActivityDAO;
-import com.crm.dao.CustomerDAO;
 import com.crm.dao.OpportunityDAO;
 import com.crm.dto.Customer360Response;
 import com.crm.model.Activity;
 import com.crm.model.Customer;
-import com.crm.model.Contact;
-import com.crm.service.Customer360Service;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Customer360E2ETest {
-
-    private CustomerDAO customerDAO;
-    private OpportunityDAO opportunityDAO;
-    private ActivityDAO activityDAO;
-    private Customer360Service service;
-
-    @BeforeEach
-    public void setUp() {
-        customerDAO = new CustomerDAO();
-        opportunityDAO = new OpportunityDAO();
-        activityDAO = new ActivityDAO();
-        service = new Customer360Service();
-    }
 
     @Test
     public void testCustomerModelGetters() {

@@ -1,4 +1,5 @@
 package com.crm.service;
+import com.crm.dto.DuplicateCandidate;
 import com.crm.model.Customer;
 import com.crm.util.DBConnection;
 
@@ -13,10 +14,10 @@ public class CustomerMergeService {
     private static final Logger LOGGER = Logger.getLogger(CustomerMergeService.class.getName());
 
     public List<Customer> findDuplicates() {
-        List<com.crm.dto.DuplicateCandidate> pairs = findDuplicatePairs();
+        List<DuplicateCandidate> pairs = findDuplicatePairs();
         List<Customer> list = new ArrayList<>();
         java.util.Set<Integer> addedIds = new java.util.HashSet<>();
-        for (com.crm.dto.DuplicateCandidate pair : pairs) {
+        for (DuplicateCandidate pair : pairs) {
             if (pair.getLeft() != null && addedIds.add(pair.getLeft().getCustomerId())) {
                 list.add(pair.getLeft());
             }
@@ -27,9 +28,9 @@ public class CustomerMergeService {
         return list;
     }
 
-    public List<com.crm.dto.DuplicateCandidate> findDuplicatePairs() {
+    public List<DuplicateCandidate> findDuplicatePairs() {
         List<Customer> allCustomers = getAllCustomersForDuplicateCheck();
-        List<com.crm.dto.DuplicateCandidate> candidates = new ArrayList<>();
+        List<DuplicateCandidate> candidates = new ArrayList<>();
 
         for (int i = 0; i < allCustomers.size(); i++) {
             Customer c1 = allCustomers.get(i);
@@ -57,7 +58,7 @@ public class CustomerMergeService {
 
                 if (!reasons.isEmpty()) {
                     String reasonStr = String.join(", ", reasons);
-                    candidates.add(new com.crm.dto.DuplicateCandidate(c1, c2, reasonStr));
+                    candidates.add(new DuplicateCandidate(c1, c2, reasonStr));
                 }
             }
         }
