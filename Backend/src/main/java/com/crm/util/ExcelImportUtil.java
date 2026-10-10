@@ -211,6 +211,78 @@ public final class ExcelImportUtil {
         return rows;
     }
 
+    public static List<com.crm.dto.LeadImportRequest> parseLeadImport(InputStream inputStream)
+            throws IOException {
+
+        List<com.crm.dto.LeadImportRequest> rows = new ArrayList<>();
+        DataFormatter formatter = new DataFormatter();
+
+        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            if (workbook.getNumberOfSheets() == 0) {
+                throw new IOException("File Excel không có sheet dữ liệu.");
+            }
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row excelRow = sheet.getRow(rowIndex);
+
+                if (excelRow == null) {
+                    continue;
+                }
+
+                String fullName = formatter.formatCellValue(excelRow.getCell(0)).trim();
+                String title = formatter.formatCellValue(excelRow.getCell(1)).trim();
+                String company = formatter.formatCellValue(excelRow.getCell(2)).trim();
+                String email = formatter.formatCellValue(excelRow.getCell(3)).trim();
+                String phone = formatter.formatCellValue(excelRow.getCell(4)).trim();
+                String sourceName = formatter.formatCellValue(excelRow.getCell(5)).trim();
+                String status = formatter.formatCellValue(excelRow.getCell(6)).trim();
+                String rating = formatter.formatCellValue(excelRow.getCell(7)).trim();
+                String industry = formatter.formatCellValue(excelRow.getCell(8)).trim();
+                String notes = formatter.formatCellValue(excelRow.getCell(9)).trim();
+
+                if (phone.matches("^[35789][0-9]{8}$")) {
+                    phone = "0" + phone;
+                }
+
+                if (fullName.isEmpty() && email.isEmpty() && phone.isEmpty() && company.isEmpty()) {
+                    continue;
+                }
+
+                com.crm.dto.LeadImportRequest request = new com.crm.dto.LeadImportRequest();
+                request.setRowIndex(rowIndex + 1);
+                request.setFullName(fullName);
+                request.setTitle(title);
+                request.setCompany(company);
+                request.setEmail(email);
+                request.setPhone(phone);
+                request.setSourceName(sourceName);
+                request.setStatus(status.isEmpty() ? "NEW" : status);
+                request.setRating(rating.isEmpty() ? "WARM" : rating);
+                request.setIndustry(industry);
+                request.setNotes(notes);
+
+                if (fullName.isEmpty()) {
+                    request.addFieldError("Họ và tên Lead không được để trống");
+                }
+
+                if (!email.isEmpty() && !isValidEmail(email)) {
+                    request.addFieldError("Email không hợp lệ");
+                }
+
+                if (!phone.isEmpty() && !isValidPhone(phone)) {
+                    request.addFieldError("Số điện thoại không hợp lệ");
+                }
+
+                rows.add(request);
+            }
+        }
+
+        return rows;
+    }
+
     private static boolean isValidEmail(String email) {
         return email != null && email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     }
@@ -221,3 +293,4 @@ public final class ExcelImportUtil {
         return cleaned.matches("^(0|\\+?84)[35789][0-9]{8}$");
     }
 }
+

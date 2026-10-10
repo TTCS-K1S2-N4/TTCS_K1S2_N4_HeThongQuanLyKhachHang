@@ -324,3 +324,61 @@ CREATE TABLE IF NOT EXISTS customer_care (
     FOREIGN KEY (last_contacted_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 21. Bảng Nguồn Lead (S4-01 / S4-02)
+CREATE TABLE IF NOT EXISTS lead_sources (
+    source_id INT AUTO_INCREMENT PRIMARY KEY,
+    source_code VARCHAR(50) NOT NULL UNIQUE,
+    source_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 22. Bảng Biểu mẫu nhúng thu thập Lead (S4-01)
+CREATE TABLE IF NOT EXISTS lead_web_forms (
+    form_id INT AUTO_INCREMENT PRIMARY KEY,
+    form_name VARCHAR(150) NOT NULL,
+    description TEXT,
+    embed_code TEXT,
+    allowed_domains VARCHAR(255),
+    success_redirect_url VARCHAR(255),
+    is_active TINYINT(1) DEFAULT 1,
+    spam_protection_enabled TINYINT(1) DEFAULT 1,
+    fields_json TEXT,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 23. Bảng Khách hàng tiềm năng - Lead (S4-01 / S4-02)
+CREATE TABLE IF NOT EXISTS leads (
+    lead_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    first_name VARCHAR(75),
+    last_name VARCHAR(75),
+    title VARCHAR(100),
+    company VARCHAR(150),
+    email VARCHAR(150),
+    phone VARCHAR(20),
+    lead_source_id INT NULL,
+    web_form_id INT NULL,
+    status VARCHAR(50) DEFAULT 'NEW',
+    rating VARCHAR(50) DEFAULT 'WARM',
+    score INT DEFAULT 0,
+    industry VARCHAR(100),
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    zip_code VARCHAR(20),
+    owner_id INT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
+    FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
