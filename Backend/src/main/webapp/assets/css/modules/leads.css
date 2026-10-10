@@ -1,5 +1,144 @@
-/* CSS for leads module */
-.lead-blocked-msg {
-    color: var(--danger-color, red);
+/* leads.css - Presentation styling for Lead module S4-01 & S4-02 */
+
+/* Public Form Styles */
+.public-form-body {
+    background-color: #f4f7f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+.public-form-container {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 500px;
+    width: 100%;
+}
+.public-form-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+}
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+}
+
+/* Common form styles for Leads */
+.form-card {
+    max-width: 700px;
+    margin: 0 auto;
+}
+.lead-form .form-group {
+    margin-bottom: 15px;
+}
+.lead-form label {
+    display: block;
     font-weight: 500;
+    margin-bottom: 5px;
+}
+.required {
+    color: red;
+}
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+.leads-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.leads-table th, .leads-table td {
+    border-bottom: 1px solid #eee;
+    padding: 10px;
+    text-align: left;
+}
+
+/* Detail page */
+.detail-card {
+    max-width: 800px;
+    margin: 0 auto;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.detail-item.full-width {
+    grid-column: span 2;
+}
+.detail-label {
+    font-weight: bold;
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+.detail-value {
+    font-size: 16px;
+    color: #333;
+    padding-top: 5px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.status-Mới { background: #e3f2fd; color: #1976d2; }
+.score-HOT { background: #ffebee; color: #d32f2f; }
+.score-WARM { background: #fff3e0; color: #f57c00; }
+.score-COLD { background: #e0f7fa; color: #0097a7; }
+
+/* Embed code UI */
+.embed-code-container {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+.embed-code-container textarea {
+    font-family: monospace;
+    font-size: 14px;
+    resize: vertical;
+}
+
+/* Import preview */
+.preview-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+.stat-item {
+    padding: 10px 15px;
+    border-radius: 4px;
+}
+.stat-item.valid {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+.stat-item.invalid {
+    background: #ffebee;
+    color: #c62828;
+}
+.row-error {
+    background-color: #fff8f8;
+}
+.error-text {
+    color: #d32f2f;
+    font-size: 12px;
 }
