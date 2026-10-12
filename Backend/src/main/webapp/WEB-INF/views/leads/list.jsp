@@ -32,6 +32,12 @@
                     <a href="${pageContext.request.contextPath}/leads/create" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Thêm Lead
                     </a>
+                    <a href="${pageContext.request.contextPath}/leads/import" class="btn btn-secondary">
+                        <i class="fas fa-file-excel"></i> Nhập Excel
+                    </a>
+                    <a href="${pageContext.request.contextPath}/lead-forms" class="btn btn-secondary">
+                        <i class="fas fa-code"></i> Web Forms
+                    </a>
                     <a href="${pageContext.request.contextPath}/lead-scoring/rules" class="btn btn-secondary" title="Cấu hình chấm điểm Lead (Giám đốc kinh doanh)">
                         <i class="fas fa-sliders-h"></i> Cấu hình Chấm điểm
                     </a>
@@ -49,18 +55,18 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; width: 100%;">
                     <!-- Tìm kiếm từ khóa -->
                     <div style="flex: 2; min-width: 220px;">
-                        <input type="search" name="keyword" class="form-control" placeholder="Tìm kiếm họ tên, công ty, email, số điện thoại..." value="<c:out value='${param.keyword}'/>" style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; width: 100%;">
+                        <input type="search" name="keyword" class="form-control" placeholder="Tìm kiếm họ tên, công ty, email, số điện thoại..." value="<c:out value='${param.keyword != null ? param.keyword : (param.search != null ? param.search : search)}'/>" style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; width: 100%;">
                     </div>
 
                     <!-- Lọc Trạng thái (Status) -->
                     <div style="flex: 1; min-width: 140px;">
                         <select name="status" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; width: 100%;">
                             <option value="">-- Trạng thái --</option>
-                            <option value="NEW" ${param.status == 'NEW' ? 'selected' : ''}>Mới tạo</option>
-                            <option value="CONTACTED" ${param.status == 'CONTACTED' ? 'selected' : ''}>Đang liên hệ</option>
-                            <option value="QUALIFIED" ${param.status == 'QUALIFIED' ? 'selected' : ''}>Đã xác định nhu cầu</option>
-                            <option value="UNQUALIFIED" ${param.status == 'UNQUALIFIED' ? 'selected' : ''}>Không tiềm năng</option>
-                            <option value="CONVERTED" ${param.status == 'CONVERTED' ? 'selected' : ''}>Đã chuyển đổi</option>
+                            <option value="NEW" ${param.status == 'NEW' || status == 'NEW' ? 'selected' : ''}>Mới tạo</option>
+                            <option value="CONTACTED" ${param.status == 'CONTACTED' || status == 'CONTACTED' ? 'selected' : ''}>Đang liên hệ</option>
+                            <option value="QUALIFIED" ${param.status == 'QUALIFIED' || status == 'QUALIFIED' ? 'selected' : ''}>Đã xác định nhu cầu</option>
+                            <option value="UNQUALIFIED" ${param.status == 'UNQUALIFIED' || status == 'UNQUALIFIED' ? 'selected' : ''}>Không tiềm năng</option>
+                            <option value="CONVERTED" ${param.status == 'CONVERTED' || status == 'CONVERTED' ? 'selected' : ''}>Đã chuyển đổi</option>
                         </select>
                     </div>
 
@@ -81,9 +87,9 @@
                     <div style="flex: 1; min-width: 150px;">
                         <select name="classification" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px 12px; width: 100%;">
                             <option value="">-- Phân loại điểm --</option>
-                            <option value="HOT" ${param.classification == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Gọi trước)</option>
-                            <option value="WARM" ${param.classification == 'WARM' ? 'selected' : ''}>☀️ ẤM</option>
-                            <option value="COLD" ${param.classification == 'COLD' ? 'selected' : ''}>❄️ LẠNH</option>
+                            <option value="HOT" ${param.classification == 'HOT' || param.rating == 'HOT' || rating == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Gọi trước)</option>
+                            <option value="WARM" ${param.classification == 'WARM' || param.rating == 'WARM' || rating == 'WARM' ? 'selected' : ''}>☀️ ẤM</option>
+                            <option value="COLD" ${param.classification == 'COLD' || param.rating == 'COLD' || rating == 'COLD' ? 'selected' : ''}>❄️ LẠNH</option>
                         </select>
                     </div>
 
@@ -150,10 +156,11 @@
 
             <!-- Lead List Table -->
             <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <c:set var="leadItems" value="${not empty leads ? leads : (not empty leadList ? leadList : list)}"/>
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h2 class="card-title" style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
                         <i class="fas fa-user-friends" style="color: var(--color-primary);"></i>
-                        Danh sách Lead (${not empty leads ? leads.size() : (not empty list ? list.size() : 0)})
+                        Danh sách Lead (${not empty leadItems ? leadItems.size() : (not empty totalLeads ? totalLeads : 0)})
                     </h2>
                     <div style="font-size: 13px; color: var(--color-text-secondary);">
                         Sắp xếp theo: <strong>Điểm số ưu tiên (Giảm dần)</strong>
@@ -178,48 +185,56 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <c:set var="leadItems" value="${not empty leads ? leads : list}"/>
                             <c:choose>
                                 <c:when test="${not empty leadItems}">
                                     <c:forEach var="item" items="${leadItems}">
+                                        <c:set var="currentLeadId" value="${item.leadId != null && item.leadId > 0 ? item.leadId : item.id}"/>
+                                        <c:set var="currentCompany" value="${item.companyName != null ? item.companyName : item.company}"/>
+                                        <c:set var="currentSource" value="${item.sourceName != null ? item.sourceName : (item.source != null ? item.source : 'Chưa rõ')}"/>
+                                        <c:set var="leadScore" value="${item.score != null ? item.score : 0}"/>
                                         <tr class="${item.slaOverdue ? 'row-sla-overdue' : ''}">
-                                            <td>${item.leadId}</td>
+                                            <td>${currentLeadId}</td>
                                             <td>
                                                 <div style="font-weight: 600; color: var(--color-gray-900);">
-                                                    <c:out value="${item.fullName}"/>
+                                                    <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="text-primary">
+                                                        <c:out value="${item.fullName}"/>
+                                                    </a>
                                                 </div>
                                             </td>
-                                            <td><c:out value="${item.companyName}"/></td>
+                                            <td><c:out value="${currentCompany}"/></td>
                                             <td>
                                                 <div style="font-size: 13px;">
-                                                    <div><i class="fas fa-envelope" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.email}"/></div>
-                                                    <div><i class="fas fa-phone" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.phone}"/></div>
+                                                    <c:if test="${not empty item.email}">
+                                                        <div><i class="fas fa-envelope" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.email}"/></div>
+                                                    </c:if>
+                                                    <c:if test="${not empty item.phone}">
+                                                        <div><i class="fas fa-phone" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.phone}"/></div>
+                                                    </c:if>
                                                 </div>
                                             </td>
-                                            <td><span class="badge badge-neutral"><c:out value="${item.source != null ? item.source : 'Chưa rõ'}"/></span></td>
+                                            <td><span class="badge badge-neutral"><c:out value="${currentSource}"/></span></td>
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${item.status == 'NEW'}"><span class="badge badge-info">Mới tạo</span></c:when>
-                                                    <c:when test="${item.status == 'CONTACTED'}"><span class="badge badge-warning">Đang liên hệ</span></c:when>
-                                                    <c:when test="${item.status == 'QUALIFIED'}"><span class="badge badge-success">Đã xác định NC</span></c:when>
-                                                    <c:when test="${item.status == 'CONVERTED'}"><span class="badge" style="background:#dcfce7; color:#15803d;">Đã chuyển đổi</span></c:when>
+                                                    <c:when test="${item.status == 'NEW' || item.status == 'Mới' || item.status == 'Mới tạo'}"><span class="badge badge-info">Mới tạo</span></c:when>
+                                                    <c:when test="${item.status == 'CONTACTED' || item.status == 'Đang liên hệ'}"><span class="badge badge-warning">Đang liên hệ</span></c:when>
+                                                    <c:when test="${item.status == 'QUALIFIED' || item.status == 'Tiềm năng'}"><span class="badge badge-success">Đã xác định NC</span></c:when>
+                                                    <c:when test="${item.status == 'CONVERTED' || item.status == 'Đã chuyển đổi'}"><span class="badge" style="background:#dcfce7; color:#15803d;">Đã chuyển đổi</span></c:when>
                                                     <c:otherwise><span class="badge badge-neutral"><c:out value="${item.status}"/></span></c:otherwise>
                                                 </c:choose>
                                             </td>
                                             <!-- Điểm số Lead (S4-05-AC-02 & S4-05-AC-04) -->
                                             <td>
-                                                <span class="lead-score-pill ${(item.score != null ? item.score : 0) >= 70 ? 'score-positive' : ((item.score != null ? item.score : 0) >= 40 ? 'score-neutral' : 'score-negative')}">
-                                                    <i class="fas fa-bolt"></i> ${item.score != null ? item.score : 0} điểm
+                                                <span class="lead-score-pill ${leadScore >= 70 ? 'score-positive' : (leadScore >= 40 ? 'score-neutral' : 'score-negative')}">
+                                                    <i class="fas fa-bolt"></i> ${leadScore} điểm
                                                 </span>
                                             </td>
                                             <!-- Nhãn phân loại Nóng / Ấm / Lạnh (S4-05-AC-03) -->
                                             <td>
-                                                <c:set var="leadScore" value="${item.score != null ? item.score : 0}"/>
                                                 <c:choose>
-                                                    <c:when test="${item.classification == 'HOT' || leadScore >= 70}">
+                                                    <c:when test="${item.classification == 'HOT' || item.rating == 'HOT' || leadScore >= 70}">
                                                         <span class="badge badge-hot"><i class="fas fa-fire"></i> NÓNG</span>
                                                     </c:when>
-                                                    <c:when test="${item.classification == 'WARM' || (leadScore >= 40 && leadScore < 70)}">
+                                                    <c:when test="${item.classification == 'WARM' || item.rating == 'WARM' || (leadScore >= 40 && leadScore < 70)}">
                                                         <span class="badge badge-warm"><i class="fas fa-sun"></i> ẤM</span>
                                                     </c:when>
                                                     <c:otherwise>
@@ -242,72 +257,29 @@
                                                 </c:choose>
                                             </td>
                                             <td style="text-align: center;">
-                                                <a href="${pageContext.request.contextPath}/leads/detail?id=${item.leadId}" class="btn btn-secondary btn-sm" title="Xem chi tiết">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="${pageContext.request.contextPath}/leads/convert?leadId=${item.leadId}" class="btn btn-secondary btn-sm" style="color: #16a34a;" title="Chuyển đổi Lead">
-                                                    <i class="fas fa-exchange-alt"></i>
-                                                </a>
+                                                <div style="display: flex; gap: 4px; justify-content: center;">
+                                                    <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Xem chi tiết">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="${pageContext.request.contextPath}/leads/edit?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Chỉnh sửa">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </a>
+                                                    <a href="${pageContext.request.contextPath}/leads/convert?leadId=${currentLeadId}" class="btn btn-secondary btn-sm" style="color: #16a34a;" title="Chuyển đổi Lead">
+                                                        <i class="fas fa-exchange-alt"></i>
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     </c:forEach>
                                 </c:when>
                                 <c:otherwise>
-                                    <!-- Mẫu hiển thị trực quan khi DB chưa có dữ liệu nạp sẵn -->
-                                    <tr class="row-sla-overdue">
-                                        <td>101</td>
-                                        <td><strong>Nguyễn Văn Hùng</strong></td>
-                                        <td>Công ty CP Công Nghệ NextGen</td>
-                                        <td>
-                                            <div>hung.nguyen@nextgen.vn</div>
-                                            <div>0987654321</div>
-                                        </td>
-                                        <td><span class="badge badge-neutral">Website</span></td>
-                                        <td><span class="badge badge-info">Mới tạo</span></td>
-                                        <td><span class="lead-score-pill score-positive"><i class="fas fa-bolt"></i> 85 điểm</span></td>
-                                        <td><span class="badge badge-hot"><i class="fas fa-fire"></i> NÓNG</span></td>
-                                        <td>Lê Văn Thắng</td>
-                                        <td>
-                                            <span class="badge badge-sla-overdue"><i class="fas fa-exclamation-triangle"></i> Quá SLA</span>
-                                        </td>
-                                        <td style="text-align: center;">
-                                            <a href="${pageContext.request.contextPath}/leads/convert?leadId=101" class="btn btn-primary btn-sm">Gọi ngay</a>
-                                        </td>
-                                    </tr>
                                     <tr>
-                                        <td>102</td>
-                                        <td><strong>Trần Thu Hà</strong></td>
-                                        <td>Tập đoàn Tài Chính ABC</td>
-                                        <td>
-                                            <div>ha.tran@abcfina.com</div>
-                                            <div>0912345678</div>
-                                        </td>
-                                        <td><span class="badge badge-neutral">Sự kiện</span></td>
-                                        <td><span class="badge badge-warning">Đang liên hệ</span></td>
-                                        <td><span class="lead-score-pill score-neutral"><i class="fas fa-bolt"></i> 55 điểm</span></td>
-                                        <td><span class="badge badge-warm"><i class="fas fa-sun"></i> ẤM</span></td>
-                                        <td>Trần Đức Cường</td>
-                                        <td><span style="font-size: 12px; color: #16a34a;"><i class="fas fa-check-circle"></i> Trong hạn</span></td>
-                                        <td style="text-align: center;">
-                                            <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i></a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>103</td>
-                                        <td><strong>Phạm Hoàng Long</strong></td>
-                                        <td>Cửa hàng bán lẻ tư nhân</td>
-                                        <td>
-                                            <div>longph@gmail.com</div>
-                                            <div>0909090909</div>
-                                        </td>
-                                        <td><span class="badge badge-neutral">Cold Call</span></td>
-                                        <td><span class="badge badge-neutral">Mới tạo</span></td>
-                                        <td><span class="lead-score-pill score-negative"><i class="fas fa-bolt"></i> 20 điểm</span></td>
-                                        <td><span class="badge badge-cold"><i class="fas fa-snowflake"></i> LẠNH</span></td>
-                                        <td>Chưa phân bổ</td>
-                                        <td><span style="font-size: 12px; color: #16a34a;"><i class="fas fa-check-circle"></i> Trong hạn</span></td>
-                                        <td style="text-align: center;">
-                                            <a href="#" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i></a>
+                                        <td colspan="11" style="text-align: center; padding: 32px 16px;">
+                                            <div class="empty-state">
+                                                <i class="fas fa-inbox" style="font-size: 36px; color: #cbd5e1; margin-bottom: 8px;"></i>
+                                                <p style="color: var(--color-text-secondary); margin-bottom: 12px;">Chưa có dữ liệu Lead nào phù hợp với bộ lọc.</p>
+                                                <a href="${pageContext.request.contextPath}/leads/create" class="btn btn-primary btn-sm">Tạo Lead mới ngay</a>
+                                            </div>
                                         </td>
                                     </tr>
                                 </c:otherwise>
@@ -315,6 +287,23 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Phân trang (Pagination) -->
+                <c:if test="${not empty totalPages && totalPages > 1}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--color-border);">
+                        <div style="font-size: 13px; color: var(--color-text-secondary);">
+                            Trang <strong>${currentPage}</strong> / <strong>${totalPages}</strong> (Tổng số: ${totalLeads} Lead)
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <c:if test="${currentPage > 1}">
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage - 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}" class="btn btn-secondary btn-sm">Trước</a>
+                            </c:if>
+                            <c:if test="${currentPage < totalPages}">
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage + 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}" class="btn btn-secondary btn-sm">Sau</a>
+                            </c:if>
+                        </div>
+                    </div>
+                </c:if>
             </div>
         </div>
     </main>
