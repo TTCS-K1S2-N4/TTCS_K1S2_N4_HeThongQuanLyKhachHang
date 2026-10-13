@@ -134,6 +134,7 @@ public class CustomerCareServiceTest {
         when(mockCareDAO.getInactiveThreshold()).thenReturn(30);
         when(mockPermissionService.getAccessibleAccountIdsForRoles(1, Collections.singletonList(1), "ACCOUNT"))
                 .thenReturn(Collections.singletonList(4));
+        when(mockCareDAO.countInactiveCustomers(30, Collections.singletonList(4))).thenReturn(5);
         int count = careService.countInactiveCustomers(30, 1, Collections.singletonList(1));
         assertEquals(5, count);
     }
