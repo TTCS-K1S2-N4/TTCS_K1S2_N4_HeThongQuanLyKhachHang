@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 public class ContactTransferServlet extends HttpServlet {
 
     private ContactService contactService = new ContactService();
+    private com.crm.dao.CustomerDAO customerDAO = new com.crm.dao.CustomerDAO();
+    private com.crm.service.PermissionService permissionService = new com.crm.service.PermissionService();
 
     public void setContactService(ContactService contactService) {
         if (contactService != null) {
@@ -38,21 +40,72 @@ public class ContactTransferServlet extends HttpServlet {
         }
     }
 
+    public void setCustomerDAO(com.crm.dao.CustomerDAO customerDAO) {
+        if (customerDAO != null) {
+            this.customerDAO = customerDAO;
+        }
+    }
+
+    public void setPermissionService(com.crm.service.PermissionService permissionService) {
+        if (permissionService != null) {
+            this.permissionService = permissionService;
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(false);
         Integer userId = (session != null) ? (Integer) session.getAttribute("userId") : null;
+        List<Integer> roleIds = (session != null) ? ValidationUtil.getSafeIntegerList(session.getAttribute("roleIds")) : null;
+        Integer roleId = (session != null) ? (Integer) session.getAttribute("roleId") : null;
+
         if (userId == null) {
             handleUnauthorized(req, resp, "Bạn cần đăng nhập để thực hiện chức năng này.");
             return;
         }
 
+        List<Integer> effectiveRoles = (roleIds != null && !roleIds.isEmpty())
+                ? roleIds
+                : (roleId != null ? Collections.singletonList(roleId) : Collections.emptyList());
+
         String contactIdStr = req.getParameter("contactId");
         if (contactIdStr == null || contactIdStr.trim().isEmpty()) {
             contactIdStr = req.getParameter("id");
         }
-        req.setAttribute("contactId", contactIdStr);
-        req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
+
+        if (contactIdStr == null || contactIdStr.trim().isEmpty()) {
+            req.setAttribute("errorMessage", "Chưa chỉ định người liên hệ cần chuyển.");
+            req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
+            return;
+        }
+
+        int contactId;
+        try {
+            contactId = Integer.parseInt(contactIdStr.trim());
+        } catch (NumberFormatException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "ID người liên hệ không hợp lệ.");
+            return;
+        }
+
+        try {
+            com.crm.dto.ContactResponse contact = contactService.getContactById(contactId, userId, effectiveRoles);
+            com.crm.model.Customer currentCustomer = customerDAO.findById(contact.getCustomerId());
+
+            List<Integer> accessibleOwnerIds = permissionService.getAccessibleAccountIdsForRoles(userId, effectiveRoles, "ACCOUNT");
+            List<com.crm.model.Customer> customers = customerDAO.getList(null, accessibleOwnerIds, 1, 1000);
+
+            req.setAttribute("contact", contact);
+            req.setAttribute("contactId", contact.getContactId());
+            req.setAttribute("currentCustomer", currentCustomer);
+            req.setAttribute("customers", customers);
+            req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
+        } catch (ValidationException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+        } catch (AuthorizationException e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
+        } catch (Exception e) {
+            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi máy chủ nội bộ: " + e.getMessage());
+        }
     }
 
     @Override
@@ -90,7 +143,26 @@ public class ContactTransferServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/contacts/detail?id=" + transferRequest.getContactId() + "&success=transferred");
             }
         } catch (ValidationException e) {
-            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            if (isJsonRequest(req)) {
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            } else {
+                // Giữ lại lý do và thông tin form khi có lỗi validation
+                try {
+                    if (transferRequest.getContactId() != null && transferRequest.getContactId() > 0) {
+                        com.crm.dto.ContactResponse contact = contactService.getContactById(transferRequest.getContactId(), userId, effectiveRoles);
+                        com.crm.model.Customer currentCustomer = customerDAO.findById(contact.getCustomerId());
+                        List<Integer> accessibleOwnerIds = permissionService.getAccessibleAccountIdsForRoles(userId, effectiveRoles, "ACCOUNT");
+                        List<com.crm.model.Customer> customers = customerDAO.getList(null, accessibleOwnerIds, 1, 1000);
+
+                        req.setAttribute("contact", contact);
+                        req.setAttribute("contactId", contact.getContactId());
+                        req.setAttribute("currentCustomer", currentCustomer);
+                        req.setAttribute("customers", customers);
+                    }
+                } catch (Exception ignored) {}
+                req.setAttribute("errorMessage", e.getMessage());
+                req.getRequestDispatcher("/WEB-INF/views/contacts/transfer.jsp").forward(req, resp);
+            }
         } catch (AuthorizationException e) {
             sendErrorResponse(req, resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         } catch (Exception e) {

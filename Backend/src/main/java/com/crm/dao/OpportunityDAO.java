@@ -289,7 +289,11 @@ public class OpportunityDAO {
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
-                     "WHERE o.customer_id = ? AND (o.stage IS NULL OR (o.stage NOT LIKE '%WON%' AND o.stage NOT LIKE '%LOST%' AND o.stage NOT LIKE '%CLOSED%')) ORDER BY o.opportunity_id DESC";
+                     "WHERE o.customer_id = ? AND " +
+                     "  (o.stage IS NULL OR (o.stage NOT LIKE '%WON%' AND o.stage NOT LIKE '%LOST%' AND o.stage NOT LIKE '%CLOSED%')) AND " +
+                     "  (ps.stage_name IS NULL OR (ps.stage_name NOT LIKE '%Won%' AND ps.stage_name NOT LIKE '%thành công%' AND ps.stage_name NOT LIKE '%Lost%' AND ps.stage_name NOT LIKE '%Thất bại%')) AND " +
+                     "  (ps.default_probability IS NULL OR (ps.default_probability > 0 AND ps.default_probability < 100)) " +
+                     "ORDER BY o.opportunity_id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);
@@ -310,7 +314,11 @@ public class OpportunityDAO {
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
-                     "WHERE o.customer_id = ? AND (o.stage LIKE '%WON%' OR o.stage LIKE '%LOST%' OR o.stage LIKE '%CLOSED%') ORDER BY o.opportunity_id DESC";
+                     "WHERE o.customer_id = ? AND (" +
+                     "  o.stage LIKE '%WON%' OR o.stage LIKE '%LOST%' OR o.stage LIKE '%CLOSED%' OR " +
+                     "  ps.stage_name LIKE '%Won%' OR ps.stage_name LIKE '%thành công%' OR ps.stage_name LIKE '%Lost%' OR ps.stage_name LIKE '%Thất bại%' OR " +
+                     "  ps.default_probability = 100 OR ps.default_probability = 0" +
+                     ") ORDER BY o.opportunity_id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);
@@ -325,7 +333,12 @@ public class OpportunityDAO {
     }
 
     public double calculateTotalOpenAmount(int customerId) {
-        String sql = "SELECT SUM(amount) FROM opportunities WHERE customer_id = ? AND (stage IS NULL OR (stage NOT LIKE '%WON%' AND stage NOT LIKE '%LOST%' AND stage NOT LIKE '%CLOSED%'))";
+        String sql = "SELECT SUM(o.amount) FROM opportunities o " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "WHERE o.customer_id = ? AND " +
+                     "  (o.stage IS NULL OR (o.stage NOT LIKE '%WON%' AND o.stage NOT LIKE '%LOST%' AND o.stage NOT LIKE '%CLOSED%')) AND " +
+                     "  (ps.stage_name IS NULL OR (ps.stage_name NOT LIKE '%Won%' AND ps.stage_name NOT LIKE '%thành công%' AND ps.stage_name NOT LIKE '%Lost%' AND ps.stage_name NOT LIKE '%Thất bại%')) AND " +
+                     "  (ps.default_probability IS NULL OR (ps.default_probability > 0 AND ps.default_probability < 100))";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);

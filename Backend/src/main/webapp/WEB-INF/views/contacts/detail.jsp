@@ -99,6 +99,12 @@
                                 </form>
                             </c:if>
                             <a class="btn btn-primary" href="${transferUrl}"><i class="fas fa-right-left"></i> Chuyển công ty</a>
+                            <form method="post" action="${pageContext.request.contextPath}/contacts/delete"
+                                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa người liên hệ này không? Thao tác này không thể hoàn tác.');">
+                                <input type="hidden" name="contactId" value="<c:out value='${contact.contactId}'/>">
+                                <input type="hidden" name="customerId" value="<c:out value='${contact.customerId}'/>">
+                                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Xóa</button>
+                            </form>
                         </div>
                     </div>
 
@@ -168,8 +174,9 @@
                                     <thead>
                                     <tr>
                                         <th>Thời điểm</th>
-                                        <th>Từ khách hàng</th>
-                                        <th>Sang khách hàng</th>
+                                        <th>Từ công ty</th>
+                                        <th>Sang công ty</th>
+                                        <th>Lý do</th>
                                         <th>Người thực hiện</th>
                                     </tr>
                                     </thead>
@@ -179,15 +186,16 @@
                                             <c:forEach var="h" items="${history}">
                                                 <tr>
                                                     <td><fmt:formatDate value="${h.transferredAt}" pattern="dd/MM/yyyy HH:mm"/></td>
-                                                    <td><c:out value="${empty h.oldCustomerName ? h.oldCustomerId : h.oldCustomerName}"/></td>
-                                                    <td><c:out value="${empty h.newCustomerName ? h.newCustomerId : h.newCustomerName}"/></td>
+                                                    <td><c:out value="${not empty h.fromCustomerName ? h.fromCustomerName : (not empty h.oldCustomerName ? h.oldCustomerName : (h.fromCustomerId > 0 ? ('Mã ' += h.fromCustomerId) : '—'))}"/></td>
+                                                    <td><c:out value="${not empty h.toCustomerName ? h.toCustomerName : (not empty h.newCustomerName ? h.newCustomerName : (h.toCustomerId > 0 ? ('Mã ' += h.toCustomerId) : '—'))}"/></td>
+                                                    <td><c:out value="${empty h.reason ? '—' : h.reason}"/></td>
                                                     <td><c:out value="${empty h.transferredByName ? '—' : h.transferredByName}"/></td>
                                                 </tr>
                                             </c:forEach>
                                         </c:when>
                                         <c:otherwise>
                                             <tr>
-                                                <td colspan="4">
+                                                <td colspan="5">
                                                     <div class="empty-state">
                                                         <div class="empty-state-icon"><i class="fas fa-history"></i></div>
                                                         <h3 style="font-size: 16px; margin-bottom: 8px; color: var(--color-gray-900);">Chưa có lịch sử chuyển công ty</h3>

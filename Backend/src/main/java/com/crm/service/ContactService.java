@@ -312,8 +312,33 @@ public class ContactService {
         }
     }
 
+    public List<ContactCompanyHistory> getTransferHistory(int contactId, int userId, List<Integer> roleIds)
+            throws ValidationException, AuthorizationException {
+        if (contactId <= 0) {
+            throw new ValidationException("ID người liên hệ không hợp lệ.");
+        }
+
+        Contact contact = contactDAO.findById(contactId);
+        if (contact == null) {
+            throw new ValidationException("Người liên hệ không tồn tại (ID: " + contactId + ").");
+        }
+
+        Customer customer = customerDAO.findById(contact.getCustomerId());
+        if (customer == null) {
+            throw new ValidationException("Khách hàng của người liên hệ không tồn tại.");
+        }
+
+        permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
+
+        return contactCompanyHistoryDAO.findByContactId(contactId);
+    }
+
     public boolean deleteContact(int contactId, int userId, List<Integer> roleIds)
             throws ValidationException, AuthorizationException {
+        if (contactId <= 0) {
+            throw new ValidationException("ID người liên hệ không hợp lệ.");
+        }
+
         Contact contact = contactDAO.findById(contactId);
         if (contact == null) {
             throw new ValidationException("Người liên hệ không tồn tại (ID: " + contactId + ").");
@@ -322,6 +347,12 @@ public class ContactService {
         Customer customer = customerDAO.findById(contact.getCustomerId());
         if (customer != null) {
             permissionService.validateDataAccessForRoles(userId, roleIds, "ACCOUNT", customer.getOwnerId());
+        }
+
+        // BẢO TOÀN DỮ LIỆU LỊCH SỬ: Chặn xóa nếu người liên hệ đã có lịch sử chuyển công ty
+        List<ContactCompanyHistory> historyList = contactCompanyHistoryDAO.findByContactId(contactId);
+        if (historyList != null && !historyList.isEmpty()) {
+            throw new ValidationException("Không thể xóa người liên hệ đã có lịch sử chuyển công ty để đảm bảo toàn vẹn dữ liệu.");
         }
 
         return contactDAO.delete(contactId);
@@ -347,6 +378,9 @@ public class ContactService {
             request.setBuyingRole("END_USER");
         } else {
             String roleUpper = request.getBuyingRole().toUpperCase().trim();
+            if ("DECISION_MAKER".equals(roleUpper)) {
+                roleUpper = "DECIDER";
+            }
             if (!BUYING_ROLES.contains(roleUpper)) {
                 throw new ValidationException("Vai trò quyết định mua không hợp lệ (" + request.getBuyingRole() +
                         "). Cho phép: " + String.join(", ", BUYING_ROLES));

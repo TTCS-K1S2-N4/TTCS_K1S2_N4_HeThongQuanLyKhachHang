@@ -74,8 +74,8 @@ public class CustomerCareService {
     }
 
     public boolean updateConfiguredInactiveDays(int days, int userId, List<Integer> roleIds) throws ValidationException {
-        if (days <= 0) {
-            throw new ValidationException("Số ngày định kỳ phải là số nguyên dương (> 0).");
+        if (days <= 0 || days > 365) {
+            throw new ValidationException("Số ngày định kỳ phải là số nguyên dương từ 1 đến 365 ngày.");
         }
         return customerCareDAO.updateInactiveThreshold(days);
     }

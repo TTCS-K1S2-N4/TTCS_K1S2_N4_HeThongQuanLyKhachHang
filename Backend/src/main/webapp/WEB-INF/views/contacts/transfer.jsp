@@ -93,7 +93,7 @@
                                                     <option value="">-- Chọn khách hàng --</option>
                                                     <c:forEach var="cus" items="${customers}">
                                                         <c:if test="${empty currentCustomer or cus.customerId != currentCustomer.customerId}">
-                                                            <option value="<c:out value='${cus.customerId}'/>" ${param.newCustomerId == cus.customerId ? 'selected' : ''}>
+                                                            <option value="<c:out value='${cus.customerId}'/>" ${(not empty selectedNewCustomerId and selectedNewCustomerId == cus.customerId) or param.newCustomerId == cus.customerId ? 'selected' : ''}>
                                                                 <c:out value="${cus.customerName}"/> (Mã <c:out value="${cus.customerId}"/>)
                                                             </option>
                                                         </c:if>
@@ -102,7 +102,7 @@
                                             </c:when>
                                             <c:otherwise>
                                                 <input id="newCustomerId" name="newCustomerId" class="form-control" type="number"
-                                                       min="1" step="1" required value="<c:out value='${param.newCustomerId}'/>">
+                                                       min="1" step="1" required value="<c:out value='${empty selectedNewCustomerId ? param.newCustomerId : selectedNewCustomerId}'/>">
                                                 <p class="form-help">Nhập mã khách hàng mới mà bạn có quyền truy cập.</p>
                                             </c:otherwise>
                                         </c:choose>
@@ -114,7 +114,7 @@
 
                                 <div class="form-group">
                                     <label class="form-label" for="reason">Lý do chuyển công ty <span class="form-required">*</span></label>
-                                    <textarea id="reason" name="reason" class="form-control" rows="3" required><c:out value="${param.reason}"/></textarea>
+                                    <textarea id="reason" name="reason" class="form-control" rows="3" required><c:out value="${empty reason ? param.reason : reason}"/></textarea>
                                 </div>
 
                                 <div class="contact-form-actions">

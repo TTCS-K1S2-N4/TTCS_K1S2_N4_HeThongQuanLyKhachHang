@@ -1,7 +1,20 @@
+-- =============================================================================
+-- CSDL HỆ THỐNG QUẢN LÝ KHÁCH HÀNG (CRM SYSTEM) - SCHEMA CHUẨN HÓA
+-- File: schema.sql
+-- Thư mục: Backend/src/main/resources/sql/
+-- Bộ ký tự: UTF-8 / utf8mb4
+-- Mô tả: File cấu trúc dữ liệu duy nhất chứa toàn bộ các bảng, chỉ mục,
+--       ràng buộc toàn vẹn và khóa ngoại của toàn bộ hệ thống CRM.
+-- =============================================================================
+
 CREATE DATABASE IF NOT EXISTS crm_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE crm_db;
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
--- 1. Bảng Nhóm kinh doanh (Cập nhật Sprint 02)
+-- -----------------------------------------------------------------------------
+-- 1. BẢNG PHÒNG BAN / NHÓM KINH DOANH (teams)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS teams (
     team_id INT AUTO_INCREMENT PRIMARY KEY,
     team_name VARCHAR(100) NOT NULL UNIQUE,
@@ -12,16 +25,20 @@ CREATE TABLE IF NOT EXISTS teams (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (parent_team_id) REFERENCES teams(team_id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Bảng Vai trò (7 vai trò theo tài liệu)
+-- -----------------------------------------------------------------------------
+-- 2. BẢNG VAI TRÒ HỆ THỐNG (roles)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS roles (
     role_id INT AUTO_INCREMENT PRIMARY KEY,
     role_code VARCHAR(50) NOT NULL UNIQUE,
     role_name VARCHAR(100) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Bảng Người dùng (Bổ sung reset_token và reset_token_expiry cho S1-03)
+-- -----------------------------------------------------------------------------
+-- 3. BẢNG NGƯỜI DÙNG / TÀI KHOẢN (users)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -41,23 +58,64 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4. Bảng liên kết N-N: User - Role
+-- -----------------------------------------------------------------------------
+-- 4. BẢNG LIÊN KẾT NGƯỜI DÙNG - VAI TRÒ (user_roles)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Bảng Khách hàng (Có trường owner_id phục vụ bàn giao dữ liệu S1-10)
+-- -----------------------------------------------------------------------------
+-- 5. BẢNG QUYỀN HẠN HỆ THỐNG (permissions)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS permissions (
+    permission_id INT AUTO_INCREMENT PRIMARY KEY,
+    permission_code VARCHAR(50) NOT NULL UNIQUE,
+    permission_name VARCHAR(100) NOT NULL,
+    module VARCHAR(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 6. BẢNG GÁN QUYỀN CHO VAI TRÒ VÀ DATA SCOPE (role_permissions)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id INT NOT NULL,
+    permission_id INT NOT NULL,
+    data_scope ENUM('MY', 'TEAM', 'ALL') NOT NULL DEFAULT 'MY',
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_role_permission (role_id, permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 7. BẢNG MENU ĐIỀU HƯỚNG (menu_items)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS menu_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    icon VARCHAR(50) DEFAULT 'fa-folder',
+    permission_code VARCHAR(50) NOT NULL,
+    display_order INT DEFAULT 0,
+    parent_id INT DEFAULT 0,
+    UNIQUE KEY uk_menu_url_permission (url, permission_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 8. BẢNG KHÁCH HÀNG / DOANH NGHIỆP (customers)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customers (
     customer_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(200) NOT NULL,
     phone VARCHAR(20),
-    tax_code VARCHAR(50),
+    tax_code VARCHAR(50) UNIQUE,
     email VARCHAR(150),
     status VARCHAR(50) DEFAULT 'Tiềm năng',
     industry VARCHAR(100),
@@ -70,44 +128,97 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Bảng Cơ hội bán hàng (Có trường owner_id phục vụ S1-10, S2-09, S2-10)
+-- -----------------------------------------------------------------------------
+-- 9. BẢNG GIAI ĐOẠN BÁN HÀNG PIPELINE (pipeline_stages)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pipeline_stages (
+    pipeline_stage_id INT AUTO_INCREMENT PRIMARY KEY,
+    stage_name VARCHAR(100) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    default_probability DECIMAL(5,2) NOT NULL DEFAULT 0,
+    exit_condition TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 10. BẢNG LÝ DO THẮNG / THUA THƯƠNG VỤ (win_loss_reasons)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS win_loss_reasons (
+    reason_id INT AUTO_INCREMENT PRIMARY KEY,
+    reason_type ENUM('WIN', 'LOSS') NOT NULL,
+    reason_name VARCHAR(200) NOT NULL,
+    display_order INT NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 11. BẢNG ĐỐI THỦ CẠNH TRANH (competitors)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS competitors (
+    competitor_id INT AUTO_INCREMENT PRIMARY KEY,
+    competitor_name VARCHAR(200) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 12. BẢNG CƠ HỘI BÁN HÀNG (opportunities)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NULL,
     title VARCHAR(200) NOT NULL,
-    amount DECIMAL(15, 2) DEFAULT 0,
+    amount DECIMAL(15, 2) DEFAULT 0.00,
     owner_id INT NOT NULL,
     pipeline_stage_id INT NULL,
-    probability DECIMAL(5, 2) DEFAULT 0,
+    probability DECIMAL(5, 2) DEFAULT 0.00,
+    stage VARCHAR(50) NULL,
     win_loss_reason_id INT NULL,
     competitor_id INT NULL,
     close_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES users(user_id)
-);
+    FOREIGN KEY (owner_id) REFERENCES users(user_id),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
--- 6.1. Bảng Hoạt động (Activities)
+-- -----------------------------------------------------------------------------
+-- 13. BẢNG HOẠT ĐỘNG & TƯƠNG TÁC (activities)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS activities (
     activity_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
+    activity_type VARCHAR(50) DEFAULT 'NOTE',
     owner_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES users(user_id)
-);
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_activities_customer_created (customer_id, created_at DESC),
+    FOREIGN KEY (owner_id) REFERENCES users(user_id),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6.2. Bảng Báo giá (Quotes)
+-- -----------------------------------------------------------------------------
+-- 14. BẢNG BÁO GIÁ (quotes)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS quotes (
     quote_id INT AUTO_INCREMENT PRIMARY KEY,
     quote_number VARCHAR(100) NOT NULL,
     owner_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Bảng Nhật ký thao tác (Audit log bàn giao S1-10)
+-- -----------------------------------------------------------------------------
+-- 15. BẢNG NHẬT KÝ THAO TÁC / AUDIT TRAIL (audit_logs)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     action_type VARCHAR(50) NOT NULL,
@@ -118,71 +229,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     new_value TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (performed_by) REFERENCES users(user_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Bảng lưu thông tin quyền hạn (Permissions - Module BE3)
-CREATE TABLE IF NOT EXISTS permissions (
-    permission_id INT AUTO_INCREMENT PRIMARY KEY,
-    permission_code VARCHAR(50) NOT NULL UNIQUE,
-    permission_name VARCHAR(100) NOT NULL,
-    module VARCHAR(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 9. Bảng gán quyền cho Vai trò kèm Phạm vi dữ liệu (DataScope: MY, TEAM, ALL - Module BE3)
-CREATE TABLE IF NOT EXISTS role_permissions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    role_id INT NOT NULL,
-    permission_id INT NOT NULL,
-    data_scope ENUM('MY', 'TEAM', 'ALL') NOT NULL DEFAULT 'MY',
-    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
-    FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE,
-    UNIQUE KEY uk_role_permission (role_id, permission_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 10. Bảng lưu danh sách Mục Menu điều hướng (Module BE3)
-CREATE TABLE IF NOT EXISTS menu_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    url VARCHAR(255) NOT NULL,
-    icon VARCHAR(50) DEFAULT 'fa-folder',
-    permission_code VARCHAR(50) NOT NULL,
-    display_order INT DEFAULT 0,
-    parent_id INT DEFAULT 0,
-    UNIQUE KEY uk_menu_url_permission (url, permission_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 6.3. Bảng cấu hình các giai đoạn Pipeline - S2-09
-CREATE TABLE IF NOT EXISTS pipeline_stages (
-    pipeline_stage_id INT AUTO_INCREMENT PRIMARY KEY,
-    stage_name VARCHAR(100) NOT NULL,
-    display_order INT NOT NULL DEFAULT 0,
-    default_probability DECIMAL(5,2) NOT NULL DEFAULT 0,
-    exit_condition TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- 6.4. Bảng lý do thắng/thua - S2-10
-CREATE TABLE IF NOT EXISTS win_loss_reasons (
-    reason_id INT AUTO_INCREMENT PRIMARY KEY,
-    reason_type ENUM('WIN', 'LOSS') NOT NULL,
-    reason_name VARCHAR(200) NOT NULL,
-    display_order INT NOT NULL DEFAULT 0,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- 6.5. Bảng đối thủ cạnh tranh - S2-10
-CREATE TABLE IF NOT EXISTS competitors (
-    competitor_id INT AUTO_INCREMENT PRIMARY KEY,
-    competitor_name VARCHAR(200) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- 11. Bảng Danh mục Sản phẩm / Dịch vụ (S2-05)
+-- -----------------------------------------------------------------------------
+-- 16. BẢNG SẢN PHẨM & DỊCH VỤ (products)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     product_code VARCHAR(50) NOT NULL UNIQUE,
@@ -195,9 +246,11 @@ CREATE TABLE IF NOT EXISTS products (
     status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 12. Bảng Danh mục dùng chung (S2-07)
+-- -----------------------------------------------------------------------------
+-- 17. BẢNG DANH MỤC DÙNG CHUNG (categories)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     category_type VARCHAR(50) NOT NULL,
@@ -207,9 +260,11 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_type_name (category_type, category_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 13. Bảng Định nghĩa Trường tùy chỉnh (Custom Field Definitions)
+-- -----------------------------------------------------------------------------
+-- 18. BẢNG ĐỊNH NGHĨA TRƯỜNG TÙY CHỈNH (custom_field_definitions)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS custom_field_definitions (
     field_id INT AUTO_INCREMENT PRIMARY KEY,
     entity_type VARCHAR(50) NOT NULL,
@@ -224,9 +279,11 @@ CREATE TABLE IF NOT EXISTS custom_field_definitions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uk_entity_field (entity_type, field_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 14. Bảng Giá trị Trường tùy chỉnh (Custom Field Values)
+-- -----------------------------------------------------------------------------
+-- 19. BẢNG GIÁ TRỊ TRƯỜNG TÙY CHỈNH (custom_field_values)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS custom_field_values (
     value_id INT AUTO_INCREMENT PRIMARY KEY,
     field_id INT NOT NULL,
@@ -237,37 +294,44 @@ CREATE TABLE IF NOT EXISTS custom_field_values (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (field_id) REFERENCES custom_field_definitions(field_id) ON DELETE CASCADE,
     UNIQUE KEY uk_field_entity (field_id, entity_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 15. Bảng Quan hệ Khách hàng (S3-05)
+-- -----------------------------------------------------------------------------
+-- 20. BẢNG QUAN HỆ CÔNG TY MẸ - CON / TẬP ĐOÀN (customer_relationships)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_relationships (
     relationship_id INT AUTO_INCREMENT PRIMARY KEY,
     parent_customer_id INT NOT NULL,
     child_customer_id INT NOT NULL,
-    relationship_type VARCHAR(50) DEFAULT 'SUBSIDIARY', -- SUBSIDIARY, BRANCH, AFFILIATE
+    relationship_type VARCHAR(50) DEFAULT 'SUBSIDIARY', -- SUBSIDIARY, BRANCH, MEMBER
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (parent_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (child_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     UNIQUE KEY uk_parent_child (parent_customer_id, child_customer_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 16. Bảng Lịch sử gộp Khách hàng (S3-04)
+-- -----------------------------------------------------------------------------
+-- 21. BẢNG LỊCH SỬ GỘP KHÁCH HÀNG TRÙNG LẶP (customer_merges)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_merges (
     merge_id INT AUTO_INCREMENT PRIMARY KEY,
     primary_customer_id INT NOT NULL,
     secondary_customer_id INT NOT NULL,
-    merged_data TEXT, -- JSON containing old data
+    merged_data TEXT,
     merged_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (primary_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (merged_by) REFERENCES users(user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 17. Bảng Người liên hệ (S3-02 / S30-03)
+-- -----------------------------------------------------------------------------
+-- 22. BẢNG NGƯỜI LIÊN HỆ & VAI TRÒ QUYẾT ĐỊNH MUA (contacts)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contacts (
     contact_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     full_name VARCHAR(150) NOT NULL,
+    position VARCHAR(100) NULL,
     title VARCHAR(100) NULL,
     email VARCHAR(150) NULL,
     phone VARCHAR(20) NULL,
@@ -276,9 +340,12 @@ CREATE TABLE IF NOT EXISTS contacts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 18. Bảng Lịch sử chuyển công ty của Người liên hệ (S3-02 / S30-03)
+-- -----------------------------------------------------------------------------
+-- 23. BẢNG LỊCH SỬ CHUYỂN CÔNG TY CỦA NGƯỜI LIÊN HỆ (contact_company_history)
+-- Ràng buộc: ON DELETE RESTRICT để bảo vệ dữ liệu audit trail không bị mất
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS contact_company_history (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
     contact_id INT NOT NULL,
@@ -288,12 +355,14 @@ CREATE TABLE IF NOT EXISTS contact_company_history (
     reason TEXT NULL,
     transferred_by INT NULL,
     FOREIGN KEY (contact_id) REFERENCES contacts(contact_id) ON DELETE CASCADE,
-    FOREIGN KEY (from_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
-    FOREIGN KEY (to_customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (from_customer_id) REFERENCES customers(customer_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (to_customer_id) REFERENCES customers(customer_id) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (transferred_by) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 19. Bảng Yêu cầu hỗ trợ sau bán (S3-08 / S30-09)
+-- -----------------------------------------------------------------------------
+-- 24. BẢNG YÊU CẦU HỖ TRỢ SAU BÁN (support_requests)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS support_requests (
     request_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -308,9 +377,11 @@ CREATE TABLE IF NOT EXISTS support_requests (
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 20. Bảng Chăm sóc khách hàng định kỳ (S3-09 / S30-10)
+-- -----------------------------------------------------------------------------
+-- 25. BẢNG CHĂM SÓC KHÁCH HÀNG ĐỊNH KỲ (customer_care)
+-- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS customer_care (
     care_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NULL UNIQUE,
@@ -322,5 +393,38 @@ CREATE TABLE IF NOT EXISTS customer_care (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (last_contacted_by) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- 26. BẢNG BỘ LỌC ĐÃ LƯU (saved_filters)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS saved_filters (
+    filter_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    filter_name VARCHAR(100) NOT NULL,
+    module VARCHAR(50) DEFAULT 'CUSTOMER',
+    keyword VARCHAR(200) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT NULL,
+    industry VARCHAR(100) DEFAULT NULL,
+    company_size VARCHAR(50) DEFAULT NULL,
+    region VARCHAR(100) DEFAULT NULL,
+    owner_id INT DEFAULT NULL,
+    filter_query TEXT,
+    is_default TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 27. BẢNG TỆP ĐÍNH KÈM HỒ SƠ KHÁCH HÀNG (attachments)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS attachments (
+    attachment_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size BIGINT DEFAULT 0,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_attachment_customer (customer_id),
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
