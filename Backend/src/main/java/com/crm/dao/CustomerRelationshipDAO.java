@@ -93,6 +93,25 @@ public class CustomerRelationshipDAO {
         return false;
     }
 
+    public CustomerRelationship findById(int relationshipId) {
+        String sql = "SELECT cr.*, p.customer_name AS parent_name, c.customer_name AS child_name " +
+                     "FROM customer_relationships cr " +
+                     "LEFT JOIN customers p ON cr.parent_customer_id = p.customer_id " +
+                     "LEFT JOIN customers c ON cr.child_customer_id = c.customer_id " +
+                     "WHERE cr.relationship_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, relationshipId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSet(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public boolean deleteRelationship(int relationshipId) {
         String sql = "DELETE FROM customer_relationships WHERE relationship_id = ?";
         try (Connection conn = DBConnection.getConnection();
