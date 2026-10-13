@@ -27,12 +27,6 @@
                 </div>
             </div>
 
-            <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                    <i class="fas fa-exclamation-triangle"></i> <c:out value="${errorMessage}"/>
-                </div>
-            </c:if>
-
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
                 <!-- Form tạo/sửa stage -->
                 <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: fit-content;">

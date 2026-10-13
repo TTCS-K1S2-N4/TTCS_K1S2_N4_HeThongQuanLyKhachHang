@@ -348,7 +348,9 @@
         e.preventDefault();
         const filterName = document.getElementById('leadFilterNameInput').value.trim();
         if (!filterName) {
-            alert('Vui lòng nhập tên cho bộ lọc.');
+            if (typeof window.showToast === 'function') {
+                window.showToast('warning', 'Vui lòng nhập tên cho bộ lọc.');
+            }
             return;
         }
 
@@ -371,9 +373,11 @@
         })
         .then(res => {
             if (res.ok) {
-                alert('Lưu bộ lọc "' + filterName + '" thành công!');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('success', 'Lưu bộ lọc "' + filterName + '" thành công!');
+                }
                 closeSaveLeadFilterModal();
-                window.location.reload();
+                setTimeout(() => window.location.reload(), 800);
             } else {
                 throw new Error('HTTP ' + res.status);
             }
@@ -381,7 +385,9 @@
         .catch(err => {
             console.warn('Backend endpoint /leads/filters response:', err);
             // Fallback submit
-            alert('Đã gửi yêu cầu lưu bộ lọc tới hệ thống.');
+            if (typeof window.showToast === 'function') {
+                window.showToast('info', 'Đã gửi yêu cầu lưu bộ lọc tới hệ thống.');
+            }
             closeSaveLeadFilterModal();
         })
         .finally(() => {

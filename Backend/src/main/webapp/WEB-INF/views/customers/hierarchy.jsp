@@ -1247,12 +1247,12 @@ document.addEventListener('DOMContentLoaded', function() {
             var parentId = document.getElementById('parentId').value;
             var childId = document.getElementById('childId').value;
             if (!childId) {
-                alert('Vui lòng chọn công ty con.');
+                (typeof window.showToast === 'function' ? window.showToast('warning', 'Vui lòng chọn công ty con.') : window.alert('Vui lòng chọn công ty con.'));
                 e.preventDefault();
                 return false;
             }
             if (parentId === childId) {
-                alert('Công ty mẹ và công ty con không được là cùng một khách hàng!');
+                (typeof window.showToast === 'function' ? window.showToast('warning', 'Công ty mẹ và công ty con không được là cùng một khách hàng!') : window.alert('Công ty mẹ và công ty con không được là cùng một khách hàng!'));
                 e.preventDefault();
                 return false;
             }

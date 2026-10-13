@@ -161,12 +161,7 @@
                 </div>
             </div>
 
-            <c:if test="${param.success == 'update'}">
-                <div class="alert-success">Cập nhật thông tin nhóm kinh doanh thành công! Tài khoản Trưởng nhóm đã được đồng bộ.</div>
-            </c:if>
-            <c:if test="${param.success == 'transfer'}">
-                <div class="alert-success">Chuyển nhân viên sang nhóm mới thành công! Thuộc tính users.team_id và Data Scoping đã cập nhật.</div>
-            </c:if>
+
             <c:if test="${not empty errors}">
                 <div class="alert-danger">
                     <strong>Đã xảy ra lỗi:</strong>
@@ -569,6 +564,30 @@
             filterMemberTable(filterSelect.value);
         }
     });
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var success = params.get('success');
+        var handled = false;
+
+        if (success === 'update') {
+            if (typeof window.showToast === 'function') {
+                window.showToast('success', 'Cập nhật thông tin nhóm kinh doanh thành công! Tài khoản Trưởng nhóm đã được đồng bộ.');
+            }
+            handled = true;
+        } else if (success === 'transfer') {
+            if (typeof window.showToast === 'function') {
+                window.showToast('success', 'Chuyển nhân viên sang nhóm mới thành công! Thuộc tính users.team_id và Data Scoping đã cập nhật.');
+            }
+            handled = true;
+        }
+
+        if (handled && window.history && window.history.replaceState) {
+            params.delete('success');
+            var remaining = params.toString();
+            var newUrl = window.location.pathname + (remaining ? ('?' + remaining) : '') + window.location.hash;
+            window.history.replaceState(null, document.title, newUrl);
+        }
+    })();
 </script>
 </body>
 </html>

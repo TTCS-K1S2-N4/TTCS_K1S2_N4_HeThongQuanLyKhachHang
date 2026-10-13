@@ -512,7 +512,7 @@
         }
 
         if (primaryId === secondaryId) {
-            alert('Khách hàng chính và khách hàng phụ không được trùng ID nhau!');
+            (typeof window.showToast === 'function' ? window.showToast('warning', 'Khách hàng chính và khách hàng phụ không được trùng ID nhau!') : window.alert('Khách hàng chính và khách hàng phụ không được trùng ID nhau!'));
             return;
         }
 
@@ -528,7 +528,7 @@
             const s = secondaryInput.value.trim();
             if (p && s && p === s) {
                 e.preventDefault();
-                alert('Không thể gộp một khách hàng vào chính nó!');
+                (typeof window.showToast === 'function' ? window.showToast('warning', 'Không thể gộp một khách hàng vào chính nó!') : window.alert('Không thể gộp một khách hàng vào chính nó!'));
             }
         });
     }

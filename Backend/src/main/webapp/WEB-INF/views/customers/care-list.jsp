@@ -1333,7 +1333,8 @@
                                                         <button type="button" 
                                                                 class="btn-care-contacted" 
                                                                 id="btn-care-${item.customerId}"
-                                                                onclick="openContactModal(${item.customerId}, '<c:out value="${item.customerName}"/>', this)">
+                                                                data-customer-name="<c:out value='${item.customerName}'/>"
+                                                                onclick="openContactModal(${item.customerId}, this.getAttribute('data-customer-name'), this)">
                                                             <i class="fa-solid fa-check-double"></i> Đã liên hệ
                                                         </button>
                                                         <a href="${pageContext.request.contextPath}/customers/detail?id=${item.customerId}" 
@@ -1434,8 +1435,7 @@
     </div>
 </div>
 
-<!-- Floating Toast Container -->
-<div class="exec-toast-container" id="toastContainer"></div>
+
 
 <script>
 let currentTargetCustomerId = null;
@@ -1461,7 +1461,7 @@ function handleConfigSubmit(form, event) {
     const val = parseInt(input.value, 10);
     if (isNaN(val) || val <= 0 || val > 365) {
         if (event) event.preventDefault();
-        showToast("Số ngày N phải là số nguyên dương từ 1 đến 365 ngày.", "danger");
+        (typeof window.showToast === 'function' ? window.showToast('error', "Số ngày N phải là số nguyên dương từ 1 đến 365 ngày.") : window.alert("Số ngày N phải là số nguyên dương từ 1 đến 365 ngày."));
         return false;
     }
     const btn = document.getElementById("btnSaveConfig");
@@ -1536,7 +1536,7 @@ function submitContactModal() {
         closeContactModal();
 
         if (xhr.status >= 200 && xhr.status < 300) {
-            showToast("Đã ghi nhận chăm sóc khách hàng \"" + customerName + "\" thành công!", "success");
+            (typeof window.showToast === 'function' ? window.showToast('success', "Đã ghi nhận chăm sóc khách hàng \"" + customerName + "\" thành công!") : window.alert("Đã ghi nhận chăm sóc khách hàng \"" + customerName + "\" thành công!"));
             
             const row = document.getElementById("customer-row-" + customerId);
             if (row) {
@@ -1566,7 +1566,7 @@ function submitContactModal() {
             } catch (e) {
                 if (xhr.responseText) errorMsg = xhr.responseText;
             }
-            showToast("Không thể ghi nhận: " + errorMsg, "danger");
+            (typeof window.showToast === 'function' ? window.showToast('error', "Không thể ghi nhận: " + errorMsg) : window.alert("Không thể ghi nhận: " + errorMsg));
         }
     };
 
@@ -1574,7 +1574,7 @@ function submitContactModal() {
         btnConfirm.disabled = false;
         btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> Xác nhận đã liên hệ';
         closeContactModal();
-        showToast("Lỗi kết nối mạng đến máy chủ!", "danger");
+        (typeof window.showToast === 'function' ? window.showToast('error', "Lỗi kết nối mạng đến máy chủ!") : window.alert("Lỗi kết nối mạng đến máy chủ!"));
     };
 
     xhr.send("customerId=" + encodeURIComponent(customerId) + "&note=" + encodeURIComponent(note));
@@ -1614,30 +1614,12 @@ function setQuickFilter(mode, btn) {
     filterCareTable();
 }
 
-// Modern Toast Alert
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'exec-toast ' + (type === 'danger' ? 'danger' : 'success');
-    
-    const iconClass = type === 'danger' ? 'fa-triangle-exclamation toast-icon danger' : 'fa-circle-check toast-icon success';
-    toast.innerHTML = '<i class="fa-solid ' + iconClass + '"></i><div class="toast-message-text">' + message + '</div>';
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-10px)';
-        setTimeout(() => toast.remove(), 250);
-    }, 4500);
-}
-
 // Handle URL success query param
 <c:if test="${not empty param.success}">
 window.addEventListener('DOMContentLoaded', () => {
-    showToast("Đã cập nhật cấu hình thời hạn chăm sóc định kỳ thành công!", "success");
+    const success = new URLSearchParams(window.location.search).get('success');
+    if (!success || (success === 'config' && window.__crmToastInitialized && typeof window.showToast === 'function')) return;
+    (typeof window.showToast === 'function' ? window.showToast('success', "Đã cập nhật cấu hình thời hạn chăm sóc định kỳ thành công!") : window.alert("Đã cập nhật cấu hình thời hạn chăm sóc định kỳ thành công!"));
 });
 </c:if>
 </script>

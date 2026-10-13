@@ -246,13 +246,19 @@
         .then(res => res.json())
         .then(data => {
             if (data.error) {
-                alert('Lỗi: ' + data.error);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', 'Lỗi: ' + data.error);
+                }
             } else {
                 closeModal();
                 loadFields(currentEntity);
             }
         })
-        .catch(err => alert('Lỗi kết nối máy chủ.'));
+        .catch(err => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('error', 'Lỗi kết nối máy chủ.');
+            }
+        });
     }
 </script>
 </body>

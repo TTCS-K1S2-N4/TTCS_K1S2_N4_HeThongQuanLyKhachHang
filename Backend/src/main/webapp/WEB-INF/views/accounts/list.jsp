@@ -70,22 +70,7 @@
                 </div>
             </div>
 
-            <% String errorParam = request.getParameter("error"); %>
-            <% if ("created".equals(msg) || "created_email_sent".equals(msg)) { %>
-                <div class="alert alert-success">Tạo tài khoản và gửi email thông tin mật khẩu tạm thời thành công!</div>
-            <% } else if ("created_no_email".equals(msg) || "created_email_failed".equals(msg)) { %>
-                <div class="alert alert-warning">Tạo tài khoản thành công, nhưng gửi Email mật khẩu tạm thời thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP). Bạn có thể bấm biểu tượng Gửi lại Email ở bảng dưới.</div>
-            <% } else if ("email_resent_success".equals(msg)) { %>
-                <div class="alert alert-success">Gửi lại email thông tin mật khẩu tạm thời thành công!</div>
-            <% } else if ("email_resent_failed".equals(msg)) { %>
-                <div class="alert alert-danger">Gửi lại email thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP).</div>
-            <% } else if ("unlocked".equals(msg)) { %>
-                <div class="alert alert-success">Mở khóa tài khoản thành công! Trạng thái đã được chuyển sang Hoạt động.</div>
-            <% } else if ("transferred_and_locked".equals(msg)) { %>
-                <div class="alert alert-success">Khóa và bàn giao dữ liệu tài khoản thành công.</div>
-            <% } else if ("unlock_failed".equals(errorParam)) { %>
-                <div class="alert alert-danger">Mở khóa tài khoản thất bại hoặc tài khoản không tồn tại.</div>
-            <% } %>
+
 
             <section class="card accounts-list-card">
                 <div class="card-header" style="padding: 16px 20px;">
@@ -246,5 +231,56 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var msg = params.get('msg');
+        var error = params.get('error');
+        var handled = false;
+
+        if (msg) {
+            if (msg === 'created' || msg === 'created_email_sent') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Tạo tài khoản và gửi email thông tin mật khẩu tạm thời thành công!');
+                handled = true;
+            } else if (msg === 'created_no_email' || msg === 'created_email_failed') {
+                if (typeof window.showToast === 'function') window.showToast('warning', 'Tạo tài khoản thành công, nhưng gửi Email mật khẩu tạm thời thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP). Bạn có thể bấm biểu tượng Gửi lại Email ở bảng dưới.');
+                handled = true;
+            } else if (msg === 'email_resent_success') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Gửi lại email thông tin mật khẩu tạm thời thành công!');
+                handled = true;
+            } else if (msg === 'email_resent_failed') {
+                if (typeof window.showToast === 'function') window.showToast('error', 'Gửi lại email thất bại (do chưa cấu hình hoặc lỗi kết nối SMTP).');
+                handled = true;
+            } else if (msg === 'unlocked') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Mở khóa tài khoản thành công! Trạng thái đã được chuyển sang Hoạt động.');
+                handled = true;
+            } else if (msg === 'transferred_and_locked') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Khóa và bàn giao dữ liệu tài khoản thành công.');
+                handled = true;
+            }
+        }
+
+        if (error) {
+            if (error === 'unlock_failed') {
+                if (typeof window.showToast === 'function') window.showToast('error', 'Mở khóa tài khoản thất bại hoặc tài khoản không tồn tại.');
+                handled = true;
+            } else if (error === 'notfound') {
+                if (typeof window.showToast === 'function') window.showToast('error', 'Không tìm thấy thông tin tài khoản.');
+                handled = true;
+            } else if (error === 'missing_id') {
+                if (typeof window.showToast === 'function') window.showToast('error', 'Thiếu mã định danh tài khoản.');
+                handled = true;
+            }
+        }
+
+        if (handled && window.history && window.history.replaceState) {
+            params.delete('msg');
+            params.delete('error');
+            var remaining = params.toString();
+            var newUrl = window.location.pathname + (remaining ? ('?' + remaining) : '') + window.location.hash;
+            window.history.replaceState(null, document.title, newUrl);
+        }
+    })();
+</script>
 </body>
 </html>

@@ -17,6 +17,17 @@
                 <p class="page-description">Quản lý các danh mục phân loại trong hệ thống.</p>
             </div>
 
+            <c:if test="${not empty errors}">
+                <div class="alert alert-danger" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 1rem;">
+                    <strong>Đã xảy ra lỗi:</strong>
+                    <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+                        <c:forEach var="err" items="${errors}">
+                            <li><c:out value="${err}"/></li>
+                        </c:forEach>
+                    </ul>
+                </div>
+            </c:if>
+
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
                 <!-- Form cập nhật danh mục -->
                 <div class="card">
@@ -110,5 +121,32 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var success = params.get('success');
+        var handled = false;
+
+        if (success === 'true') {
+            if (typeof window.showToast === 'function') {
+                window.showToast('success', 'Thao tác danh mục thành công!');
+            }
+            handled = true;
+        }
+
+        <c:if test="${not empty errors}">
+            if (typeof window.showToast === 'function') {
+                window.showToast('error', 'Vui lòng kiểm tra lại thông tin danh mục.');
+            }
+        </c:if>
+
+        if (handled && window.history && window.history.replaceState) {
+            params.delete('success');
+            var remaining = params.toString();
+            var newUrl = window.location.pathname + (remaining ? ('?' + remaining) : '') + window.location.hash;
+            window.history.replaceState(null, document.title, newUrl);
+        }
+    })();
+</script>
 </body>
 </html>

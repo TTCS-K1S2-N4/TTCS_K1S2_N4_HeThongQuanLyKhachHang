@@ -241,17 +241,14 @@
         },
 
         /**
-         * Helper display notification
+         * Helper display notification using Shared Toast
          */
         showNotification: function (message, type) {
-            const existingAlert = document.getElementById('leadScoringAlert');
-            if (existingAlert) {
-                existingAlert.className = 'alert ' + (type === 'error' ? 'alert-danger' : 'alert-success');
-                existingAlert.innerText = message;
-                existingAlert.style.display = 'block';
+            if (typeof window.showToast === 'function') {
+                window.showToast(type || 'info', message);
                 return;
             }
-            alert(message);
+            console.warn('[LeadScoring] Toast notification:', type, message);
         }
     };
 

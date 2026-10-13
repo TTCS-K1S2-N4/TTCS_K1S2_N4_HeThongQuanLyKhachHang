@@ -55,7 +55,7 @@
                     <div class="import-alert-error">
                         <i class="fa-solid fa-triangle-exclamation" style="font-size: 20px;"></i>
                         <div style="flex: 1;">
-                            <strong>Đã xảy ra lỗi:</strong> <c:out value="${alertMsg}"/>
+                            <strong>Đã xảy ra lỗi:</strong> <span id="toast-import-err"><c:out value="${alertMsg}"/></span>
                         </div>
                         <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:#991b1b; cursor:pointer; font-size:16px;">
                             <i class="fa-solid fa-xmark"></i>
@@ -223,14 +223,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const fileName = file.name;
         const ext = fileName.slice((fileName.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
         if (ext !== 'xlsx' && ext !== 'xls') {
-            alert('Vui lòng chỉ chọn tệp Excel (.xlsx hoặc .xls)');
+            (typeof window.showToast === 'function' ? window.showToast('warning', 'Vui lòng chỉ chọn tệp Excel (.xlsx hoặc .xls)') : window.alert('Vui lòng chỉ chọn tệp Excel (.xlsx hoặc .xls)'));
             updateFileDisplay(null);
             return;
         }
 
         // Validate size (10MB)
         if (file.size > 10 * 1024 * 1024) {
-            alert('Kích thước tệp vượt quá 10MB cho phép. Vui lòng chọn tệp nhỏ hơn.');
+            (typeof window.showToast === 'function' ? window.showToast('warning', 'Kích thước tệp vượt quá 10MB cho phép. Vui lòng chọn tệp nhỏ hơn.') : window.alert('Kích thước tệp vượt quá 10MB cho phép. Vui lòng chọn tệp nhỏ hơn.'));
             updateFileDisplay(null);
             return;
         }
@@ -293,12 +293,22 @@ document.addEventListener('DOMContentLoaded', function () {
     uploadForm.addEventListener('submit', function (e) {
         if (!fileInput.files || fileInput.files.length === 0) {
             e.preventDefault();
-            alert('Vui lòng chọn file Excel trước khi tiếp tục.');
+            (typeof window.showToast === 'function' ? window.showToast('warning', 'Vui lòng chọn file Excel trước khi tiếp tục.') : window.alert('Vui lòng chọn file Excel trước khi tiếp tục.'));
             return;
         }
         loadingOverlay.style.display = 'flex';
     });
 });
 </script>
+<c:if test="${empty errorMessage and not empty error}">
+<script>
+(function() {
+    var message = document.getElementById('toast-import-err');
+    if (message && message.textContent.trim() && typeof window.showToast === 'function') {
+        window.showToast('error', message.textContent.trim());
+    }
+})();
+</script>
+</c:if>
 </body>
 </html>
