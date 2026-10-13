@@ -46,10 +46,6 @@ public class Account {
         return accountId;
     }
 
-    public int getUserId() {
-        return accountId;
-    }
-
     public void setAccountId(int accountId) {
         this.accountId = accountId;
     }
