@@ -96,43 +96,76 @@ public class CustomerSaveServlet extends HttpServlet {
 
         Integer customerId = null;
         boolean isEdit = (idStr != null && !idStr.trim().isEmpty());
+        Customer existingCustomer = null;
         if (isEdit) {
             try {
                 customerId = Integer.parseInt(idStr.trim());
+                existingCustomer = customerDAO.findById(customerId);
+                if (existingCustomer == null) {
+                    sendErrorResponse(req, resp, HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy khách hàng cần cập nhật", isEdit, isJsonRequest, null);
+                    return;
+                }
             } catch (NumberFormatException e) {
-                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "ID khách hàng không hợp lệ", isEdit, isJsonRequest);
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "ID khách hàng không hợp lệ", isEdit, isJsonRequest, null);
                 return;
             }
         }
 
+        // Tạo đối tượng formCustomer lưu giữ trạng thái form hiện tại phòng khi có lỗi validation
+        Customer formCustomer = new Customer();
+        if (isEdit) {
+            formCustomer.setCustomerId(customerId);
+        }
+        formCustomer.setCustomerName(customerName != null ? customerName.trim() : "");
+        formCustomer.setPhone(phone != null ? phone.trim() : "");
+        formCustomer.setTaxCode(taxCode != null ? taxCode.trim() : "");
+        formCustomer.setIndustry(industry != null ? industry.trim() : "");
+        formCustomer.setSize(size != null ? size.trim() : "");
+        formCustomer.setWebsite(website != null ? website.trim() : "");
+        formCustomer.setAddress(address != null ? address.trim() : "");
+        formCustomer.setStatus(status != null ? status.trim() : "POTENTIAL");
+        if (existingCustomer != null) {
+            formCustomer.setOwnerId(existingCustomer.getOwnerId());
+            formCustomer.setOwnerName(existingCustomer.getOwnerName());
+        }
+
         if (customerName == null || customerName.trim().isEmpty()) {
-            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Tên khách hàng không được để trống", isEdit, isJsonRequest);
+            sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Tên khách hàng không được để trống", isEdit, isJsonRequest, formCustomer);
             return;
         }
 
         // Validate taxCode (UNIQUE)
         if (taxCode != null && !taxCode.trim().isEmpty()) {
             taxCode = taxCode.trim();
-            if (customerDAO.isTaxCodeExists(taxCode, customerId)) {
-                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Mã số thuế đã tồn tại trong hệ thống", isEdit, isJsonRequest);
+            boolean taxCodeChanged = true;
+            // Nếu đang chỉnh sửa và MST trùng khớp với MST hiện tại của chính khách hàng này -> Không báo lỗi trùng
+            if (isEdit && existingCustomer != null && existingCustomer.getTaxCode() != null) {
+                if (taxCode.equalsIgnoreCase(existingCustomer.getTaxCode().trim())) {
+                    taxCodeChanged = false;
+                }
+            }
+            if (taxCodeChanged && customerDAO.isTaxCodeExists(taxCode, customerId)) {
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Mã số thuế đã tồn tại trong hệ thống", isEdit, isJsonRequest, formCustomer);
                 return;
             }
         }
 
-        // Validate status (Valid statuses: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác, POTENTIAL, DEALING, CUSTOMER, STOPPED, ACTIVE)
-        List<String> validStatuses = List.of("Tiềm năng", "Đang giao dịch", "Khách hàng", "Ngừng hợp tác", "POTENTIAL", "DEALING", "CUSTOMER", "STOPPED", "ACTIVE");
+        // Validate status (Valid statuses: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác, POTENTIAL, DEALING, CUSTOMER, STOPPED, ACTIVE, Chính thức)
+        List<String> validStatuses = List.of("Tiềm năng", "Đang giao dịch", "Khách hàng", "Ngừng hợp tác", "POTENTIAL", "DEALING", "CUSTOMER", "STOPPED", "ACTIVE", "Chính thức");
         if (status == null || status.trim().isEmpty()) {
             status = "POTENTIAL";
         } else {
             status = status.trim();
             if (!validStatuses.contains(status)) {
-                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Trạng thái khách hàng không hợp lệ. Các trạng thái hợp lệ: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác", isEdit, isJsonRequest);
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Trạng thái khách hàng không hợp lệ. Các trạng thái hợp lệ: Tiềm năng, Đang giao dịch, Khách hàng, Ngừng hợp tác", isEdit, isJsonRequest, formCustomer);
                 return;
             }
             switch (status) {
                 case "Tiềm năng": status = "POTENTIAL"; break;
                 case "Đang giao dịch": status = "DEALING"; break;
-                case "Khách hàng": status = "CUSTOMER"; break;
+                case "Khách hàng":
+                case "Chính thức":
+                    status = "CUSTOMER"; break;
                 case "Ngừng hợp tác": status = "STOPPED"; break;
             }
         }
@@ -141,6 +174,7 @@ public class CustomerSaveServlet extends HttpServlet {
         if (ownerIdStr != null && !ownerIdStr.trim().isEmpty()) {
             try { ownerId = Integer.parseInt(ownerIdStr.trim()); } catch (Exception ignored) {}
         }
+        formCustomer.setOwnerId(ownerId != null ? ownerId : 1);
 
         // Extract custom fields from request parameters
         Map<Integer, String> customFieldValues = new HashMap<>();
@@ -167,7 +201,7 @@ public class CustomerSaveServlet extends HttpServlet {
                 sb.append("]}");
                 resp.getWriter().print(sb.toString());
             } else {
-                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, validationErrors.get(0), isEdit, false);
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, validationErrors.get(0), isEdit, false, formCustomer);
             }
             return;
         }
@@ -201,11 +235,11 @@ public class CustomerSaveServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/customers");
             }
         } else {
-            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể lưu khách hàng vào cơ sở dữ liệu", isEdit, isJsonRequest);
+            sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể lưu khách hàng vào cơ sở dữ liệu", isEdit, isJsonRequest, formCustomer);
         }
     }
 
-    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message, boolean isEdit, boolean isJsonRequest) throws ServletException, IOException {
+    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message, boolean isEdit, boolean isJsonRequest, Customer fallbackCustomer) throws ServletException, IOException {
         resp.setStatus(statusCode);
         String forwardPath = isEdit ? "/WEB-INF/views/customers/edit.jsp" : "/WEB-INF/views/customers/create.jsp";
         if (isJsonRequest || req.getRequestDispatcher(forwardPath) == null) {
@@ -213,8 +247,15 @@ public class CustomerSaveServlet extends HttpServlet {
             resp.getWriter().print("{\"error\":\"" + escapeJson(message) + "\"}");
         } else {
             req.setAttribute("message", message);
+            if (fallbackCustomer != null) {
+                req.setAttribute("customer", fallbackCustomer);
+            }
             req.getRequestDispatcher(forwardPath).forward(req, resp);
         }
+    }
+
+    private void sendErrorResponse(HttpServletRequest req, HttpServletResponse resp, int statusCode, String message, boolean isEdit, boolean isJsonRequest) throws ServletException, IOException {
+        sendErrorResponse(req, resp, statusCode, message, isEdit, isJsonRequest, null);
     }
 
     private void handleDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
