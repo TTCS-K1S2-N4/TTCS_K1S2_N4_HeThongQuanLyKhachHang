@@ -406,13 +406,20 @@
         .then(async res => {
             const data = await res.json();
             if (!res.ok) {
-                alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ') + (data.details ? '\n- ' + data.details.join('\n- ') : ''));
+                const errMsg = (data.error || 'Thao tác không hợp lệ') + (data.details ? ': ' + data.details.join(', ') : '');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', errMsg);
+                }
             } else {
                 closeOppModal();
                 window.location.reload();
             }
         })
-        .catch(err => alert('Lỗi kết nối máy chủ.'));
+        .catch(err => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('error', 'Lỗi kết nối máy chủ.');
+            }
+        });
     }
 </script>
 

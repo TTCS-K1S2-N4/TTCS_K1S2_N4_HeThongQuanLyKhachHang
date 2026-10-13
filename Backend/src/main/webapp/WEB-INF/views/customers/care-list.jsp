@@ -95,13 +95,6 @@
                 </div>
             </div>
 
-            <!-- Toast / Alert message -->
-            <div id="alert-toast" class="alert" style="display: none; margin-bottom: 15px;"></div>
-            <c:if test="${not empty param.success}">
-                <div class="alert alert-success" style="background: #dcfce7; color: #15803d; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
-                    Cập nhật cấu hình ngày định kỳ thành công!
-                </div>
-            </c:if>
 
             <!-- Care Config Toolbar -->
             <div class="care-toolbar">
@@ -157,7 +150,7 @@
                                                     <span class="badge-care"><c:out value="${item.careStatus}"/></span>
                                                 </td>
                                                 <td style="padding: 12px 16px; text-align: center;">
-                                                    <button type="button" class="btn-contacted" onclick="markContacted(${item.customerId}, '${item.customerName}')">
+                                                    <button type="button" class="btn-contacted" data-customer-id="${item.customerId}" data-customer-name="<c:out value='${item.customerName}'/>" onclick="markContacted(this)">
                                                         <i class="fa-solid fa-check-double"></i> Đã liên hệ
                                                     </button>
                                                 </td>
@@ -198,20 +191,28 @@
 </div>
 
 <script>
-function markContacted(customerId, customerName) {
+function markContacted(target, name) {
+    var customerId = target;
+    var customerName = name;
+    if (target && typeof target === "object") {
+        customerId = target.getAttribute("data-customer-id");
+        customerName = target.getAttribute("data-customer-name");
+    }
     if (!confirm("Xác nhận đánh dấu đã chăm sóc/liên hệ với " + customerName + "?")) {
         return;
     }
     
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "${pageContext.request.contextPath}/customers/" + customerId + "/care/mark-contacted", true);
+    xhr.open("POST", "${pageContext.request.contextPath}/customers/care/mark-contacted", true);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
     xhr.setRequestHeader("Accept", "application/json");
 
     xhr.onload = function() {
         if (xhr.status >= 200 && xhr.status < 300) {
-            showToast("Đã ghi nhận chăm sóc khách hàng " + customerName + " thành công!", "success");
+            if (typeof window.showToast === 'function') {
+                window.showToast("success", "Đã ghi nhận chăm sóc khách hàng " + customerName + " thành công!");
+            }
             var row = document.getElementById("customer-row-" + customerId);
             if (row) {
                 row.style.transition = "all 0.4s ease";
@@ -226,27 +227,28 @@ function markContacted(customerId, customerName) {
                 }, 400);
             }
         } else {
-            showToast("Không thể ghi nhận: " + (xhr.responseText || "Lỗi máy chủ"), "danger");
+            var errMsg = "Lỗi máy chủ (" + xhr.status + ")";
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res && res.message) {
+                    errMsg = res.message;
+                }
+            } catch (e) {
+                if (xhr.responseText && xhr.responseText.trim().length > 0) {
+                    errMsg = xhr.responseText;
+                }
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast("error", "Không thể ghi nhận: " + errMsg);
+            }
         }
     };
     xhr.onerror = function() {
-        showToast("Lỗi kết nối mạng!", "danger");
+        if (typeof window.showToast === 'function') {
+            window.showToast("error", "Lỗi kết nối mạng!");
+        }
     };
-    xhr.send("customerId=" + customerId + "&note=" + encodeURIComponent("Đã liên hệ chăm sóc định kỳ từ danh sách"));
-}
-
-function showToast(message, type) {
-    var toast = document.getElementById("alert-toast");
-    toast.className = "alert alert-" + type;
-    toast.style.background = type === "success" ? "#dcfce7" : "#fee2e2";
-    toast.style.color = type === "success" ? "#15803d" : "#dc2626";
-    toast.style.padding = "12px";
-    toast.style.borderRadius = "6px";
-    toast.style.display = "block";
-    toast.innerText = message;
-    setTimeout(function() {
-        toast.style.display = "none";
-    }, 4000);
+    xhr.send("customerId=" + encodeURIComponent(customerId) + "&note=" + encodeURIComponent("Đã liên hệ chăm sóc định kỳ từ danh sách"));
 }
 </script>
 </body>

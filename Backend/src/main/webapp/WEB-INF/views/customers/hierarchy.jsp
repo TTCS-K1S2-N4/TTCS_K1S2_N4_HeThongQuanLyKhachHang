@@ -15,17 +15,6 @@
         <div class="content-container">
             <h1 class="page-title">Cấu trúc công ty mẹ / con</h1>
             
-            <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger" style="padding: 12px; margin-bottom: 20px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px;">
-                    <c:out value="${errorMessage}"/>
-                </div>
-            </c:if>
-            <c:if test="${not empty successMessage}">
-                <div class="alert alert-success" style="padding: 12px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
-                    <c:out value="${successMessage}"/>
-                </div>
-            </c:if>
-            
             <c:choose>
                 <c:when test="${not empty customer}">
                     <div style="background: #ffffff; padding: 20px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -185,12 +174,20 @@ document.addEventListener('DOMContentLoaded', function() {
             var parentId = document.getElementById('parentId').value;
             var childId = document.getElementById('childId').value;
             if (!childId) {
-                alert('Vui lòng chọn công ty con.');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Vui lòng chọn công ty con.');
+                } else {
+                    alert('Vui lòng chọn công ty con.');
+                }
                 e.preventDefault();
                 return false;
             }
             if (parentId === childId) {
-                alert('Công ty mẹ và công ty con không được là cùng một khách hàng!');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Công ty mẹ và công ty con không được là cùng một khách hàng!');
+                } else {
+                    alert('Công ty mẹ và công ty con không được là cùng một khách hàng!');
+                }
                 e.preventDefault();
                 return false;
             }

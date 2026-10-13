@@ -1,5 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:if test="${empty requestScope.__crmToastComponentRendered}">
+<c:set var="__crmToastComponentRendered" value="true" scope="request"/>
 <style>
 /* TOAST NOTIFICATION STYLES */
 .toast-container {
@@ -130,6 +132,11 @@
 
 <script>
     (function() {
+        if (window.__crmToastInitialized) {
+            return;
+        }
+        window.__crmToastInitialized = true;
+
         const ICONS = {
             success: '<i class="fas fa-check-circle"></i>',
             error: '<i class="fas fa-exclamation-circle"></i>',
@@ -144,11 +151,32 @@
             info: 'Thông báo'
         };
 
+        const VALID_TYPES = ['success', 'error', 'warning', 'info'];
+
         window.showToast = function(type, message, autoDismiss = true) {
+            // Defensive handling if caller passed (message, type)
+            if (VALID_TYPES.includes(message) && !VALID_TYPES.includes(type)) {
+                const temp = type;
+                type = message;
+                message = temp;
+            }
+            if (type === 'danger') {
+                type = 'error';
+            }
+            if (!VALID_TYPES.includes(type)) {
+                type = 'info';
+            }
+
             if (!message) return;
             
-            const container = document.getElementById('toast-container');
-            if (!container) return;
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container';
+                container.setAttribute('aria-live', 'polite');
+                (document.body || document.documentElement).appendChild(container);
+            }
 
             const toast = document.createElement('div');
             toast.className = 'toast toast-' + type;
@@ -197,22 +225,47 @@
             }
         };
 
-        // Automatically show toasts if global variables are set from backend
-        document.addEventListener('DOMContentLoaded', function() {
+        function handleInitialToasts() {
+            // Automatically show toasts if global variables are set from backend
             const successInputs = document.querySelectorAll('.global-success-message');
             successInputs.forEach(input => {
                 if (input.value && input.value.trim() !== '') {
-                    showToast('success', input.value.trim());
+                    window.showToast('success', input.value.trim());
                 }
             });
             
             const errorInputs = document.querySelectorAll('.global-error-message');
             errorInputs.forEach(input => {
                 if (input.value && input.value.trim() !== '') {
-                    showToast('error', input.value.trim());
+                    window.showToast('error', input.value.trim());
                 }
             });
-        });
+
+            // S3-09: Specific handling for /customers/care with success=config
+            try {
+                const currentPath = window.location.pathname;
+                if (currentPath.indexOf('/customers/care') !== -1) {
+                    const searchParams = new URLSearchParams(window.location.search);
+                    if (searchParams.get('success') === 'config') {
+                        window.showToast('success', 'Cập nhật cấu hình ngày định kỳ thành công!');
+                        if (window.history && window.history.replaceState) {
+                            searchParams.delete('success');
+                            const remainingQuery = searchParams.toString();
+                            const newUrl = window.location.pathname + (remainingQuery ? ('?' + remainingQuery) : '') + window.location.hash;
+                            window.history.replaceState(null, document.title, newUrl);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Error handling URL toast notification:', e);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', handleInitialToasts);
+        } else {
+            handleInitialToasts();
+        }
     })();
 </script>
 
@@ -222,3 +275,4 @@
 <% if (request.getAttribute("loginError") != null) { %>
     <input type="hidden" class="global-error-message" value="<%= request.getAttribute("loginError") %>">
 <% } %>
+</c:if>

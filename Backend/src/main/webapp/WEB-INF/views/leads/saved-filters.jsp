@@ -36,17 +36,6 @@
                 </div>
             </div>
 
-            <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger" style="margin-bottom: 16px;">
-                    <i class="fas fa-exclamation-circle"></i> <c:out value="${errorMessage}"/>
-                </div>
-            </c:if>
-            <c:if test="${not empty successMessage}">
-                <div class="alert alert-success" style="margin-bottom: 16px;">
-                    <i class="fas fa-check-circle"></i> <c:out value="${successMessage}"/>
-                </div>
-            </c:if>
-
             <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h2 class="card-title" style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
@@ -143,5 +132,44 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlErr = urlParams.get('error');
+            var urlSuccess = urlParams.get('success');
+            var urlMsg = urlParams.get('msg');
+            var hasParamToast = false;
+
+            if (urlErr) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', urlErr === '1' ? 'Đã xảy ra lỗi khi xử lý bộ lọc.' : urlErr);
+                }
+                urlParams.delete('error');
+                hasParamToast = true;
+            } else if (urlSuccess) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('success', urlSuccess === '1' || urlSuccess === 'true' ? 'Thao tác bộ lọc thành công!' : urlSuccess);
+                }
+                urlParams.delete('success');
+                hasParamToast = true;
+            } else if (urlMsg) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('info', urlMsg);
+                }
+                urlParams.delete('msg');
+                hasParamToast = true;
+            }
+
+            if (hasParamToast && window.history && window.history.replaceState) {
+                var remainingQuery = urlParams.toString();
+                var newUrl = window.location.pathname + (remainingQuery ? ('?' + remainingQuery) : '') + window.location.hash;
+                window.history.replaceState(null, document.title, newUrl);
+            }
+        } catch (e) {
+            console.error('Error handling URL params in leads/saved-filters.jsp:', e);
+        }
+    })();
+</script>
 </body>
 </html>

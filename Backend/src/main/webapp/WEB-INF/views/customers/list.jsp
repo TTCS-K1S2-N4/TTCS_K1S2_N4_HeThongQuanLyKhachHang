@@ -489,10 +489,16 @@
                 if (data.success) {
                     window.location.reload();
                 } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể xóa bộ lọc.'));
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('error', data.message || 'Không thể xóa bộ lọc.');
+                    }
                 }
             })
-            .catch(() => alert('Lỗi kết nối máy chủ.'));
+            .catch(() => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', 'Lỗi kết nối máy chủ.');
+                }
+            });
         }
 
         function openSaveFilterModal() {
@@ -524,7 +530,9 @@
             e.preventDefault();
             const filterName = document.getElementById('filterNameInput').value.trim();
             if (!filterName) {
-                alert('Vui lòng nhập tên bộ lọc.');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Vui lòng nhập tên bộ lọc.');
+                }
                 return;
             }
 
@@ -549,10 +557,16 @@
                     closeSaveFilterModal();
                     filterForm.submit();
                 } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể lưu bộ lọc.'));
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('error', data.message || 'Không thể lưu bộ lọc.');
+                    }
                 }
             })
-            .catch(() => alert('Lỗi kết nối máy chủ.'));
+            .catch(() => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', 'Lỗi kết nối máy chủ.');
+                }
+            });
         }
 
         function openCustomerModal() {
@@ -578,13 +592,20 @@
             .then(async res => {
                 const data = await res.json();
                 if (!res.ok) {
-                    alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ') + (data.details ? '\n- ' + data.details.join('\n- ') : ''));
+                    var errMsg = (data.error || 'Thao tác không hợp lệ') + (data.details ? ': ' + data.details.join(', ') : '');
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('error', errMsg);
+                    }
                 } else {
                     closeCustomerModal();
                     window.location.reload();
                 }
             })
-            .catch(err => alert('Lỗi kết nối máy chủ.'));
+            .catch(err => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', 'Lỗi kết nối máy chủ.');
+                }
+            });
         }
     </script>
 </body>

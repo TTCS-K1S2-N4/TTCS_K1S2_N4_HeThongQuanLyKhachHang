@@ -18,10 +18,6 @@
                     <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách khách hàng
                 </a>
             </div>
-            
-            <c:if test="${not empty error}">
-                <div class="alert alert-danger">${error}</div>
-            </c:if>
 
             <div class="card mb-4">
                 <div class="card-header">
@@ -51,5 +47,34 @@
         </div>
     </main>
 </div>
+<c:if test="${not empty error}">
+    <input type="hidden" id="toast-import-err" value="<c:out value='${error}'/>">
+</c:if>
+<script>
+    (function() {
+        var errInput = document.getElementById('toast-import-err');
+        if (errInput && errInput.value && typeof window.showToast === 'function') {
+            window.showToast('error', errInput.value);
+        }
+
+        var form = document.querySelector('form');
+        var fileInput = document.getElementById('importFile');
+        if (form && fileInput) {
+            form.addEventListener('submit', function(e) {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    var fileName = fileInput.files[0].name;
+                    if (!fileName.toLowerCase().endsWith('.xlsx')) {
+                        e.preventDefault();
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('warning', 'Vui lòng chọn file Excel đúng định dạng (.xlsx)');
+                        } else {
+                            alert('Vui lòng chọn file Excel đúng định dạng (.xlsx)');
+                        }
+                    }
+                }
+            });
+        }
+    })();
+</script>
 </body>
 </html>

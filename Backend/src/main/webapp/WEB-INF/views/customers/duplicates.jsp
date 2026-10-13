@@ -13,15 +13,6 @@
     <main class="main-content">
         <div class="content-container">
             <h1 class="page-title">Danh sách khách hàng trùng lặp</h1>
-            <c:if test="${param.error == '1'}">
-                <div class="alert alert-danger">Thao tác gộp khách hàng không thành công. Vui lòng thử lại.</div>
-            </c:if>
-            <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger"><c:out value="${errorMessage}"/></div>
-            </c:if>
-            <c:if test="${not empty successMessage}">
-                <div class="alert alert-success"><c:out value="${successMessage}"/></div>
-            </c:if>
 
             <table class="table" style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <thead>
@@ -85,5 +76,46 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var errParam = urlParams.get('error');
+            var successParam = urlParams.get('success');
+            var msgParam = urlParams.get('msg');
+            var hasParamToast = false;
+
+            if (errParam) {
+                var errMsg = (errParam === '1') ? 'Thao tác gộp khách hàng không thành công. Vui lòng thử lại.' : errParam;
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', errMsg);
+                }
+                urlParams.delete('error');
+                hasParamToast = true;
+            } else if (successParam) {
+                var succMsg = (successParam === '1' || successParam === 'true') ? 'Thao tác thành công!' : successParam;
+                if (typeof window.showToast === 'function') {
+                    window.showToast('success', succMsg);
+                }
+                urlParams.delete('success');
+                hasParamToast = true;
+            } else if (msgParam) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('info', msgParam);
+                }
+                urlParams.delete('msg');
+                hasParamToast = true;
+            }
+
+            if (hasParamToast && window.history && window.history.replaceState) {
+                var remainingQuery = urlParams.toString();
+                var newUrl = window.location.pathname + (remainingQuery ? ('?' + remainingQuery) : '') + window.location.hash;
+                window.history.replaceState(null, document.title, newUrl);
+            }
+        } catch (e) {
+            console.error('Error handling URL params in duplicates.jsp:', e);
+        }
+    })();
+</script>
 </body>
 </html>

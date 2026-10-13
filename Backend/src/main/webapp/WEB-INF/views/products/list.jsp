@@ -131,6 +131,45 @@
         document.body.appendChild(form);
         form.submit();
     }
+
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var success = params.get('success');
+        var error = params.get('error');
+        var handled = false;
+
+        if (success) {
+            if (success === 'create') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Tạo mới sản phẩm thành công!');
+                handled = true;
+            } else if (success === 'status') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Cập nhật trạng thái sản phẩm thành công!');
+                handled = true;
+            } else if (success === 'delete') {
+                if (typeof window.showToast === 'function') window.showToast('success', 'Xóa sản phẩm thành công!');
+                handled = true;
+            }
+        }
+
+        if (error) {
+            if (error === 'status') {
+                if (typeof window.showToast === 'function') window.showToast('error', 'Cập nhật trạng thái sản phẩm thất bại.');
+                handled = true;
+            } else {
+                var errorMsg = (error && error.trim()) ? error : 'Thao tác sản phẩm thất bại.';
+                if (typeof window.showToast === 'function') window.showToast('error', errorMsg);
+                handled = true;
+            }
+        }
+
+        if (handled && window.history && window.history.replaceState) {
+            params.delete('success');
+            params.delete('error');
+            var remaining = params.toString();
+            var newUrl = window.location.pathname + (remaining ? ('?' + remaining) : '') + window.location.hash;
+            window.history.replaceState(null, document.title, newUrl);
+        }
+    })();
 </script>
 </body>
 </html>

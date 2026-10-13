@@ -110,5 +110,16 @@
         </div>
     </main>
 </div>
+<% if (request.getAttribute("error") != null) { 
+    String errStr = (String) request.getAttribute("error");
+%>
+<script>
+    (function() {
+        if (typeof window.showToast === 'function') {
+            window.showToast('error', '<%= errStr.replace("'", "\\'").replace("\r", "").replace("\n", " ") %>');
+        }
+    })();
+</script>
+<% } %>
 </body>
 </html>

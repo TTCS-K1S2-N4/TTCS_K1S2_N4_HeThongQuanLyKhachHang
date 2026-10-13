@@ -298,7 +298,9 @@
             }
         })
         .catch(err => {
-            alert('Lỗi: ' + err.message);
+            if (typeof window.showToast === 'function') {
+                window.showToast('error', 'Lỗi: ' + (err.message || 'Không thể xem trước dữ liệu.'));
+            }
         })
         .finally(() => {
             btnPreview.disabled = false;
@@ -356,7 +358,9 @@
                 currentFile = null;
             })
             .catch(err => {
-                alert('Lỗi khi thực hiện import: ' + err.message);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', 'Lỗi khi thực hiện import: ' + (err.message || 'Hệ thống gặp lỗi.'));
+                }
                 btnExecute.disabled = false;
                 btnExecute.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Xác nhận Thực hiện Import';
             });

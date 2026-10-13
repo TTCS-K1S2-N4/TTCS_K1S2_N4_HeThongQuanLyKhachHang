@@ -133,5 +133,27 @@
         </div>
     </main>
 </div>
+<c:if test="${not empty message}">
+    <input type="hidden" id="toast-customer-edit-msg" value="<c:out value='${message}'/>">
+    <script>
+        (function() {
+            var msgEl = document.getElementById('toast-customer-edit-msg');
+            if (msgEl && msgEl.value && typeof window.showToast === 'function') {
+                window.showToast('error', msgEl.value);
+            }
+        })();
+    </script>
+</c:if>
+<c:if test="${not empty error}">
+    <input type="hidden" id="toast-customer-edit-err" value="<c:out value='${error}'/>">
+    <script>
+        (function() {
+            var errEl = document.getElementById('toast-customer-edit-err');
+            if (errEl && errEl.value && typeof window.showToast === 'function') {
+                window.showToast('error', errEl.value);
+            }
+        })();
+    </script>
+</c:if>
 </body>
 </html>

@@ -118,5 +118,14 @@
         </div>
     </main>
 </div>
+<% if (error != null) { %>
+<script>
+    (function() {
+        if (typeof window.showToast === 'function') {
+            window.showToast('error', '<%= error.replace("'", "\\'").replace("\r", "").replace("\n", " ") %>');
+        }
+    })();
+</script>
+<% } %>
 </body>
 </html>

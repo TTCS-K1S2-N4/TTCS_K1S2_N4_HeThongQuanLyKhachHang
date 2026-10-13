@@ -78,18 +78,6 @@
 
                             <h1 class="page-title">So sánh và Gộp khách hàng</h1>
 
-                            <c:if test="${not empty errorMessage}">
-                                <div class="alert alert-danger">
-                                    <c:out value="${errorMessage}" />
-                                </div>
-                            </c:if>
-
-                            <c:if test="${not empty successMessage}">
-                                <div class="alert alert-success">
-                                    <c:out value="${successMessage}" />
-                                </div>
-                            </c:if>
-
                             <div class="alert alert-warning merge-warning">
                                 <strong>Cảnh báo:</strong>
                                 Hành động gộp khách hàng không thể hoàn tác.
@@ -298,7 +286,11 @@
                             }
 
                             if (primaryId === secondaryId) {
-                                alert('Khách hàng chính và khách hàng phụ không được trùng ID nhau!');
+                                if (typeof window.showToast === 'function') {
+                                    window.showToast('warning', 'Khách hàng chính và khách hàng phụ không được trùng ID nhau!');
+                                } else {
+                                    alert('Khách hàng chính và khách hàng phụ không được trùng ID nhau!');
+                                }
                                 return;
                             }
 
@@ -320,7 +312,11 @@
                                 const s = secondaryInput.value.trim();
                                 if (p && s && p === s) {
                                     e.preventDefault();
-                                    alert('Không thể gộp một khách hàng vào chính nó!');
+                                    if (typeof window.showToast === 'function') {
+                                        window.showToast('warning', 'Không thể gộp một khách hàng vào chính nó!');
+                                    } else {
+                                        alert('Không thể gộp một khách hàng vào chính nó!');
+                                    }
                                 }
                             });
                         }

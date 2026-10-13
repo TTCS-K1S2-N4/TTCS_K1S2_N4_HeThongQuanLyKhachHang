@@ -36,8 +36,6 @@
                 </div>
             </div>
 
-            <div id="leadScoringAlert" class="alert" style="display: none; margin-bottom: 16px;"></div>
-
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-danger" style="margin-bottom: 16px;">
                     <i class="fas fa-exclamation-circle"></i> <c:out value="${errorMessage}"/>
