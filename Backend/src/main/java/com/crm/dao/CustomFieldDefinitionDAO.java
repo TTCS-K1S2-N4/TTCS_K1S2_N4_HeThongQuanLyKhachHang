@@ -18,18 +18,23 @@ public class CustomFieldDefinitionDAO {
 
     public List<CustomFieldDefinition> getDefinitions(String entityType, String status) {
         List<CustomFieldDefinition> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT * FROM custom_field_definitions WHERE 1=1 ");
+        StringBuilder sql = new StringBuilder(
+                "SELECT d.*, COUNT(v.value_id) AS usage_count " +
+                "FROM custom_field_definitions d " +
+                "LEFT JOIN custom_field_values v ON d.field_id = v.field_id " +
+                "WHERE 1=1 "
+        );
         List<Object> params = new ArrayList<>();
 
         if (entityType != null && !entityType.trim().isEmpty()) {
-            sql.append("AND entity_type = ? ");
+            sql.append("AND d.entity_type = ? ");
             params.add(entityType.trim());
         }
         if (status != null && !status.trim().isEmpty()) {
-            sql.append("AND status = ? ");
+            sql.append("AND d.status = ? ");
             params.add(status.trim());
         }
-        sql.append("ORDER BY display_order ASC, field_id ASC");
+        sql.append("GROUP BY d.field_id ORDER BY d.display_order ASC, d.field_id ASC");
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
@@ -157,6 +162,11 @@ public class CustomFieldDefinitionDAO {
         def.setStatus(rs.getString("status"));
         def.setCreatedAt(rs.getTimestamp("created_at"));
         def.setUpdatedAt(rs.getTimestamp("updated_at"));
+        try {
+            def.setUsageCount(rs.getInt("usage_count"));
+        } catch (SQLException ignored) {
+            // Field usage_count might not be in query result
+        }
         return def;
     }
 }

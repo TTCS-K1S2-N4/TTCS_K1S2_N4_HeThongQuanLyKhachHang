@@ -99,8 +99,11 @@ public class ProductListServlet extends HttpServlet {
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
         if (totalPages < 1) totalPages = 1;
 
+        boolean canManage = productService.canManageProducts(currentUser);
+
         req.setAttribute("products", products);
         req.setAttribute("canAccessCostPrice", canViewCost);
+        req.setAttribute("canManageProducts", canManage);
         req.setAttribute("totalItems", totalItems);
         req.setAttribute("totalPages", totalPages);
         req.setAttribute("currentPage", page);

@@ -1,7 +1,10 @@
 package com.crm.controller.customer;
 
+import com.crm.dao.AccountDAO;
 import com.crm.dao.CustomerDAO;
 import com.crm.model.Customer;
+import com.crm.model.CustomFieldDefinition;
+import com.crm.model.CustomFieldValue;
 import com.crm.service.CustomFieldService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,6 +22,7 @@ import java.util.Map;
 public class CustomerSaveServlet extends HttpServlet {
 
     private final CustomerDAO customerDAO = new CustomerDAO();
+    private final AccountDAO accountDAO = new AccountDAO();
     private final CustomFieldService customFieldService = new CustomFieldService();
 
     @Override
@@ -27,6 +31,13 @@ public class CustomerSaveServlet extends HttpServlet {
         Integer userId = (Integer) req.getSession().getAttribute("userId");
         if (userId == null) {
             resp.sendRedirect(req.getContextPath() + "/auth/login");
+            return;
+        }
+
+        if (uri.endsWith("/create")) {
+            req.setAttribute("salesUsers", accountDAO.getAllActiveAccounts());
+            req.setAttribute("customFieldDefinitions", customFieldService.getDefinitions("CUSTOMER", "ACTIVE"));
+            req.getRequestDispatcher("/WEB-INF/views/customers/create.jsp").forward(req, resp);
             return;
         }
 
@@ -40,7 +51,18 @@ public class CustomerSaveServlet extends HttpServlet {
                     int id = Integer.parseInt(idStr.trim());
                     Customer customer = customerDAO.findById(id);
                     if (customer != null) {
+                        req.setAttribute("salesUsers", accountDAO.getAllActiveAccounts());
                         req.setAttribute("customer", customer);
+                        List<CustomFieldDefinition> customFieldDefs = customFieldService.getDefinitions("CUSTOMER", "ACTIVE");
+                        req.setAttribute("customFieldDefinitions", customFieldDefs);
+                        List<CustomFieldValue> cfValues = customFieldService.getValuesByEntity("CUSTOMER", id);
+                        Map<Integer, String> customFieldValuesMap = new HashMap<>();
+                        if (cfValues != null) {
+                            for (CustomFieldValue val : cfValues) {
+                                customFieldValuesMap.put(val.getFieldId(), val.getFieldValue());
+                            }
+                        }
+                        req.setAttribute("customFieldValuesMap", customFieldValuesMap);
                         req.getRequestDispatcher("/WEB-INF/views/customers/edit.jsp").forward(req, resp);
                         return;
                     }
@@ -72,6 +94,7 @@ public class CustomerSaveServlet extends HttpServlet {
     }
 
     private void handleSave(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Integer userId = (Integer) req.getSession().getAttribute("userId");
         boolean isJsonRequest = req.getRequestURI().contains("/api/")
                 || "XMLHttpRequest".equals(req.getHeader("X-Requested-With"))
                 || (req.getHeader("Accept") != null && req.getHeader("Accept").contains("application/json"));
@@ -221,6 +244,19 @@ public class CustomerSaveServlet extends HttpServlet {
         if (isEdit) {
             customer.setCustomerId(customerId);
             success = customerDAO.update(customer);
+            if (success && existingCustomer != null && existingCustomer.getOwnerId() != customer.getOwnerId()) {
+                try {
+                    com.crm.model.AuditLog ownerLog = new com.crm.model.AuditLog();
+                    ownerLog.setAction("DATA_OWNERSHIP_TRANSFER");
+                    ownerLog.setUserId(userId != null ? userId : 1);
+                    ownerLog.setTargetUserId(customer.getCustomerId());
+                    ownerLog.setDetails("Bàn giao quyền phụ trách khách hàng " + customer.getCustomerName());
+                    ownerLog.setOldValue("Người phụ trách cũ: " + (existingCustomer.getOwnerName() != null ? existingCustomer.getOwnerName() : ("ID " + existingCustomer.getOwnerId())));
+                    com.crm.model.Account newOwner = accountDAO.getAccountById(customer.getOwnerId());
+                    ownerLog.setNewValue("Người phụ trách mới: " + (newOwner != null ? newOwner.getFullName() : ("ID " + customer.getOwnerId())));
+                    new com.crm.dao.AuditLogDAO().insertLog(ownerLog);
+                } catch (Exception ignored) {}
+            }
         } else {
             success = customerDAO.insert(customer);
         }
@@ -246,7 +282,9 @@ public class CustomerSaveServlet extends HttpServlet {
             resp.setContentType("application/json;charset=UTF-8");
             resp.getWriter().print("{\"error\":\"" + escapeJson(message) + "\"}");
         } else {
+            req.setAttribute("salesUsers", accountDAO.getAllActiveAccounts());
             req.setAttribute("message", message);
+            req.setAttribute("customFieldDefinitions", customFieldService.getDefinitions("CUSTOMER", "ACTIVE"));
             if (fallbackCustomer != null) {
                 req.setAttribute("customer", fallbackCustomer);
             }

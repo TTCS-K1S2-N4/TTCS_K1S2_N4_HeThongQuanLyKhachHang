@@ -430,11 +430,17 @@ INSERT INTO custom_field_definitions (field_id, entity_type, field_key, field_la
 (1, 'CUSTOMER', 'tax_bracket',       'Phân nhóm Doanh nghiệp', 'SELECT', 'Doanh nghiệp lớn (Hạng A),Doanh nghiệp vừa (Hạng B),Doanh nghiệp nhỏ (Hạng C)', 0, 'Doanh nghiệp lớn (Hạng A)', 1, 'ACTIVE'),
 (2, 'CUSTOMER', 'facebook_fanpage',  'Trang Fanpage Doanh nghiệp', 'TEXT',   NULL, 0, NULL, 2, 'ACTIVE'),
 (3, 'CUSTOMER', 'annual_revenue_usd','Doanh thu Ước tính (USD)','NUMBER', NULL, 0, '0', 3, 'ACTIVE'),
-(4, 'CUSTOMER', 'erp_system',        'Hệ thống ERP đang dùng', 'TEXT',   NULL, 0, 'Chưa có', 4, 'ACTIVE')
+(4, 'CUSTOMER', 'erp_system',        'Hệ thống ERP đang dùng', 'TEXT',   NULL, 0, 'Chưa có', 4, 'ACTIVE'),
+(5, 'CUSTOMER', 'contract_renewal_date', 'Hạn gia hạn hợp đồng', 'DATE', NULL, 0, NULL, 5, 'ACTIVE'),
+(6, 'OPPORTUNITY', 'deploy_deadline', 'Hạn hoàn thành triển khai', 'DATE', NULL, 0, NULL, 1, 'ACTIVE'),
+(7, 'OPPORTUNITY', 'software_edition', 'Phiên bản phần mềm dự kiến', 'SELECT', 'Standard Cloud,Enterprise Dedicated,On-Premise Custom', 1, 'Enterprise Dedicated', 2, 'ACTIVE'),
+(8, 'OPPORTUNITY', 'user_licenses', 'Số lượng tài khoản dự kiến', 'NUMBER', NULL, 0, '50', 3, 'ACTIVE'),
+(9, 'OPPORTUNITY', 'procurement_poc', 'Đầu mối mua sắm phía khách hàng', 'TEXT', NULL, 0, NULL, 4, 'ACTIVE')
 ON DUPLICATE KEY UPDATE 
     field_label = VALUES(field_label), 
     field_type = VALUES(field_type), 
-    options = VALUES(options);
+    options = VALUES(options),
+    is_required = VALUES(is_required);
 
 -- =============================================================================
 -- 20. BẢNG GIÁ TRỊ TRƯỜNG TÙY CHỈNH (custom_field_values)

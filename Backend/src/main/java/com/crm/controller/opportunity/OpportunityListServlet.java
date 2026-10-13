@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/deals")
+@WebServlet(urlPatterns = { "/deals", "/opportunities" })
 public class OpportunityListServlet extends HttpServlet {
     private OpportunityDAO dao = new OpportunityDAO();
 

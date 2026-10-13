@@ -1,5 +1,7 @@
 package com.crm.controller.audit;
 
+import com.crm.dao.AccountDAO;
+import com.crm.model.Account;
 import com.crm.model.AuditLog;
 import com.crm.service.AuditLogService;
 
@@ -16,10 +18,12 @@ import java.util.List;
 public class AuditLogPageServlet extends HttpServlet {
 
     private AuditLogService auditLogService;
+    private AccountDAO accountDAO;
 
     @Override
     public void init() {
         this.auditLogService = new AuditLogService();
+        this.accountDAO = new AccountDAO();
     }
 
     @Override
@@ -68,11 +72,26 @@ public class AuditLogPageServlet extends HttpServlet {
         int totalPages = (pageSize > 0) ? (int) Math.ceil((double) totalItems / pageSize) : 1;
         if (totalPages <= 0) totalPages = 1;
 
+        // Metric stats for sensitive entities
+        int discountCount = auditLogService.getTotalAuditLogs(null, "DISCOUNT", null, null);
+        int targetCount = auditLogService.getTotalAuditLogs(null, "KPI", null, null);
+        int ownershipCount = auditLogService.getTotalAuditLogs(null, "DATA_OWNERSHIP", null, null);
+        int roleCount = auditLogService.getTotalAuditLogs(null, "USER_ROLE", null, null);
+
+        // Load active users for dropdown filter
+        List<Account> userList = accountDAO.getAllActiveAccounts();
+
         request.setAttribute("auditLogs", auditLogs);
         request.setAttribute("totalItems", totalItems);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("currentPage", page);
         request.setAttribute("pageSize", pageSize);
+
+        request.setAttribute("userList", userList);
+        request.setAttribute("discountCount", discountCount);
+        request.setAttribute("targetCount", targetCount);
+        request.setAttribute("ownershipCount", ownershipCount);
+        request.setAttribute("roleCount", roleCount);
 
         request.setAttribute("userIdParam", userIdStr != null ? userIdStr : "");
         request.setAttribute("entityTypeParam", entityType != null ? entityType : "");

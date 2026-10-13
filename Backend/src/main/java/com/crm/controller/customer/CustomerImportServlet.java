@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet({ "/customers/import", "/customers/import/template", "/customers/import/preview", "/customers/import/execute" })
+@WebServlet({ "/customers/import", "/customers/import/template", "/customers/import/preview", "/customers/import/execute", "/customers/import-preview" })
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024,      // 1MB
     maxFileSize = 1024 * 1024 * 10,        // 10MB
@@ -55,7 +55,7 @@ public class CustomerImportServlet extends HttpServlet {
             return;
         }
 
-        if ("/customers/import".equals(path)) {
+        if ("/customers/import".equals(path) || "/customers/import/preview".equals(path) || "/customers/import-preview".equals(path)) {
             request.getRequestDispatcher("/WEB-INF/views/customers/import.jsp").forward(request, response);
         } else if ("/customers/import/template".equals(path)) {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

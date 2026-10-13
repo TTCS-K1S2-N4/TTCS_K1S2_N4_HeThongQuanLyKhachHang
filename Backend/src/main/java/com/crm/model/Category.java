@@ -28,6 +28,7 @@ public class Category {
     private String categoryName;
     private int displayOrder;
     private String status;
+    private int usageCount;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -98,5 +99,13 @@ public class Category {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public int getUsageCount() {
+        return usageCount;
+    }
+
+    public void setUsageCount(int usageCount) {
+        this.usageCount = usageCount;
     }
 }
