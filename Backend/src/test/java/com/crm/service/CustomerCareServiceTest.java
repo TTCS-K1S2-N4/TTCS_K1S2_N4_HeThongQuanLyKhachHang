@@ -81,5 +81,60 @@ public class CustomerCareServiceTest {
         assertThrows(ValidationException.class, () -> {
             careService.updateConfiguredInactiveDays(0, 1, Collections.singletonList(1));
         });
+        assertThrows(ValidationException.class, () -> {
+            careService.updateConfiguredInactiveDays(-10, 1, Collections.singletonList(1));
+        });
+        assertThrows(ValidationException.class, () -> {
+            careService.updateConfiguredInactiveDays(366, 1, Collections.singletonList(1));
+        });
+    }
+
+    @Test
+    public void testUpdateConfiguredInactiveDays_Valid_Success() throws Exception {
+        when(mockCareDAO.updateInactiveThreshold(45)).thenReturn(true);
+        boolean result = careService.updateConfiguredInactiveDays(45, 1, Collections.singletonList(1));
+        assertTrue(result);
+        verify(mockCareDAO).updateInactiveThreshold(45);
+    }
+
+    @Test
+    public void testMarkContacted_InvalidCustomerId_ThrowsValidationException() {
+        assertThrows(ValidationException.class, () -> {
+            careService.markContacted(0, "note", 1, Collections.singletonList(1));
+        });
+        assertThrows(ValidationException.class, () -> {
+            careService.markContacted(-5, "note", 1, Collections.singletonList(1));
+        });
+    }
+
+    @Test
+    public void testMarkContacted_CustomerNotFound_ThrowsValidationException() {
+        when(mockCustomerDAO.findById(999)).thenReturn(null);
+        assertThrows(ValidationException.class, () -> {
+            careService.markContacted(999, "note", 1, Collections.singletonList(1));
+        });
+    }
+
+    @Test
+    public void testMarkContacted_RecordFailed_ThrowsValidationException() {
+        Customer c = new Customer();
+        c.setCustomerId(101);
+        c.setOwnerId(4);
+
+        when(mockCustomerDAO.findById(101)).thenReturn(c);
+        when(mockCareDAO.recordContacted(101, 1, "note")).thenReturn(false);
+
+        assertThrows(ValidationException.class, () -> {
+            careService.markContacted(101, "note", 1, Collections.singletonList(1));
+        });
+    }
+
+    @Test
+    public void testCountInactiveCustomers_ReturnsCount() {
+        when(mockCareDAO.getInactiveThreshold()).thenReturn(30);
+        when(mockPermissionService.getAccessibleAccountIdsForRoles(1, Collections.singletonList(1), "ACCOUNT"))
+                .thenReturn(Collections.singletonList(4));
+        int count = careService.countInactiveCustomers(30, 1, Collections.singletonList(1));
+        assertEquals(5, count);
     }
 }

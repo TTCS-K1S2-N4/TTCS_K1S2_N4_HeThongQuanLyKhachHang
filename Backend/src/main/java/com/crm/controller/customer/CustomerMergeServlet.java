@@ -101,6 +101,14 @@ public class CustomerMergeServlet extends HttpServlet {
                 rIds = rId != null ? java.util.Collections.singletonList(rId) : new java.util.ArrayList<>();
             }
             
+            // Backlog: Chỉ Trưởng nhóm trở lên được thực hiện gộp (TEAM_LEAD, DIRECTOR, ADMIN hoặc có quyền ACCOUNT_DELETE)
+            boolean isTeamLeadOrAbove = permissionService.hasPermissionForRoles(rIds, "ACCOUNT_DELETE") ||
+                                       rIds.contains(1) || rIds.contains(3) || rIds.contains(4);
+            if (!isTeamLeadOrAbove) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chỉ Trưởng nhóm kinh doanh trở lên mới có quyền thực hiện gộp khách hàng.");
+                return;
+            }
+
             try {
                 permissionService.validateDataAccessForRoles(userId, rIds, "ACCOUNT", primaryCustomer.getOwnerId());
                 permissionService.validateDataAccessForRoles(userId, rIds, "ACCOUNT", secondaryCustomer.getOwnerId());

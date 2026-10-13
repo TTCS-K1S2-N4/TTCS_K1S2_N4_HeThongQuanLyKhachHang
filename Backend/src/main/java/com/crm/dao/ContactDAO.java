@@ -22,14 +22,27 @@ public class ContactDAO {
         Contact c = new Contact();
         c.setContactId(rs.getInt("contact_id"));
         c.setCustomerId(rs.getInt("customer_id"));
-        c.setFullName(rs.getString("full_name"));
-        c.setTitle(rs.getString("title"));
+
+        String fullName = null;
+        try { fullName = rs.getString("full_name"); } catch (SQLException ignored) {}
+        if (fullName == null || fullName.trim().isEmpty()) {
+            try { fullName = rs.getString("contact_name"); } catch (SQLException ignored) {}
+        }
+        c.setFullName(fullName);
+
+        String title = null;
+        try { title = rs.getString("title"); } catch (SQLException ignored) {}
+        if (title == null || title.trim().isEmpty()) {
+            try { title = rs.getString("position"); } catch (SQLException ignored) {}
+        }
+        c.setTitle(title);
+
         c.setEmail(rs.getString("email"));
         c.setPhone(rs.getString("phone"));
         c.setBuyingRole(rs.getString("buying_role"));
         c.setPrimary(rs.getBoolean("is_primary"));
         c.setCreatedAt(rs.getTimestamp("created_at"));
-        c.setUpdatedAt(rs.getTimestamp("updated_at"));
+        try { c.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
         return c;
     }
 
@@ -92,16 +105,18 @@ public class ContactDAO {
     }
 
     public int insert(Contact contact, Connection conn) throws SQLException {
-        String sql = "INSERT INTO contacts (customer_id, full_name, title, email, phone, buying_role, is_primary) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO contacts (customer_id, full_name, contact_name, title, position, email, phone, buying_role, is_primary) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, contact.getCustomerId());
             ps.setString(2, contact.getFullName());
-            ps.setString(3, contact.getTitle());
-            ps.setString(4, contact.getEmail());
-            ps.setString(5, contact.getPhone());
-            ps.setString(6, contact.getBuyingRole());
-            ps.setBoolean(7, contact.isPrimary());
+            ps.setString(3, contact.getFullName());
+            ps.setString(4, contact.getTitle());
+            ps.setString(5, contact.getTitle());
+            ps.setString(6, contact.getEmail());
+            ps.setString(7, contact.getPhone());
+            ps.setString(8, contact.getBuyingRole());
+            ps.setBoolean(9, contact.isPrimary());
 
             int affected = ps.executeUpdate();
             if (affected > 0) {
@@ -127,16 +142,18 @@ public class ContactDAO {
     }
 
     public boolean update(Contact contact, Connection conn) throws SQLException {
-        String sql = "UPDATE contacts SET full_name = ?, title = ?, email = ?, phone = ?, " +
+        String sql = "UPDATE contacts SET full_name = ?, contact_name = ?, title = ?, position = ?, email = ?, phone = ?, " +
                      "buying_role = ?, is_primary = ? WHERE contact_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, contact.getFullName());
-            ps.setString(2, contact.getTitle());
-            ps.setString(3, contact.getEmail());
-            ps.setString(4, contact.getPhone());
-            ps.setString(5, contact.getBuyingRole());
-            ps.setBoolean(6, contact.isPrimary());
-            ps.setInt(7, contact.getContactId());
+            ps.setString(2, contact.getFullName());
+            ps.setString(3, contact.getTitle());
+            ps.setString(4, contact.getTitle());
+            ps.setString(5, contact.getEmail());
+            ps.setString(6, contact.getPhone());
+            ps.setString(7, contact.getBuyingRole());
+            ps.setBoolean(8, contact.isPrimary());
+            ps.setInt(9, contact.getContactId());
 
             return ps.executeUpdate() > 0;
         }

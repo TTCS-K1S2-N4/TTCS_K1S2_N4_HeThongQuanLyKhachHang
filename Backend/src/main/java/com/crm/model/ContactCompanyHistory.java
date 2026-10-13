@@ -15,6 +15,11 @@ public class ContactCompanyHistory {
     private String reason;
     private Integer transferredBy;
 
+    // Display fields for UI joins
+    private String fromCustomerName;
+    private String toCustomerName;
+    private String transferredByName;
+
     public ContactCompanyHistory() {
     }
 
@@ -80,5 +85,46 @@ public class ContactCompanyHistory {
 
     public void setTransferredBy(Integer transferredBy) {
         this.transferredBy = transferredBy;
+    }
+
+    public String getFromCustomerName() {
+        return fromCustomerName;
+    }
+
+    public void setFromCustomerName(String fromCustomerName) {
+        this.fromCustomerName = fromCustomerName;
+    }
+
+    public String getToCustomerName() {
+        return toCustomerName;
+    }
+
+    public void setToCustomerName(String toCustomerName) {
+        this.toCustomerName = toCustomerName;
+    }
+
+    public String getTransferredByName() {
+        return transferredByName;
+    }
+
+    public void setTransferredByName(String transferredByName) {
+        this.transferredByName = transferredByName;
+    }
+
+    // Convenience aliases for JSP EL compatibility
+    public String getOldCustomerName() {
+        return fromCustomerName;
+    }
+
+    public String getNewCustomerName() {
+        return toCustomerName;
+    }
+
+    public int getOldCustomerId() {
+        return fromCustomerId;
+    }
+
+    public int getNewCustomerId() {
+        return toCustomerId;
     }
 }

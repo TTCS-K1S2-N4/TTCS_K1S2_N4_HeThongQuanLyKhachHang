@@ -29,6 +29,17 @@ public class ContactCompanyHistoryDAO {
         if (!rs.wasNull()) {
             h.setTransferredBy(transferredBy);
         }
+
+        try {
+            h.setFromCustomerName(rs.getString("from_customer_name"));
+        } catch (SQLException ignored) {}
+        try {
+            h.setToCustomerName(rs.getString("to_customer_name"));
+        } catch (SQLException ignored) {}
+        try {
+            h.setTransferredByName(rs.getString("transferred_by_name"));
+        } catch (SQLException ignored) {}
+
         return h;
     }
 
@@ -70,7 +81,16 @@ public class ContactCompanyHistoryDAO {
 
     public List<ContactCompanyHistory> findByContactId(int contactId) {
         List<ContactCompanyHistory> list = new ArrayList<>();
-        String sql = "SELECT * FROM contact_company_history WHERE contact_id = ? ORDER BY transferred_at DESC";
+        String sql = "SELECT h.*, " +
+                     "       fc.customer_name AS from_customer_name, " +
+                     "       tc.customer_name AS to_customer_name, " +
+                     "       u.full_name AS transferred_by_name " +
+                     "FROM contact_company_history h " +
+                     "LEFT JOIN customers fc ON h.from_customer_id = fc.customer_id " +
+                     "LEFT JOIN customers tc ON h.to_customer_id = tc.customer_id " +
+                     "LEFT JOIN users u ON h.transferred_by = u.user_id " +
+                     "WHERE h.contact_id = ? " +
+                     "ORDER BY h.transferred_at DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, contactId);
@@ -87,8 +107,16 @@ public class ContactCompanyHistoryDAO {
 
     public List<ContactCompanyHistory> findByCustomerId(int customerId) {
         List<ContactCompanyHistory> list = new ArrayList<>();
-        String sql = "SELECT * FROM contact_company_history WHERE from_customer_id = ? OR to_customer_id = ? " +
-                     "ORDER BY transferred_at DESC";
+        String sql = "SELECT h.*, " +
+                     "       fc.customer_name AS from_customer_name, " +
+                     "       tc.customer_name AS to_customer_name, " +
+                     "       u.full_name AS transferred_by_name " +
+                     "FROM contact_company_history h " +
+                     "LEFT JOIN customers fc ON h.from_customer_id = fc.customer_id " +
+                     "LEFT JOIN customers tc ON h.to_customer_id = tc.customer_id " +
+                     "LEFT JOIN users u ON h.transferred_by = u.user_id " +
+                     "WHERE h.from_customer_id = ? OR h.to_customer_id = ? " +
+                     "ORDER BY h.transferred_at DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, customerId);
