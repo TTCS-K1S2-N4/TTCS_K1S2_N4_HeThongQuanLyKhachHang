@@ -984,10 +984,10 @@
                 if (data.success) {
                     window.location.reload();
                 } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể xóa bộ lọc.'));
+                    (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi: ' + (data.message || 'Không thể xóa bộ lọc.')) : window.alert('Lỗi: ' + (data.message || 'Không thể xóa bộ lọc.')));
                 }
             })
-            .catch(() => alert('Lỗi kết nối máy chủ.'));
+            .catch(() => (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi kết nối máy chủ.') : window.alert('Lỗi kết nối máy chủ.')));
         }
 
         function openSaveFilterModal() {
@@ -1019,7 +1019,7 @@
             e.preventDefault();
             const filterName = document.getElementById('filterNameInput').value.trim();
             if (!filterName) {
-                alert('Vui lòng nhập tên bộ lọc.');
+                (typeof window.showToast === 'function' ? window.showToast('warning', 'Vui lòng nhập tên bộ lọc.') : window.alert('Vui lòng nhập tên bộ lọc.'));
                 return;
             }
 
@@ -1048,10 +1048,10 @@
                     closeSaveFilterModal();
                     filterForm.submit();
                 } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể lưu bộ lọc.'));
+                    (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi: ' + (data.message || 'Không thể lưu bộ lọc.')) : window.alert('Lỗi: ' + (data.message || 'Không thể lưu bộ lọc.')));
                 }
             })
-            .catch(() => alert('Lỗi kết nối máy chủ.'));
+            .catch(() => (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi kết nối máy chủ.') : window.alert('Lỗi kết nối máy chủ.')));
         }
 
         function openCustomerModal() {
@@ -1113,7 +1113,7 @@
                         alertText.innerHTML = errMsg;
                         alertErr.style.display = 'block';
                     } else {
-                        alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ'));
+                        (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi: ' + (data.error || 'Thao tác không hợp lệ')) : window.alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ')));
                     }
                 } else {
                     closeCustomerModal();
@@ -1126,7 +1126,7 @@
                     alertText.innerText = 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.';
                     alertErr.style.display = 'block';
                 } else {
-                    alert('Lỗi kết nối máy chủ.');
+                    (typeof window.showToast === 'function' ? window.showToast('error', 'Lỗi kết nối máy chủ.') : window.alert('Lỗi kết nối máy chủ.'));
                 }
             })
             .finally(() => {

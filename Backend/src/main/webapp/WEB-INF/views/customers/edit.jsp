@@ -644,7 +644,14 @@
                 <c:if test="${not empty message}">
                     <div class="exec-alert-danger">
                         <i class="fa-solid fa-triangle-exclamation" style="font-size: 20px;"></i>
-                        <div><c:out value="${message}"/></div>
+                        <div id="toast-customer-edit-msg"><c:out value="${message}"/></div>
+                    </div>
+                </c:if>
+
+                <c:if test="${not empty error}">
+                    <div class="exec-alert-danger">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 20px;"></i>
+                        <div id="toast-customer-edit-err"><c:out value="${error}"/></div>
                     </div>
                 </c:if>
 
@@ -1088,6 +1095,16 @@ document.getElementById('customerEditForm').addEventListener('submit', function(
         btn.disabled = true;
     }
 });
+</script>
+<script>
+(function() {
+    ['toast-customer-edit-msg', 'toast-customer-edit-err'].forEach(function(id) {
+        var message = document.getElementById(id);
+        if (message && message.textContent.trim() && typeof window.showToast === 'function') {
+            window.showToast('error', message.textContent.trim());
+        }
+    });
+})();
 </script>
 </body>
 </html>

@@ -348,5 +348,38 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var errParam = urlParams.get('error');
+            var successParam = urlParams.get('success');
+            var msgParam = urlParams.get('msg');
+            var hasParamToast = false;
+            if (errParam) {
+                var errMsg = errParam === '1' ? 'Thao tác gộp khách hàng không thành công. Vui lòng thử lại.' : errParam;
+                (typeof window.showToast === 'function' ? window.showToast('error', errMsg) : window.alert(errMsg));
+                urlParams.delete('error');
+                hasParamToast = true;
+            } else if (successParam) {
+                var succMsg = successParam === '1' || successParam === 'true' ? 'Thao tác thành công!' : successParam;
+                (typeof window.showToast === 'function' ? window.showToast('success', succMsg) : window.alert(succMsg));
+                urlParams.delete('success');
+                hasParamToast = true;
+            } else if (msgParam) {
+                (typeof window.showToast === 'function' ? window.showToast('info', msgParam) : window.alert(msgParam));
+                urlParams.delete('msg');
+                hasParamToast = true;
+            }
+            if (hasParamToast && window.history && window.history.replaceState) {
+                var remainingQuery = urlParams.toString();
+                var newUrl = window.location.pathname + (remainingQuery ? '?' + remainingQuery : '') + window.location.hash;
+                window.history.replaceState(null, document.title, newUrl);
+            }
+        } catch (e) {
+            console.error('Error handling URL params in duplicates.jsp:', e);
+        }
+    })();
+</script>
 </body>
 </html>
