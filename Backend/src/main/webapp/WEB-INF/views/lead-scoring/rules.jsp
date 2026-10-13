@@ -4,7 +4,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <title>Cấu hình Chấm điểm Lead | CRM</title>
+    <title>Cấu hình Chấm điểm Lead | CRM System</title>
     <jsp:include page="/WEB-INF/views/fragments/head.jsp"/>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/modules/lead-scoring.css">
 </head>
@@ -14,38 +14,50 @@
     <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/>
     <main class="main-content">
         <div class="content-container">
+            <!-- Breadcrumb Navigation -->
             <nav class="breadcrumb" aria-label="Breadcrumb">
                 <a href="${pageContext.request.contextPath}/dashboard"><i class="fas fa-home"></i> Trang chủ</a>
                 <span>/</span>
-                <a href="${pageContext.request.contextPath}/leads">Lead</a>
+                <a href="${pageContext.request.contextPath}/leads"><i class="fas fa-user-friends"></i> Lead</a>
                 <span>/</span>
                 <span class="breadcrumb-current">Cấu hình Lead Scoring</span>
             </nav>
 
-            <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <!-- Page Header -->
+            <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
                 <div>
-                    <h1 class="page-title">Cấu hình Chấm điểm Lead (Lead Scoring)</h1>
-                    <p class="page-subtitle" style="color: var(--color-text-secondary); margin-top: 4px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                        <h1 class="page-title" style="margin: 0;">Cấu hình Chấm điểm Lead (Lead Scoring)</h1>
+                        <span class="badge badge-info" style="font-size: 11px;"><i class="fas fa-cog"></i> Sprint 04</span>
+                    </div>
+                    <p class="page-subtitle" style="color: var(--color-text-secondary); margin: 0; line-height: 1.5;">
                         Khai báo tiêu chí ngành nghề, quy mô, nguồn và mức độ quan tâm để tự động xếp hạng ưu tiên Lead Nóng, Ấm, Lạnh.
                     </p>
                 </div>
-                <div class="page-actions" style="display: flex; gap: 8px;">
+                <div class="page-actions" style="display: flex; gap: 10px;">
                     <a href="${pageContext.request.contextPath}/leads" class="btn btn-secondary">
-                        <i class="fas fa-list"></i> Xem danh sách Lead
+                        <i class="fas fa-arrow-left"></i> Danh sách Lead
                     </a>
                 </div>
             </div>
 
+            <!-- Global Feedback Notifications -->
             <div id="leadScoringAlert" class="alert" style="display: none; margin-bottom: 16px;"></div>
 
             <c:if test="${not empty errorMessage}">
-                <div class="alert alert-danger" style="margin-bottom: 16px;">
-                    <i class="fas fa-exclamation-circle"></i> <c:out value="${errorMessage}"/>
+                <div class="alert alert-danger scoring-notification-banner" style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span><c:out value="${errorMessage}"/></span>
+                    </div>
                 </div>
             </c:if>
             <c:if test="${not empty successMessage}">
-                <div class="alert alert-success" style="margin-bottom: 16px;">
-                    <i class="fas fa-check-circle"></i> <c:out value="${successMessage}"/>
+                <div class="alert alert-success scoring-notification-banner" style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check-circle"></i>
+                        <span><c:out value="${successMessage}"/></span>
+                    </div>
                 </div>
             </c:if>
 
@@ -54,61 +66,104 @@
                 <!-- Cột 1: Danh sách và Form thêm tiêu chí chấm điểm -->
                 <div class="scoring-card">
                     <div class="scoring-card-header">
-                        <h2 class="scoring-card-title">
-                            <i class="fas fa-sliders-h" style="color: var(--color-primary);"></i>
-                            Khai báo Tiêu chí & Số điểm
-                        </h2>
+                        <div>
+                            <h2 class="scoring-card-title">
+                                <i class="fas fa-sliders-h" style="color: var(--color-primary);"></i>
+                                Khai báo Tiêu chí & Số điểm
+                            </h2>
+                            <div class="scoring-card-subtitle">
+                                Định nghĩa các điều kiện cộng hoặc trừ điểm cho mỗi đầu mối kinh doanh mới thu thập.
+                            </div>
+                        </div>
                     </div>
 
-                    <form id="scoringRuleForm" method="post" action="${pageContext.request.contextPath}/lead-scoring/rules" style="background: var(--color-gray-50); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 20px;">
-                        <input type="hidden" name="ruleId" value="">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
-                            <div>
-                                <label class="form-label" style="font-weight: 600; font-size: 13px;">Tiêu chí (Criterion) <span style="color:red">*</span></label>
-                                <select id="criterionSelect" name="criterion" class="form-control" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
-                                    <option value="INDUSTRY">Ngành nghề phù hợp (Industry)</option>
-                                    <option value="COMPANY_SIZE">Quy mô doanh nghiệp (Company Size)</option>
-                                    <option value="SOURCE">Nguồn Lead (Lead Source)</option>
-                                    <option value="INTEREST">Mức độ quan tâm (Interest Level)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label" style="font-weight: 600; font-size: 13px;">Toán tử (Operator)</label>
-                                <select name="operator" class="form-control" style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
-                                    <option value="EQUALS">Bằng (Equals)</option>
-                                    <option value="CONTAINS">Chứa (Contains)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label" style="font-weight: 600; font-size: 13px;">Giá trị điều kiện <span style="color:red">*</span></label>
-                                <input type="text" id="conditionValueInput" name="conditionValue" list="criterionSuggestions" class="form-control" placeholder="VD: Công nghệ, Lớn, Website..." required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
-                                <datalist id="criterionSuggestions"></datalist>
-                            </div>
-                            <div>
-                                <label class="form-label" style="font-weight: 600; font-size: 13px;">Số điểm cộng/trừ <span style="color:red">*</span></label>
-                                <input type="number" name="score" class="form-control" placeholder="VD: 20 hoặc -10" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
-                            </div>
+                    <!-- Form nhập quy tắc chấm điểm -->
+                    <div class="rule-form-container">
+                        <div class="rule-form-header">
+                            <span class="rule-form-header-title">
+                                <i class="fas fa-plus-circle" style="color: var(--color-primary);"></i>
+                                Thêm mới hoặc chỉnh sửa tiêu chí
+                            </span>
+                            <span style="font-size: 12px; color: var(--color-text-secondary);">
+                                Dấu (<span style="color: red;">*</span>) là bắt buộc
+                            </span>
                         </div>
-                        <div style="text-align: right;">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Lưu tiêu chí
-                            </button>
-                        </div>
-                    </form>
+
+                        <form id="scoringRuleForm" method="post" action="${pageContext.request.contextPath}/lead-scoring/rules">
+                            <input type="hidden" name="ruleId" value="">
+                            <div class="rule-form-grid">
+                                <div class="rule-form-field">
+                                    <label class="form-label" for="criterionSelect">
+                                        <i class="fas fa-tag" style="color: var(--color-primary); font-size: 11px;"></i>
+                                        Tiêu chí <span style="color:red">*</span>
+                                    </label>
+                                    <select id="criterionSelect" name="criterion" class="form-control" required>
+                                        <option value="INDUSTRY">Ngành nghề phù hợp (Industry)</option>
+                                        <option value="COMPANY_SIZE">Quy mô doanh nghiệp (Company Size)</option>
+                                        <option value="SOURCE">Nguồn Lead (Lead Source)</option>
+                                        <option value="INTEREST">Mức độ quan tâm (Interest Level)</option>
+                                    </select>
+                                </div>
+
+                                <div class="rule-form-field">
+                                    <label class="form-label">
+                                        <i class="fas fa-code-branch" style="color: var(--color-text-secondary); font-size: 11px;"></i>
+                                        Toán tử so khớp
+                                    </label>
+                                    <select name="operator" class="form-control">
+                                        <option value="EQUALS">Bằng chính xác (Equals)</option>
+                                        <option value="CONTAINS">Chứa từ khóa (Contains)</option>
+                                    </select>
+                                </div>
+
+                                <div class="rule-form-field">
+                                    <label class="form-label" for="conditionValueInput">
+                                        <i class="fas fa-font" style="color: var(--color-text-secondary); font-size: 11px;"></i>
+                                        Giá trị điều kiện <span style="color:red">*</span>
+                                    </label>
+                                    <input type="text" id="conditionValueInput" name="conditionValue" list="criterionSuggestions" class="form-control" placeholder="VD: Công nghệ thông tin, Bất động sản..." required>
+                                    <datalist id="criterionSuggestions"></datalist>
+                                </div>
+
+                                <div class="rule-form-field">
+                                    <label class="form-label">
+                                        <i class="fas fa-calculator" style="color: var(--color-text-secondary); font-size: 11px;"></i>
+                                        Số điểm (+ / -) <span style="color:red">*</span>
+                                    </label>
+                                    <input type="number" name="score" class="form-control" placeholder="VD: 25 hoặc -10" required>
+                                </div>
+                            </div>
+
+                            <div class="rule-form-actions">
+                                <button type="reset" class="btn btn-secondary btn-sm" onclick="document.querySelector('#scoringRuleForm [name=ruleId]').value=''">
+                                    <i class="fas fa-redo"></i> Nhập lại
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-save"></i> Lưu tiêu chí chấm điểm
+                                </button>
+                            </div>
+                        </form>
+                    </div>
 
                     <!-- Danh sách các quy tắc đã khai báo -->
-                    <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--color-gray-800);">
-                        Danh sách tiêu chí đang áp dụng
-                    </h3>
+                    <div class="rule-table-section-title">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>Danh sách tiêu chí đang áp dụng</span>
+                            <span class="rule-table-count">
+                                ${not empty rules ? rules.size() : 4} tiêu chí
+                            </span>
+                        </div>
+                    </div>
+
                     <div class="table-container">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th style="width: 50px;">#</th>
+                                    <th style="width: 50px; text-align: center;">#</th>
                                     <th>Tiêu chí</th>
                                     <th>Toán tử</th>
                                     <th>Giá trị áp dụng</th>
-                                    <th>Điểm</th>
+                                    <th>Điểm số</th>
                                     <th style="width: 100px; text-align: center;">Thao tác</th>
                                 </tr>
                             </thead>
@@ -117,27 +172,53 @@
                                     <c:when test="${not empty rules}">
                                         <c:forEach var="rule" items="${rules}" varStatus="status">
                                             <tr>
-                                                <td>${status.count}</td>
-                                                <td>
-                                                    <strong>
-                                                        <c:choose>
-                                                            <c:when test="${rule.criterion == 'INDUSTRY'}">Ngành nghề</c:when>
-                                                            <c:when test="${rule.criterion == 'COMPANY_SIZE'}">Quy mô doanh nghiệp</c:when>
-                                                            <c:when test="${rule.criterion == 'SOURCE'}">Nguồn Lead</c:when>
-                                                            <c:when test="${rule.criterion == 'INTEREST'}">Mức độ quan tâm</c:when>
-                                                            <c:otherwise><c:out value="${rule.criterion}"/></c:otherwise>
-                                                        </c:choose>
-                                                    </strong>
+                                                <td style="text-align: center; color: var(--color-text-secondary); font-weight: 500;">
+                                                    ${status.count}
                                                 </td>
-                                                <td><c:out value="${rule.operator != null ? rule.operator : 'EQUALS'}"/></td>
-                                                <td><span class="badge badge-neutral"><c:out value="${rule.conditionValue}"/></span></td>
+                                                <td>
+                                                    <div class="criterion-tag">
+                                                        <c:choose>
+                                                            <c:when test="${rule.criterion == 'INDUSTRY'}">
+                                                                <i class="fas fa-building" title="Ngành nghề"></i>
+                                                                <span>Ngành nghề</span>
+                                                            </c:when>
+                                                            <c:when test="${rule.criterion == 'COMPANY_SIZE'}">
+                                                                <i class="fas fa-users" title="Quy mô"></i>
+                                                                <span>Quy mô doanh nghiệp</span>
+                                                            </c:when>
+                                                            <c:when test="${rule.criterion == 'SOURCE'}">
+                                                                <i class="fas fa-share-alt" title="Nguồn"></i>
+                                                                <span>Nguồn Lead</span>
+                                                            </c:when>
+                                                            <c:when test="${rule.criterion == 'INTEREST'}">
+                                                                <i class="fas fa-heart" title="Quan tâm"></i>
+                                                                <span>Mức độ quan tâm</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <i class="fas fa-check"></i>
+                                                                <span><c:out value="${rule.criterion}"/></span>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="operator-badge">
+                                                        <c:out value="${rule.operator != null ? rule.operator : 'EQUALS'}"/>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-neutral" style="font-weight: 600;">
+                                                        <c:out value="${rule.conditionValue}"/>
+                                                    </span>
+                                                </td>
                                                 <td>
                                                     <span class="lead-score-pill ${rule.score > 0 ? 'score-positive' : (rule.score < 0 ? 'score-negative' : 'score-neutral')}">
+                                                        <i class="fas ${rule.score > 0 ? 'fa-arrow-up' : (rule.score < 0 ? 'fa-arrow-down' : 'fa-minus')}"></i>
                                                         ${rule.score > 0 ? '+' : ''}${rule.score} điểm
                                                     </span>
                                                 </td>
                                                 <td style="text-align: center;">
-                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="LeadScoring.deleteRule('${rule.ruleId}')" title="Xóa quy tắc">
+                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="LeadScoring.deleteRule('${rule.ruleId}')" title="Xóa quy tắc này" style="padding: 4px 8px;">
                                                         <i class="fas fa-trash-alt" style="color: #dc2626;"></i>
                                                     </button>
                                                 </td>
@@ -147,36 +228,56 @@
                                     <c:otherwise>
                                         <!-- Dữ liệu hiển thị mẫu ban đầu nếu Backend chưa nạp danh sách -->
                                         <tr>
-                                            <td>1</td>
-                                            <td><strong>Ngành nghề</strong></td>
-                                            <td>EQUALS</td>
-                                            <td><span class="badge badge-neutral">Công nghệ thông tin</span></td>
-                                            <td><span class="lead-score-pill score-positive">+25 điểm</span></td>
-                                            <td style="text-align: center;"><span class="text-muted" style="font-size:12px;">Mặc định</span></td>
+                                            <td style="text-align: center; color: var(--color-text-secondary);">1</td>
+                                            <td>
+                                                <div class="criterion-tag">
+                                                    <i class="fas fa-building"></i>
+                                                    <span>Ngành nghề</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="operator-badge">EQUALS</span></td>
+                                            <td><span class="badge badge-neutral" style="font-weight: 600;">Công nghệ thông tin</span></td>
+                                            <td><span class="lead-score-pill score-positive"><i class="fas fa-arrow-up"></i> +25 điểm</span></td>
+                                            <td style="text-align: center;"><span class="badge badge-neutral" style="font-size: 11px;">Mặc định</span></td>
                                         </tr>
                                         <tr>
-                                            <td>2</td>
-                                            <td><strong>Quy mô doanh nghiệp</strong></td>
-                                            <td>EQUALS</td>
-                                            <td><span class="badge badge-neutral">100-500</span></td>
-                                            <td><span class="lead-score-pill score-positive">+20 điểm</span></td>
-                                            <td style="text-align: center;"><span class="text-muted" style="font-size:12px;">Mặc định</span></td>
+                                            <td style="text-align: center; color: var(--color-text-secondary);">2</td>
+                                            <td>
+                                                <div class="criterion-tag">
+                                                    <i class="fas fa-users"></i>
+                                                    <span>Quy mô doanh nghiệp</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="operator-badge">EQUALS</span></td>
+                                            <td><span class="badge badge-neutral" style="font-weight: 600;">100-500</span></td>
+                                            <td><span class="lead-score-pill score-positive"><i class="fas fa-arrow-up"></i> +20 điểm</span></td>
+                                            <td style="text-align: center;"><span class="badge badge-neutral" style="font-size: 11px;">Mặc định</span></td>
                                         </tr>
                                         <tr>
-                                            <td>3</td>
-                                            <td><strong>Nguồn Lead</strong></td>
-                                            <td>EQUALS</td>
-                                            <td><span class="badge badge-neutral">Website</span></td>
-                                            <td><span class="lead-score-pill score-positive">+15 điểm</span></td>
-                                            <td style="text-align: center;"><span class="text-muted" style="font-size:12px;">Mặc định</span></td>
+                                            <td style="text-align: center; color: var(--color-text-secondary);">3</td>
+                                            <td>
+                                                <div class="criterion-tag">
+                                                    <i class="fas fa-share-alt"></i>
+                                                    <span>Nguồn Lead</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="operator-badge">EQUALS</span></td>
+                                            <td><span class="badge badge-neutral" style="font-weight: 600;">Website</span></td>
+                                            <td><span class="lead-score-pill score-positive"><i class="fas fa-arrow-up"></i> +15 điểm</span></td>
+                                            <td style="text-align: center;"><span class="badge badge-neutral" style="font-size: 11px;">Mặc định</span></td>
                                         </tr>
                                         <tr>
-                                            <td>4</td>
-                                            <td><strong>Mức độ quan tâm</strong></td>
-                                            <td>EQUALS</td>
-                                            <td><span class="badge badge-neutral">Rất cao</span></td>
-                                            <td><span class="lead-score-pill score-positive">+30 điểm</span></td>
-                                            <td style="text-align: center;"><span class="text-muted" style="font-size:12px;">Mặc định</span></td>
+                                            <td style="text-align: center; color: var(--color-text-secondary);">4</td>
+                                            <td>
+                                                <div class="criterion-tag">
+                                                    <i class="fas fa-heart"></i>
+                                                    <span>Mức độ quan tâm</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="operator-badge">EQUALS</span></td>
+                                            <td><span class="badge badge-neutral" style="font-weight: 600;">Rất cao</span></td>
+                                            <td><span class="lead-score-pill score-positive"><i class="fas fa-arrow-up"></i> +30 điểm</span></td>
+                                            <td style="text-align: center;"><span class="badge badge-neutral" style="font-size: 11px;">Mặc định</span></td>
                                         </tr>
                                     </c:otherwise>
                                 </c:choose>
@@ -188,52 +289,120 @@
                 <!-- Cột 2: Cấu hình ngưỡng phân loại Nóng / Ấm / Lạnh (S4-05-AC-03) -->
                 <div class="scoring-card">
                     <div class="scoring-card-header">
-                        <h2 class="scoring-card-title">
-                            <i class="fas fa-thermometer-half" style="color: #ef4444;"></i>
-                            Ngưỡng Phân loại Lead
-                        </h2>
+                        <div>
+                            <h2 class="scoring-card-title">
+                                <i class="fas fa-thermometer-half" style="color: #ef4444;"></i>
+                                Ngưỡng Phân loại Lead
+                            </h2>
+                            <div class="scoring-card-subtitle">
+                                Tự động gán nhãn Nóng, Ấm hoặc Lạnh theo tổng điểm tiêu chí để tối ưu hóa thứ tự gọi của Sales.
+                            </div>
+                        </div>
                     </div>
 
-                    <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px;">
-                        Lead được tự động phân loại dựa trên tổng điểm tính từ các tiêu chí khai báo:
-                    </p>
+                    <!-- Visual Classification Cards -->
+                    <div class="classification-cards-stack">
+                        <!-- Card NÓNG -->
+                        <div class="classification-card-item hot">
+                            <div class="classification-card-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="classification-card-content">
+                                <div class="classification-card-title">
+                                    <span>LEAD NÓNG (HOT)</span>
+                                    <span class="badge badge-hot">≥ <span id="lblHotThreshold">${not empty hotThreshold ? hotThreshold : 70}</span> điểm</span>
+                                </div>
+                                <div class="classification-card-desc">
+                                    Nhu cầu cấp thiết, khả năng chuyển đổi cao.
+                                </div>
+                                <div class="classification-card-action">
+                                    <i class="fas fa-phone-volume"></i> Ưu tiên gọi điện tư vấn ngay lập tức!
+                                </div>
+                            </div>
+                        </div>
 
+                        <!-- Card ẤM -->
+                        <div class="classification-card-item warm">
+                            <div class="classification-card-icon">
+                                <i class="fas fa-sun"></i>
+                            </div>
+                            <div class="classification-card-content">
+                                <div class="classification-card-title">
+                                    <span>LEAD ẤM (WARM)</span>
+                                    <span class="badge badge-warm">≥ <span id="lblWarmThreshold">${not empty warmThreshold ? warmThreshold : 40}</span> điểm</span>
+                                </div>
+                                <div class="classification-card-desc">
+                                    Quan tâm dịch vụ, đang tìm hiểu giải pháp.
+                                </div>
+                                <div class="classification-card-action">
+                                    <i class="fas fa-envelope-open-text"></i> Gửi email tài liệu hoặc liên hệ trong ngày.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card LẠNH -->
+                        <div class="classification-card-item cold">
+                            <div class="classification-card-icon">
+                                <i class="fas fa-snowflake"></i>
+                            </div>
+                            <div class="classification-card-content">
+                                <div class="classification-card-title">
+                                    <span>LEAD LẠNH (COLD)</span>
+                                    <span class="badge badge-cold"><span id="lblColdThreshold">&lt; ${not empty warmThreshold ? warmThreshold : 40}</span> điểm</span>
+                                </div>
+                                <div class="classification-card-desc">
+                                    Chưa có nhu cầu rõ ràng hoặc chưa phù hợp.
+                                </div>
+                                <div class="classification-card-action">
+                                    <i class="fas fa-seedling"></i> Đưa vào chuỗi chiến dịch nuôi dưỡng tự động.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Indicator Bar -->
                     <div class="threshold-indicator-container">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span class="badge badge-cold"><i class="fas fa-snowflake"></i> LẠNH (<span id="lblColdThreshold">&lt; ${not empty warmThreshold ? warmThreshold : 40}</span>)</span>
-                            <span class="badge badge-warm"><i class="fas fa-sun"></i> ẤM (≥ <span id="lblWarmThreshold">${not empty warmThreshold ? warmThreshold : 40}</span>)</span>
-                            <span class="badge badge-hot"><i class="fas fa-fire"></i> NÓNG (≥ <span id="lblHotThreshold">${not empty hotThreshold ? hotThreshold : 70}</span>)</span>
+                        <div style="font-size: 12px; font-weight: 600; color: var(--color-gray-700); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                            <span><i class="fas fa-chart-line" style="color: var(--color-primary);"></i> Thước đo dải điểm</span>
+                            <span style="font-size: 11px; color: var(--color-text-secondary);">Thang điểm 0 - 100+</span>
                         </div>
-                        <div class="threshold-range-bar"></div>
+                        <div class="threshold-range-bar-wrapper">
+                            <div class="threshold-range-bar"></div>
+                        </div>
                         <div class="threshold-labels">
-                            <span>0 điểm</span>
-                            <span>Ưu tiên gọi sau</span>
-                            <span>100+ điểm (Gọi ngay)</span>
+                            <span>0 điểm (Lạnh)</span>
+                            <span>Ngưỡng Ấm</span>
+                            <span>Ngưỡng Nóng (Gọi ngay)</span>
                         </div>
                     </div>
 
-                    <form id="thresholdConfigForm" method="post" action="${pageContext.request.contextPath}/lead-scoring/config" style="margin-top: 12px;">
+                    <!-- Form điều chỉnh ngưỡng -->
+                    <form id="thresholdConfigForm" method="post" action="${pageContext.request.contextPath}/lead-scoring/config">
+                        <div id="thresholdWarning" class="alert alert-danger" style="display: none; padding: 10px 12px; font-size: 12px; margin-bottom: 12px;"></div>
+
                         <div style="margin-bottom: 14px;">
-                            <label class="form-label" style="font-weight: 600; font-size: 13px;">
-                                Ngưỡng Lead NÓNG (Hot Threshold) <span style="color:red">*</span>
+                            <label class="form-label" style="font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="fas fa-fire" style="color: #ef4444;"></i> Ngưỡng Lead NÓNG (Hot Threshold) <span style="color:red">*</span></span>
+                                <span style="font-size: 11px; color: var(--color-text-secondary); font-weight: normal;">Khuyến nghị: 70 - 80</span>
                             </label>
-                            <input type="number" name="hotThreshold" class="form-control" value="${not empty hotThreshold ? hotThreshold : 70}" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
-                            <small class="text-muted" style="display:block; margin-top: 4px; font-size: 12px;">Lead có tổng điểm từ mức này trở lên sẽ gắn nhãn Nóng (Ưu tiên gọi trước).</small>
+                            <input type="number" name="hotThreshold" class="form-control" value="${not empty hotThreshold ? hotThreshold : 70}" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 9px 12px; width: 100%; font-size: 14px;">
+                            <small class="text-muted" style="display:block; margin-top: 4px; font-size: 12px;">Lead có tổng điểm từ mức này trở lên sẽ gắn nhãn Nóng.</small>
                         </div>
 
                         <div style="margin-bottom: 16px;">
-                            <label class="form-label" style="font-weight: 600; font-size: 13px;">
-                                Ngưỡng Lead ẤM (Warm Threshold) <span style="color:red">*</span>
+                            <label class="form-label" style="font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+                                <span><i class="fas fa-sun" style="color: #f59e0b;"></i> Ngưỡng Lead ẤM (Warm Threshold) <span style="color:red">*</span></span>
+                                <span style="font-size: 11px; color: var(--color-text-secondary); font-weight: normal;">Khuyến nghị: 40 - 50</span>
                             </label>
-                            <input type="number" name="warmThreshold" class="form-control" value="${not empty warmThreshold ? warmThreshold : 40}" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 8px; width: 100%;">
+                            <input type="number" name="warmThreshold" class="form-control" value="${not empty warmThreshold ? warmThreshold : 40}" required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 9px 12px; width: 100%; font-size: 14px;">
                             <small class="text-muted" style="display:block; margin-top: 4px; font-size: 12px;">Lead có điểm từ mức này đến dưới ngưỡng Nóng được phân loại Ấm.</small>
                         </div>
 
-                        <div style="padding: 12px; background: #fefce8; border: 1px solid #fef08a; border-radius: 6px; margin-bottom: 16px; font-size: 12px; color: #854d0e;">
-                            <i class="fas fa-info-circle"></i> <strong>Lưu ý nghiệp vụ (S4-05-AC-04):</strong> Điểm số và phân loại chỉ dùng để sắp xếp thứ tự ưu tiên cuộc gọi, không tự động loại bỏ Lead khỏi hệ thống.
+                        <div style="padding: 12px 14px; background: #fefce8; border: 1px solid #fef08a; border-radius: 6px; margin-bottom: 18px; font-size: 12px; color: #854d0e; line-height: 1.45;">
+                            <i class="fas fa-info-circle"></i> <strong>Quy định nghiệp vụ (S4-05-AC-04):</strong> Điểm số và phân loại chỉ dùng để sắp xếp thứ tự ưu tiên cuộc gọi, hệ thống cam kết không tự ý loại bỏ Lead khỏi danh sách.
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block">
+                        <button type="submit" class="btn btn-primary btn-block" style="padding: 10px 16px; font-weight: 600;">
                             <i class="fas fa-save"></i> Cập nhật ngưỡng phân loại
                         </button>
                     </form>
