@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/import"})
+@WebServlet(urlPatterns = { "/leads/import" })
 @MultipartConfig(fileSizeThreshold = 1024 * 1024, maxFileSize = 10 * 1024 * 1024, maxRequestSize = 20 * 1024 * 1024)
 public class LeadImportServlet extends HttpServlet {
 
@@ -69,21 +69,26 @@ public class LeadImportServlet extends HttpServlet {
         }
     }
 
-    private void handlePreviewImport(HttpServletRequest req, HttpServletResponse resp, HttpSession session, Integer userId, boolean isJson)
+    private void handlePreviewImport(HttpServletRequest req, HttpServletResponse resp, HttpSession session,
+            Integer userId, boolean isJson)
             throws ServletException, IOException {
         Part filePart = null;
         try {
             filePart = req.getPart("file");
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         if (filePart == null || filePart.getSize() <= 0) {
-            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST, "Vui lòng chọn file Excel để upload.");
+            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST,
+                    "Vui lòng chọn file Excel để upload.");
             return;
         }
 
         String fileName = filePart.getSubmittedFileName();
-        if (fileName == null || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
-            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST, "Định dạng file không được hỗ trợ. Vui lòng upload file Excel (.xlsx, .xls).");
+        if (fileName == null
+                || (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls"))) {
+            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST,
+                    "Định dạng file không được hỗ trợ. Vui lòng upload file Excel (.xlsx, .xls).");
             return;
         }
 
@@ -99,27 +104,34 @@ public class LeadImportServlet extends HttpServlet {
                 req.getRequestDispatcher("/WEB-INF/views/leads/import_preview.jsp").forward(req, resp);
             }
         } catch (Exception e) {
-            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi đọc file Excel: " + e.getMessage());
+            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Lỗi đọc file Excel: " + e.getMessage());
         }
     }
 
     @SuppressWarnings("unchecked")
-    private void handleExecuteImport(HttpServletRequest req, HttpServletResponse resp, HttpSession session, boolean isJson)
+    private void handleExecuteImport(HttpServletRequest req, HttpServletResponse resp, HttpSession session,
+            boolean isJson)
             throws ServletException, IOException {
-        List<LeadImportRequest> pendingRequests = (List<LeadImportRequest>) session.getAttribute("pendingLeadImportRequests");
+        List<LeadImportRequest> pendingRequests = (List<LeadImportRequest>) session
+                .getAttribute("pendingLeadImportRequests");
         if (pendingRequests == null || pendingRequests.isEmpty()) {
-            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST, "Không có dữ liệu import chờ xử lý. Vui lòng upload lại file Excel.");
+            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST,
+                    "Không có dữ liệu import chờ xử lý. Vui lòng upload lại file Excel.");
             return;
         }
 
-        boolean skipDuplicates = req.getParameter("skipDuplicates") == null || "true".equalsIgnoreCase(req.getParameter("skipDuplicates")) || "on".equalsIgnoreCase(req.getParameter("skipDuplicates"));
+        boolean skipDuplicates = req.getParameter("skipDuplicates") == null
+                || "true".equalsIgnoreCase(req.getParameter("skipDuplicates"))
+                || "on".equalsIgnoreCase(req.getParameter("skipDuplicates"));
 
         int importedCount = importService.executeImport(pendingRequests, skipDuplicates);
         session.removeAttribute("pendingLeadImportRequests");
 
         if (isJson) {
             resp.setContentType("application/json; charset=UTF-8");
-            resp.getWriter().write("{\"status\":\"success\",\"message\":\"Import thành công " + importedCount + " Lead vào hệ thống!\",\"importedCount\":" + importedCount + "}");
+            resp.getWriter().write("{\"status\":\"success\",\"message\":\"Import thành công " + importedCount
+                    + " Lead vào hệ thống!\",\"importedCount\":" + importedCount + "}");
         } else {
             req.setAttribute("importedCount", importedCount);
             req.getRequestDispatcher("/WEB-INF/views/leads/import_success.jsp").forward(req, resp);
@@ -132,7 +144,8 @@ public class LeadImportServlet extends HttpServlet {
         return (accept != null && accept.contains("application/json")) || "XMLHttpRequest".equals(requestedWith);
     }
 
-    private void sendErrorResponse(HttpServletResponse resp, HttpServletRequest req, boolean isJson, int statusCode, String message) throws ServletException, IOException {
+    private void sendErrorResponse(HttpServletResponse resp, HttpServletRequest req, boolean isJson, int statusCode,
+            String message) throws ServletException, IOException {
         resp.setStatus(statusCode);
         if (isJson) {
             resp.setContentType("application/json; charset=UTF-8");
@@ -146,32 +159,34 @@ public class LeadImportServlet extends HttpServlet {
     private String buildPreviewJson(ImportResult res) {
         StringBuilder sb = new StringBuilder("{");
         sb.append("\"totalRows\":").append(res.getTotalRows())
-          .append(",\"validRows\":").append(res.getValidRows())
-          .append(",\"duplicateRows\":").append(res.getDuplicateRows())
-          .append(",\"failedRows\":").append(res.getFailedRows())
-          .append(",\"details\":[");
+                .append(",\"validRows\":").append(res.getValidRows())
+                .append(",\"duplicateRows\":").append(res.getDuplicateRows())
+                .append(",\"failedRows\":").append(res.getFailedRows())
+                .append(",\"details\":[");
 
         List<LeadImportRequest> details = res.getDetails();
         for (int i = 0; i < details.size(); i++) {
             LeadImportRequest item = details.get(i);
             sb.append("{\"rowIndex\":").append(item.getRowIndex())
-              .append(",\"fullName\":\"").append(escapeJson(item.getFullName())).append("\"")
-              .append(",\"company\":\"").append(escapeJson(item.getCompany())).append("\"")
-              .append(",\"email\":\"").append(escapeJson(item.getEmail())).append("\"")
-              .append(",\"phone\":\"").append(escapeJson(item.getPhone())).append("\"")
-              .append(",\"sourceName\":\"").append(escapeJson(item.getSourceName())).append("\"")
-              .append(",\"valid\":").append(item.isValid())
-              .append(",\"duplicate\":").append(item.isDuplicate())
-              .append(",\"duplicateReason\":\"").append(escapeJson(item.getDuplicateReason())).append("\"")
-              .append(",\"error\":\"").append(escapeJson(item.getError())).append("\"}");
-            if (i < details.size() - 1) sb.append(",");
+                    .append(",\"fullName\":\"").append(escapeJson(item.getFullName())).append("\"")
+                    .append(",\"company\":\"").append(escapeJson(item.getCompany())).append("\"")
+                    .append(",\"email\":\"").append(escapeJson(item.getEmail())).append("\"")
+                    .append(",\"phone\":\"").append(escapeJson(item.getPhone())).append("\"")
+                    .append(",\"sourceName\":\"").append(escapeJson(item.getSourceName())).append("\"")
+                    .append(",\"valid\":").append(item.isValid())
+                    .append(",\"duplicate\":").append(item.isDuplicate())
+                    .append(",\"duplicateReason\":\"").append(escapeJson(item.getDuplicateReason())).append("\"")
+                    .append(",\"error\":\"").append(escapeJson(item.getError())).append("\"}");
+            if (i < details.size() - 1)
+                sb.append(",");
         }
         sb.append("]}");
         return sb.toString();
     }
 
     private String escapeJson(String input) {
-        if (input == null) return "";
+        if (input == null)
+            return "";
         return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
