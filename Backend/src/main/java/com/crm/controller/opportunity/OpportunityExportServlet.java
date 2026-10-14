@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet("/deals/export")
+@WebServlet(urlPatterns = {"/deals/export", "/opportunities/export"})
 public class OpportunityExportServlet extends HttpServlet {
 
     private final OpportunityDAO opportunityDAO = new OpportunityDAO();

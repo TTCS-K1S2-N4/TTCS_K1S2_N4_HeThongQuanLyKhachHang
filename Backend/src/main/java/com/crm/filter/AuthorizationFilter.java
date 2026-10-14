@@ -57,6 +57,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/execute", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/preview", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import-preview", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/template", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
@@ -110,6 +111,10 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/deals/edit", "DEAL_EDIT");
         protectedUrlMap.put("/deals/detail", "DEAL_VIEW");
         protectedUrlMap.put("/deals", "DEAL_VIEW");
+        protectedUrlMap.put("/opportunities/create", "DEAL_CREATE");
+        protectedUrlMap.put("/opportunities/edit", "DEAL_EDIT");
+        protectedUrlMap.put("/opportunities/detail", "DEAL_VIEW");
+        protectedUrlMap.put("/opportunities", "DEAL_VIEW");
 
         protectedUrlMap.put("/activities/detail", "ACTIVITY_VIEW");
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");

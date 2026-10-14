@@ -152,48 +152,91 @@ public class CategoryDAO {
         int count = 0;
         String val = categoryName.trim();
 
-        // 1. Check custom_field_values
-        String sqlCf = "SELECT COUNT(*) FROM custom_field_values WHERE field_value = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sqlCf)) {
-            ps.setString(1, val);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) count += rs.getInt(1);
-            }
-        } catch (SQLException ignored) {}
+        List<String> matchValues = new ArrayList<>();
+        matchValues.add(val);
 
-        // 2. Check customers (if columns industry, company_size, lead_source exist)
-        String[] customerCols = {"industry", "company_size", "lead_source"};
-        for (String col : customerCols) {
-            String sql = "SELECT COUNT(*) FROM customers WHERE " + col + " = ?";
+        // Check if val contains parenthesized code, e.g. "Cuộc gọi (CALL)" -> "CALL"
+        if (val.contains("(") && val.contains(")")) {
+            int start = val.lastIndexOf("(");
+            int end = val.lastIndexOf(")");
+            if (end > start + 1) {
+                String code = val.substring(start + 1, end).trim();
+                if (!code.isEmpty() && !matchValues.contains(code)) {
+                    matchValues.add(code);
+                }
+            }
+        }
+
+        // Check if val contains hyphens e.g. "Tài chính - Ngân hàng" -> "Tài chính"
+        if (val.contains(" - ")) {
+            String prefix = val.substring(0, val.indexOf(" - ")).trim();
+            if (prefix.length() >= 4 && !matchValues.contains(prefix)) {
+                matchValues.add(prefix);
+            }
+        }
+
+        for (String matchVal : matchValues) {
+            // 1. Check custom_field_values
+            String sqlCf = "SELECT COUNT(*) FROM custom_field_values WHERE field_value = ? OR field_value LIKE ?";
             try (Connection conn = DBConnection.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, val);
+                 PreparedStatement ps = conn.prepareStatement(sqlCf)) {
+                ps.setString(1, matchVal);
+                ps.setString(2, "%" + matchVal + "%");
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) count += rs.getInt(1);
                 }
             } catch (SQLException ignored) {}
+
+            // 2. Check customers (industry, company_size, lead_source, size)
+            String[] customerCols = {"industry", "company_size", "lead_source", "size"};
+            for (String col : customerCols) {
+                String sql = "SELECT COUNT(*) FROM customers WHERE " + col + " = ? OR " + col + " LIKE ?";
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, matchVal);
+                    ps.setString(2, "%" + matchVal + "%");
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) count += rs.getInt(1);
+                    }
+                } catch (SQLException ignored) {}
+            }
+
+            // 3. Check opportunities (lead_source)
+            String sqlOpp = "SELECT COUNT(*) FROM opportunities WHERE lead_source = ? OR lead_source LIKE ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqlOpp)) {
+                ps.setString(1, matchVal);
+                ps.setString(2, "%" + matchVal + "%");
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) count += rs.getInt(1);
+                }
+            } catch (SQLException ignored) {}
+
+            // 4. Check activities (activity_type)
+            String sqlAct = "SELECT COUNT(*) FROM activities WHERE activity_type = ? OR activity_type LIKE ?";
+            try (Connection conn = DBConnection.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqlAct)) {
+                ps.setString(1, matchVal);
+                ps.setString(2, "%" + matchVal + "%");
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) count += rs.getInt(1);
+                }
+            } catch (SQLException ignored) {}
+
+            // 5. Check saved_filters
+            String[] filterCols = {"industry", "company_size"};
+            for (String col : filterCols) {
+                String sql = "SELECT COUNT(*) FROM saved_filters WHERE " + col + " = ? OR " + col + " LIKE ?";
+                try (Connection conn = DBConnection.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, matchVal);
+                    ps.setString(2, "%" + matchVal + "%");
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) count += rs.getInt(1);
+                    }
+                } catch (SQLException ignored) {}
+            }
         }
-
-        // 3. Check opportunities (lead_source)
-        String sqlOpp = "SELECT COUNT(*) FROM opportunities WHERE lead_source = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sqlOpp)) {
-            ps.setString(1, val);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) count += rs.getInt(1);
-            }
-        } catch (SQLException ignored) {}
-
-        // 4. Check activities (activity_type)
-        String sqlAct = "SELECT COUNT(*) FROM activities WHERE activity_type = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sqlAct)) {
-            ps.setString(1, val);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) count += rs.getInt(1);
-            }
-        } catch (SQLException ignored) {}
 
         return count;
     }

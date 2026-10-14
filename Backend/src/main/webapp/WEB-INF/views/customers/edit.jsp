@@ -829,6 +829,58 @@
                                 </div>
                             </div>
 
+                            <!-- Card: Dynamic Custom Fields (Trường dữ liệu mở rộng) -->
+                            <c:if test="${not empty customFieldDefinitions}">
+                                <div class="exec-card" style="margin-top: 24px;">
+                                    <div class="exec-card-header">
+                                        <h3 class="exec-card-title">
+                                            <i class="fa-solid fa-sliders"></i> Trường dữ liệu mở rộng
+                                        </h3>
+                                        <span class="exec-card-subtitle">Các trường tùy chỉnh bổ sung cho hồ sơ khách hàng</span>
+                                    </div>
+                                    <div class="exec-card-body">
+                                        <div class="exec-field-grid-2">
+                                            <c:forEach var="def" items="${customFieldDefinitions}">
+                                                <c:set var="curVal" value="${customFieldValuesMap[def.fieldId]}" />
+                                                <div class="exec-form-group">
+                                                    <label class="exec-label" for="cf_${def.fieldId}">
+                                                        <c:out value="${def.fieldLabel}"/>
+                                                        <c:if test="${def.required}"><span class="req">*</span></c:if>
+                                                    </label>
+                                                    <div class="exec-input-wrap">
+                                                        <c:choose>
+                                                            <c:when test="${def.fieldType == 'SELECT'}">
+                                                                <select id="cf_${def.fieldId}" name="customField_${def.fieldId}" class="exec-input no-icon" ${def.required ? 'required' : ''}>
+                                                                    <option value="">-- Chọn ${def.fieldLabel} --</option>
+                                                                    <c:forEach var="opt" items="${def.optionArray}">
+                                                                        <option value="${opt.trim()}" ${opt.trim() eq curVal ? 'selected' : ''}><c:out value="${opt.trim()}"/></option>
+                                                                    </c:forEach>
+                                                                </select>
+                                                            </c:when>
+                                                            <c:when test="${def.fieldType == 'DATE'}">
+                                                                <input type="date" id="cf_${def.fieldId}" name="customField_${def.fieldId}" class="exec-input no-icon" 
+                                                                       value="<c:out value='${not empty curVal ? curVal : def.defaultValue}'/>" 
+                                                                       ${def.required ? 'required' : ''}>
+                                                            </c:when>
+                                                            <c:when test="${def.fieldType == 'NUMBER'}">
+                                                                <input type="number" step="any" id="cf_${def.fieldId}" name="customField_${def.fieldId}" class="exec-input no-icon" 
+                                                                       value="<c:out value='${not empty curVal ? curVal : def.defaultValue}'/>" 
+                                                                       placeholder="Nhập số" ${def.required ? 'required' : ''}>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <input type="text" id="cf_${def.fieldId}" name="customField_${def.fieldId}" class="exec-input no-icon" 
+                                                                       value="<c:out value='${not empty curVal ? curVal : def.defaultValue}'/>" 
+                                                                       placeholder="Nhập <c:out value='${def.fieldLabel}'/>" ${def.required ? 'required' : ''}>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </div>
+                                            </c:forEach>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
+
                         </div>
 
                         <!-- Right Column: Status & Governance Sidebar -->
@@ -919,12 +971,29 @@
                                 <div class="exec-card-body">
                                     <div class="exec-form-group">
                                         <label class="exec-label" for="ownerId">
-                                            ID Người sở hữu hồ sơ
+                                            Nhân viên kinh doanh phụ trách
                                         </label>
                                         <div class="exec-input-wrap">
-                                            <input type="number" id="ownerId" name="ownerId" class="exec-input" 
-                                                   value="${not empty param.ownerId ? param.ownerId : customer.ownerId}" required>
-                                            <i class="fa-solid fa-id-badge exec-input-icon"></i>
+                                            <select id="ownerId" name="ownerId" class="exec-input" required onchange="updateOwnerPreview(this)">
+                                                <c:choose>
+                                                    <c:when test="${not empty salesUsers}">
+                                                        <c:forEach var="u" items="${salesUsers}">
+                                                            <option value="${u.accountId}" 
+                                                                    data-name="${u.fullName}" 
+                                                                    data-team="${not empty u.teamName ? u.teamName : 'Phòng kinh doanh'}"
+                                                                    ${((not empty param.ownerId and param.ownerId == u.accountId) or (empty param.ownerId and customer.ownerId == u.accountId)) ? 'selected' : ''}>
+                                                                <c:out value="${u.fullName}"/> — ${not empty u.teamName ? u.teamName : 'Kinh doanh'}
+                                                            </option>
+                                                        </c:forEach>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <option value="${not empty customer.ownerId ? customer.ownerId : 1}" selected>
+                                                            <c:out value="${not empty customer.ownerName ? customer.ownerName : 'Tài khoản hiện tại'}"/>
+                                                        </option>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </select>
+                                            <i class="fa-solid fa-user-tie exec-input-icon"></i>
                                         </div>
                                         <c:if test="${not empty errors['ownerId']}">
                                             <div class="exec-error">
@@ -937,10 +1006,10 @@
                                                 <i class="fa-solid fa-user-check"></i>
                                             </div>
                                             <div class="owner-info-text">
-                                                <h6>
+                                                <h6 id="previewOwnerName">
                                                     <c:out value="${not empty customer.ownerName ? customer.ownerName : 'Tài khoản người phụ trách'}"/>
                                                 </h6>
-                                                <p>Đang nắm quyền quản lý hồ sơ</p>
+                                                <p id="previewOwnerTeam">Đang nắm quyền quản lý hồ sơ</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1001,6 +1070,23 @@ function applyPreset(inputId, value) {
         el.focus();
     }
 }
+
+function updateOwnerPreview(selectEl) {
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    if (selectedOption) {
+        const name = selectedOption.getAttribute('data-name');
+        const team = selectedOption.getAttribute('data-team');
+        if (name) document.getElementById('previewOwnerName').textContent = name;
+        if (team) document.getElementById('previewOwnerTeam').textContent = team;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ownerSelect = document.getElementById('ownerId');
+    if (ownerSelect) {
+        updateOwnerPreview(ownerSelect);
+    }
+});
 
 document.getElementById('customerEditForm').addEventListener('submit', function() {
     const btn = document.getElementById('btnSubmitForm');

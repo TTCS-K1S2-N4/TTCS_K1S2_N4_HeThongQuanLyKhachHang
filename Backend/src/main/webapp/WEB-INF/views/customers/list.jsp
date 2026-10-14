@@ -907,7 +907,7 @@
                                             <c:when test="${def.fieldType == 'SELECT'}">
                                                 <select name="customField_${def.fieldId}" ${def.required ? 'required' : ''} style="width: 100%; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; outline: none;">
                                                     <option value="">-- Chọn --</option>
-                                                    <c:forEach var="opt" items="${def.options.split('[,;\\\\n]+')}">
+                                                    <c:forEach var="opt" items="${def.optionArray}">
                                                         <option value="${opt.trim()}"><c:out value="${opt.trim()}"/></option>
                                                     </c:forEach>
                                                 </select>

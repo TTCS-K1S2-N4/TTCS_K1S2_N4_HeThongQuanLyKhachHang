@@ -72,6 +72,7 @@ public class CategoryListServlet extends HttpServlet {
                 json.append("\"categoryName\":\"").append(escapeJson(c.getCategoryName())).append("\",");
                 json.append("\"displayOrder\":").append(c.getDisplayOrder()).append(",");
                 json.append("\"status\":\"").append(escapeJson(c.getStatus())).append("\",");
+                json.append("\"usageCount\":").append(c.getUsageCount()).append(",");
                 json.append("\"createdAt\":").append(c.getCreatedAt() != null ? "\"" + c.getCreatedAt().toString() + "\"" : "null").append(",");
                 json.append("\"updatedAt\":").append(c.getUpdatedAt() != null ? "\"" + c.getUpdatedAt().toString() + "\"" : "null");
                 json.append("}");
