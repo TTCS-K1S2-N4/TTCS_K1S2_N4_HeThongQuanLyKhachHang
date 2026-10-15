@@ -169,11 +169,32 @@ CREATE TABLE IF NOT EXISTS competitors (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 12. BẢNG CƠ HỘI BÁN HÀNG (opportunities)
+-- 12. BẢNG CHIẾN DỊCH TIẾP THỊ (campaigns) - S4-03
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS campaigns (
+    campaign_id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_name VARCHAR(200) NOT NULL,
+    budget DECIMAL(15, 2) DEFAULT 0.00,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    channel VARCHAR(100) NULL,
+    description TEXT NULL,
+    status VARCHAR(50) DEFAULT 'PLANNING',
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_campaigns_status (status),
+    INDEX idx_campaigns_created_by (created_by),
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 13. BẢNG CƠ HỘI BÁN HÀNG (opportunities)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NULL,
+    campaign_id INT NULL,
     title VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) DEFAULT 0.00,
     owner_id INT NOT NULL,
@@ -184,8 +205,10 @@ CREATE TABLE IF NOT EXISTS opportunities (
     competitor_id INT NULL,
     close_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_opportunities_campaign (campaign_id),
     FOREIGN KEY (owner_id) REFERENCES users(user_id),
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------

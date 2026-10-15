@@ -11,17 +11,23 @@
 -- Column choices below are a proposed minimum, NOT an approved Lead contract.
 CREATE TABLE IF NOT EXISTS leads (
     lead_id INT AUTO_INCREMENT PRIMARY KEY,
+    company VARCHAR(200) NULL,
     company_name VARCHAR(200) NULL,
-    contact_name VARCHAR(150) NOT NULL,
+    contact_name VARCHAR(150) NULL,
+    full_name VARCHAR(150) NULL,
     email VARCHAR(150) NULL,
-    phone VARCHAR(20) NULL,
+    phone VARCHAR(50) NULL,
     status VARCHAR(30) NOT NULL DEFAULT 'NEW',
     owner_id INT NULL,
+    campaign_id INT NULL,
+    customer_id INT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_leads_status (status),
     INDEX idx_leads_owner (owner_id),
-    CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id)
+    INDEX idx_leads_campaign (campaign_id),
+    CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 2. S4-06: proposed lead assignment configuration.

@@ -152,4 +152,22 @@ public class LeadDuplicateServiceTest {
         LeadMergeRequest invalidReq = new LeadMergeRequest(0, 10);
         assertThrows(IllegalArgumentException.class, () -> duplicateService.mergeLeads(invalidReq, 1));
     }
+
+    @Test
+    public void testMergeHistoryMethodsNotNull() {
+        assertNotNull(duplicateService.getMergeHistoryByLeadId(1));
+        assertNotNull(duplicateService.getAllMergeHistories(10));
+    }
+
+    @Test
+    public void testLeadRecordCompanyFallback() {
+        LeadRecord record = new LeadRecord();
+        record.setCompany("Công ty Cổ phần Alpha");
+        assertEquals("Công ty Cổ phần Alpha", record.getCompany());
+        assertEquals("Công ty Cổ phần Alpha", record.getCompanyName());
+
+        record.setCompanyName("Tập đoàn Beta");
+        assertEquals("Tập đoàn Beta", record.getCompany());
+        assertEquals("Tập đoàn Beta", record.getCompanyName());
+    }
 }

@@ -380,7 +380,22 @@ public class LeadDuplicateService {
             Integer finalCampaign = primaryLead.getCampaignId() != null ? primaryLead.getCampaignId() : duplicateLead.getCampaignId();
             Integer finalCustomer = primaryLead.getCustomerId() != null ? primaryLead.getCustomerId() : duplicateLead.getCustomerId();
 
-            String updatePrimarySql = "UPDATE leads SET full_name = ?, company_name = ?, email = ?, phone = ?, " +
+            // Đối chiếu schema thực tế: bảng leads dùng tên cột là 'company' (có fallback nếu môi trường dùng company_name)
+            String companyCol = "company";
+            try {
+                DatabaseMetaData meta = conn.getMetaData();
+                try (ResultSet rs = meta.getColumns(null, null, "leads", "company")) {
+                    if (!rs.next()) {
+                        try (ResultSet rs2 = meta.getColumns(null, null, "leads", "company_name")) {
+                            if (rs2.next()) {
+                                companyCol = "company_name";
+                            }
+                        }
+                    }
+                }
+            } catch (SQLException ignored) {}
+
+            String updatePrimarySql = "UPDATE leads SET full_name = ?, " + companyCol + " = ?, email = ?, phone = ?, " +
                     "campaign_id = ?, customer_id = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(updatePrimarySql)) {
                 ps.setString(1, finalName);
@@ -550,9 +565,9 @@ public class LeadDuplicateService {
         l.setFullName(fullName != null ? fullName : "");
 
         String comp = null;
-        try { comp = rs.getString("company_name"); } catch (SQLException ignored) {}
+        try { comp = rs.getString("company"); } catch (SQLException ignored) {}
         if (comp == null) {
-            try { comp = rs.getString("company"); } catch (SQLException ignored) {}
+            try { comp = rs.getString("company_name"); } catch (SQLException ignored) {}
         }
         l.setCompanyName(comp);
 
@@ -635,5 +650,21 @@ public class LeadDuplicateService {
     private String escapeJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    // =========================================================================
+    // 7. TRA CỨU LỊCH SỬ GỘP LEAD (S4-04-AC-03)
+    // =========================================================================
+
+    public List<LeadMergeHistory> getMergeHistoryByLeadId(int leadId) {
+        return historyDAO.findByLeadId(leadId);
+    }
+
+    public LeadMergeHistory getMergeHistoryById(int mergeId) {
+        return historyDAO.findById(mergeId);
+    }
+
+    public List<LeadMergeHistory> getAllMergeHistories(int limit) {
+        return historyDAO.findAll(limit);
     }
 }
