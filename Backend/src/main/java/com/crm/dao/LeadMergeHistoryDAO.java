@@ -59,9 +59,29 @@ public class LeadMergeHistoryDAO {
             } catch (SQLException e) {
                 LOGGER.log(Level.FINE, "Ghi nhận khởi tạo bảng: " + e.getMessage());
             }
+
+            ensureColumnExists(conn, "leads", "campaign_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "customer_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "company_name", "VARCHAR(200) NULL");
+            ensureColumnExists(conn, "leads", "status", "VARCHAR(50) DEFAULT 'NEW'");
+
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Không thể kết nối DB trong ensureSchema của LeadMergeHistoryDAO: " + e.getMessage());
         }
+    }
+
+    private void ensureColumnExists(Connection conn, String tableName, String columnName, String columnDef) {
+        try {
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getColumns(null, null, tableName, columnName)) {
+                if (!rs.next()) {
+                    String alterSql = "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnDef;
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate(alterSql);
+                    } catch (SQLException ignored) {}
+                }
+            }
+        } catch (SQLException ignored) {}
     }
 
     /**

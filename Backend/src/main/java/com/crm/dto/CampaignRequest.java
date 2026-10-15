@@ -48,6 +48,14 @@ public class CampaignRequest {
         this.name = name;
     }
 
+    public String getCampaignName() {
+        return name;
+    }
+
+    public void setCampaignName(String campaignName) {
+        this.name = campaignName;
+    }
+
     public BigDecimal getBudget() {
         return budget;
     }

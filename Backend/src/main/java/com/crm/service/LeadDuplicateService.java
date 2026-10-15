@@ -66,6 +66,15 @@ public class LeadDuplicateService {
 
         public int getLeadId() { return leadId; }
         public void setLeadId(int leadId) { this.leadId = leadId; }
+
+        // Alias methods để tương thích JSP (${primaryLead.id}, ${primaryLead.name}, ${primaryLead.company})
+        public int getId() { return leadId; }
+        public void setId(int id) { this.leadId = id; }
+        public String getName() { return fullName; }
+        public void setName(String name) { this.fullName = name; }
+        public String getCompany() { return companyName; }
+        public void setCompany(String company) { this.companyName = company; }
+
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
         public String getCompanyName() { return companyName; }
@@ -118,6 +127,37 @@ public class LeadDuplicateService {
         public String getReasonString() {
             return reasons != null ? String.join(", ", reasons) : "";
         }
+
+        // Getter ủy quyền từ right để tương thích trực tiếp với duplicates.jsp
+        public int getId() { return right != null ? right.getLeadId() : 0; }
+        public String getName() { return right != null ? right.getFullName() : ""; }
+        public String getEmail() { return right != null ? right.getEmail() : ""; }
+        public String getPhone() { return right != null ? right.getPhone() : ""; }
+        public String getCompany() { return right != null ? right.getCompanyName() : ""; }
+
+        public boolean isMatchEmail() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && r.toLowerCase().contains("email")) return true;
+            }
+            return false;
+        }
+
+        public boolean isMatchPhone() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && (r.toLowerCase().contains("thoại") || r.toLowerCase().contains("phone"))) return true;
+            }
+            return false;
+        }
+
+        public boolean isMatchCompany() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && (r.toLowerCase().contains("công ty") || r.toLowerCase().contains("company"))) return true;
+            }
+            return false;
+        }
     }
 
     public static class CustomerCandidate {
@@ -140,6 +180,12 @@ public class LeadDuplicateService {
         public String getReasonString() {
             return reasons != null ? String.join(", ", reasons) : "";
         }
+
+        // Getter ủy quyền từ customer để tương thích trực tiếp với duplicates.jsp
+        public int getId() { return customer != null ? customer.getCustomerId() : 0; }
+        public String getName() { return customer != null ? customer.getCustomerName() : ""; }
+        public String getEmail() { return customer != null ? customer.getEmail() : ""; }
+        public String getPhone() { return customer != null ? customer.getPhone() : ""; }
     }
 
     // =========================================================================
@@ -495,19 +541,32 @@ public class LeadDuplicateService {
     private LeadRecord mapLeadRow(ResultSet rs) throws SQLException {
         LeadRecord l = new LeadRecord();
         l.setLeadId(rs.getInt("lead_id"));
-        l.setFullName(rs.getString("full_name"));
-        l.setCompanyName(rs.getString("company_name"));
-        l.setEmail(rs.getString("email"));
-        l.setPhone(rs.getString("phone"));
-        l.setStatus(rs.getString("status"));
+
+        String fullName = null;
+        try { fullName = rs.getString("full_name"); } catch (SQLException ignored) {}
+        if (fullName == null) {
+            try { fullName = rs.getString("contact_name"); } catch (SQLException ignored) {}
+        }
+        l.setFullName(fullName != null ? fullName : "");
+
+        String comp = null;
+        try { comp = rs.getString("company_name"); } catch (SQLException ignored) {}
+        if (comp == null) {
+            try { comp = rs.getString("company"); } catch (SQLException ignored) {}
+        }
+        l.setCompanyName(comp);
+
+        try { l.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
+        try { l.setPhone(rs.getString("phone")); } catch (SQLException ignored) {}
+        try { l.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
         l.setOwnerId(rs.getObject("owner_id") != null ? rs.getInt("owner_id") : null);
         try { l.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignored) {}
-        l.setCampaignId(rs.getObject("campaign_id") != null ? rs.getInt("campaign_id") : null);
+        try { l.setCampaignId(rs.getObject("campaign_id") != null ? rs.getInt("campaign_id") : null); } catch (SQLException ignored) {}
         try { l.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignored) {}
-        l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null);
+        try { l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null); } catch (SQLException ignored) {}
         try { l.setSource(rs.getString("source")); } catch (SQLException ignored) {}
-        l.setCreatedAt(rs.getTimestamp("created_at"));
-        l.setUpdatedAt(rs.getTimestamp("updated_at"));
+        try { l.setCreatedAt(rs.getTimestamp("created_at")); } catch (SQLException ignored) {}
+        try { l.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
         return l;
     }
 
@@ -560,14 +619,15 @@ public class LeadDuplicateService {
         if (name == null) return "";
         String s = name.trim().toLowerCase();
         s = s.replaceAll("[.,\\-()\\[\\]\\\"\\']", " ");
+        s = s.replaceAll("\\s+", " ").trim();
 
         String[] stopWords = {
                 "công ty tnhh tm dv", "công ty tnhh tm", "công ty tnhh", "công ty cổ phần", "công ty cp", "công ty", "cty tnhh", "cty cp", "cty",
                 "tnhh tm dv", "tnhh tm", "tnhh", "cổ phần", "cp",
-                "co., ltd", "co. ltd", "co ltd", "ltd", "inc", "corp", "corporation", "gmbh", "pvt ltd"
+                "co ltd", "pvt ltd", "ltd", "inc", "corp", "corporation", "gmbh", "co"
         };
         for (String sw : stopWords) {
-            s = s.replace(sw, " ");
+            s = s.replaceAll("\\b" + sw + "\\b", " ");
         }
         return s.replaceAll("\\s+", " ").trim();
     }

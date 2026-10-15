@@ -81,6 +81,7 @@ public class CampaignListServlet extends HttpServlet {
             out.flush();
         } else {
             req.setAttribute("campaigns", campaigns);
+            req.setAttribute("list", campaigns); // Tương thích FE02 list.jsp
             req.setAttribute("total", total);
             req.setAttribute("currentPage", page);
             req.setAttribute("totalPages", totalPages);

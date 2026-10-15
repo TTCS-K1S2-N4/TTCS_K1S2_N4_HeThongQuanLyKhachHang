@@ -72,6 +72,7 @@ public class CampaignDAO {
             ensureColumnExists(conn, "opportunities", "status", "VARCHAR(50) DEFAULT 'ACTIVE'");
             ensureColumnExists(conn, "leads", "campaign_id", "INT NULL");
             ensureColumnExists(conn, "leads", "customer_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "company_name", "VARCHAR(200) NULL");
 
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Không thể kết nối DB trong ensureSchema của CampaignDAO: " + e.getMessage());

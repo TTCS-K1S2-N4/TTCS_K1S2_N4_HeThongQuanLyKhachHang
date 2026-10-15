@@ -122,6 +122,7 @@ public class CampaignUpdateServlet extends HttpServlet {
                 sendBadRequest(resp, e.getMessage(), true);
             } else {
                 req.setAttribute("errorMessage", e.getMessage());
+                req.setAttribute("error", e.getMessage());
                 req.setAttribute("campaign", requestDto);
                 req.setAttribute("channels", campaignService.getAvailableChannels());
                 req.getRequestDispatcher("/WEB-INF/views/campaigns/edit.jsp").forward(req, resp);
@@ -141,6 +142,7 @@ public class CampaignUpdateServlet extends HttpServlet {
                 resp.getWriter().write("{\"status\":\"error\",\"message\":\"Lỗi hệ thống khi cập nhật chiến dịch.\"}");
             } else {
                 req.setAttribute("errorMessage", "Lỗi hệ thống khi cập nhật chiến dịch.");
+                req.setAttribute("error", "Lỗi hệ thống khi cập nhật chiến dịch.");
                 req.setAttribute("campaign", requestDto);
                 req.setAttribute("channels", campaignService.getAvailableChannels());
                 req.getRequestDispatcher("/WEB-INF/views/campaigns/edit.jsp").forward(req, resp);
