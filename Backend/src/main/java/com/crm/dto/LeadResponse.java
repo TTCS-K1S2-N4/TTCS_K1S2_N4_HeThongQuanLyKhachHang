@@ -344,6 +344,35 @@ public class LeadResponse {
             return this.toString().compareTo(String.valueOf(o));
         }
     }
+
+    private boolean slaOverdue;
+    private String classification;
+
+    public boolean isSlaOverdue() {
+        return slaOverdue;
+    }
+
+    public void setSlaOverdue(boolean slaOverdue) {
+        this.slaOverdue = slaOverdue;
+    }
+
+    public String getClassification() {
+        if (classification != null && !classification.trim().isEmpty()) {
+            return classification.trim();
+        }
+        if (rating != null && !rating.trim().isEmpty()) {
+            return rating.trim();
+        }
+        return score >= 70 ? "HOT" : (score >= 40 ? "WARM" : "COLD");
+    }
+
+    public void setClassification(String classification) {
+        this.classification = classification;
+    }
+
+    public String getCompanyName() {
+        return company;
+    }
 }
 
 

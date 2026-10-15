@@ -38,8 +38,8 @@
                     <a href="${pageContext.request.contextPath}/leads" class="btn btn-outline">Quay lại</a>
                 </div>
                 
-                <c:if test="${not empty errorMessage}">
-                    <div class="alert alert-danger">${errorMessage}</div>
+                <c:if test="${not empty error}">
+                    <div class="alert alert-danger">${error}</div>
                 </c:if>
 
                 <div class="card form-card">
@@ -66,16 +66,16 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="interest">Nhu cầu quan tâm</label>
-                                <textarea id="interest" name="interest" class="form-control" rows="3">${param.interest}</textarea>
+                                <label for="notes">Nhu cầu quan tâm</label>
+                                <textarea id="notes" name="notes" class="form-control" rows="3">${param.notes}</textarea>
                             </div>
 
                             <div class="form-group">
-                                <label for="source">Nguồn Lead <span class="required">*</span></label>
-                                <select id="source" name="source" class="form-control" required>
+                                <label for="leadSourceId">Nguồn Lead <span class="required">*</span></label>
+                                <select id="leadSourceId" name="leadSourceId" class="form-control" required>
                                     <option value="">-- Chọn nguồn --</option>
                                     <c:forEach var="src" items="${sources}">
-                                        <option value="${src.id}" ${param.source == src.id ? 'selected' : ''}>${src.name}</option>
+                                        <option value="${src.sourceId}" ${param.leadSourceId == src.sourceId ? 'selected' : ''}>${src.sourceName}</option>
                                     </c:forEach>
                                 </select>
                             </div>

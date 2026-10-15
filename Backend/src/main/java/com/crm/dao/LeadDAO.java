@@ -238,21 +238,30 @@ public class LeadDAO {
                      "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         int count = 0;
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
-            for (Lead lead : leads) {
-                setLeadStatementParameters(ps, lead);
-                ps.addBatch();
-            }
-            int[] results = ps.executeBatch();
-            conn.commit();
-            conn.setAutoCommit(true);
-            for (int r : results) {
-                if (r >= 0 || r == Statement.SUCCESS_NO_INFO) count++;
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                for (Lead lead : leads) {
+                    setLeadStatementParameters(ps, lead);
+                    ps.addBatch();
+                }
+                int[] results = ps.executeBatch();
+                conn.commit();
+                for (int r : results) {
+                    if (r >= 0 || r == Statement.SUCCESS_NO_INFO) count++;
+                }
             }
         } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
             e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
         }
         return count;
     }

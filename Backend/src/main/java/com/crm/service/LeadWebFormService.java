@@ -117,6 +117,22 @@ public class LeadWebFormService {
             throw new IllegalArgumentException("Họ và tên không được để trống.");
         }
 
+        // Validate format email (backend — không phụ thuộc HTML5, chống bypass)
+        if (email != null && !email.trim().isEmpty()) {
+            if (!email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                throw new IllegalArgumentException("Địa chỉ email không đúng định dạng.");
+            }
+        }
+
+        // Validate format số điện thoại Việt Nam
+        if (phone != null && !phone.trim().isEmpty()) {
+            String cleanedPhone = phone.trim().replaceAll("[\\s\\-\\.]", "");
+            if (!cleanedPhone.matches("^(0|\\+?84)[35789][0-9]{8}$")) {
+                throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam.");
+            }
+        }
+
+
         Lead lead = new Lead();
         lead.setFullName(fullName.trim());
         lead.setEmail(email != null ? email.trim() : null);
@@ -134,6 +150,10 @@ public class LeadWebFormService {
             LeadSource webSource = sourceDAO.getByCode("WEB_FORM");
             if (webSource != null) {
                 lead.setLeadSourceId(webSource.getSourceId());
+            } else {
+                // Log cảnh báo để dễ debug khi DB seed thiếu source WEB_FORM
+                System.err.println("[WARN] LeadWebFormService: Không tìm thấy source_code='WEB_FORM' trong bảng lead_sources. " +
+                        "Lead sẽ được tạo không có source. Kiểm tra dữ liệu seed DB.");
             }
         }
 
