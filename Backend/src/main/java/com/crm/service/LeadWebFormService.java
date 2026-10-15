@@ -38,6 +38,7 @@ public class LeadWebFormService {
         form.setActive(request.isActive());
         form.setSpamProtectionEnabled(request.isSpamProtectionEnabled());
         form.setFieldsJson(request.getFieldsJson());
+        form.setLeadSourceId(request.getLeadSourceId());
         form.setCreatedBy(createdBy);
 
         boolean created = webFormDAO.createWebForm(form);
@@ -65,6 +66,9 @@ public class LeadWebFormService {
         existing.setActive(request.isActive());
         existing.setSpamProtectionEnabled(request.isSpamProtectionEnabled());
         existing.setFieldsJson(request.getFieldsJson());
+        if (request.getLeadSourceId() != null) {
+            existing.setLeadSourceId(request.getLeadSourceId());
+        }
 
         if (existing.getEmbedCode() == null || existing.getEmbedCode().trim().isEmpty()) {
             existing.setEmbedCode(generateEmbedCode(formId, baseUrl));
@@ -99,8 +103,13 @@ public class LeadWebFormService {
             if (!LeadSpamProtectionUtil.isDomainAllowed(refererHeader, form.getAllowedDomains())) {
                 throw new SecurityException("Domain gửi biểu mẫu không được phép.");
             }
-            if (LeadSpamProtectionUtil.containsSpamKeywords(notes) || LeadSpamProtectionUtil.containsSpamKeywords(fullName)) {
-                throw new SecurityException("Nội dung chứa từ khóa bị cấm.");
+            if (LeadSpamProtectionUtil.containsSpamKeywords(notes) || 
+                LeadSpamProtectionUtil.containsSpamKeywords(fullName) ||
+                LeadSpamProtectionUtil.containsSpamKeywords(company)) {
+                throw new SecurityException("Nội dung chứa từ khóa bị cấm hoặc liên kết spam.");
+            }
+            if (LeadSpamProtectionUtil.isSuspiciousEmail(email)) {
+                throw new SecurityException("Địa chỉ email không hợp lệ hoặc bị nghi ngờ spam.");
             }
         }
 
@@ -118,12 +127,17 @@ public class LeadWebFormService {
         lead.setStatus("NEW");
         lead.setRating("WARM");
 
-        // Gán Lead Source = WEB_FORM
-        LeadSource webSource = sourceDAO.getByCode("WEB_FORM");
-        if (webSource != null) {
-            lead.setLeadSourceId(webSource.getSourceId());
+        // Gán Lead Source từ cấu hình của biểu mẫu (nếu có); nếu không, gán nguồn mặc định WEB_FORM
+        if (form.getLeadSourceId() != null && form.getLeadSourceId() > 0) {
+            lead.setLeadSourceId(form.getLeadSourceId());
+        } else {
+            LeadSource webSource = sourceDAO.getByCode("WEB_FORM");
+            if (webSource != null) {
+                lead.setLeadSourceId(webSource.getSourceId());
+            }
         }
 
         return leadDAO.createLead(lead);
     }
 }
+

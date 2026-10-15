@@ -12,12 +12,14 @@ public class LeadWebForm {
     private boolean active;
     private boolean spamProtectionEnabled;
     private String fieldsJson;
+    private Integer leadSourceId;
     private Integer createdBy;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
     // Joined reference
     private String creatorName;
+    private String sourceName;
 
     public LeadWebForm() {}
 
@@ -124,4 +126,34 @@ public class LeadWebForm {
     public void setCreatorName(String creatorName) {
         this.creatorName = creatorName;
     }
+
+    public Integer getLeadSourceId() {
+        return leadSourceId;
+    }
+
+    public void setLeadSourceId(Integer leadSourceId) {
+        this.leadSourceId = leadSourceId;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    // JSP / DTO Compatibility Aliases
+    public int getId() {
+        return formId;
+    }
+
+    public String getName() {
+        return formName;
+    }
+
+    public Integer getSource() {
+        return leadSourceId;
+    }
 }
+

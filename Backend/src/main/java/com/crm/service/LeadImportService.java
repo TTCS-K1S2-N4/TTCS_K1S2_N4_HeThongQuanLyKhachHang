@@ -41,6 +41,10 @@ public class LeadImportService {
     }
 
     public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId) throws Exception {
+        return parseAndValidateExcel(inputStream, ownerId, null);
+    }
+
+    public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId, Integer defaultLeadSourceId) throws Exception {
         List<LeadImportRequest> requests = ExcelImportUtil.parseLeadImport(inputStream);
         ImportResult result = new ImportResult();
         result.setTotalRows(requests.size());
@@ -67,10 +71,17 @@ public class LeadImportService {
                 } else {
                     req.addFieldError("Nguồn Lead '" + req.getSourceName() + "' không tồn tại trong hệ thống");
                 }
+            } else if (defaultLeadSourceId != null && defaultLeadSourceId > 0) {
+                req.setLeadSourceId(defaultLeadSourceId);
             } else {
                 Integer defaultSrc = sourceMap.get("import_excel");
+                if (defaultSrc == null) {
+                    defaultSrc = sourceMap.get("nhập từ excel");
+                }
                 if (defaultSrc != null) {
                     req.setLeadSourceId(defaultSrc);
+                } else if (!activeSources.isEmpty()) {
+                    req.setLeadSourceId(activeSources.get(0).getSourceId());
                 } else {
                     req.addFieldError("Nguồn Lead là bắt buộc và không được để trống");
                 }

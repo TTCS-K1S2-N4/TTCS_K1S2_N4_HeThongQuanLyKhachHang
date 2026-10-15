@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/list"})
+@WebServlet(urlPatterns = {"/leads", "/leads/list"})
 public class LeadListServlet extends HttpServlet {
 
     private LeadService leadService = new LeadService();
