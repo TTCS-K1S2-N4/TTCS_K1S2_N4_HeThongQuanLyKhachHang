@@ -290,6 +290,51 @@
     border: 1px solid var(--color-border, #e2e8f0);
 }
 
+.lead-score-pill.score-hot {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.lead-score-pill.score-warm {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.lead-score-pill.score-cold {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.lead-score-pill.score-muted {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+/* Row being actively edited in rule table */
+.editing-rule-row {
+    background-color: #f0f9ff !important;
+    outline: 2px solid #0284c7 !important;
+    outline-offset: -2px;
+}
+
+.rule-edit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    margin-left: 8px;
+}
+
 /* =========================================================
    5. THRESHOLD VISUAL CARDS & RANGE BAR (S4-05)
    ========================================================= */

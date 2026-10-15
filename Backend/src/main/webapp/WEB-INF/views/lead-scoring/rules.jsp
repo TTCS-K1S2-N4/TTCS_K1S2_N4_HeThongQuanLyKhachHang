@@ -79,7 +79,7 @@
                     <!-- Form nhập quy tắc chấm điểm -->
                     <div class="rule-form-container">
                         <div class="rule-form-header">
-                            <span class="rule-form-header-title">
+                            <span class="rule-form-header-title" id="ruleFormTitle">
                                 <i class="fas fa-plus-circle" style="color: var(--color-primary);"></i>
                                 Thêm mới hoặc chỉnh sửa tiêu chí
                             </span>
@@ -134,10 +134,13 @@
                             </div>
 
                             <div class="rule-form-actions">
-                                <button type="reset" class="btn btn-secondary btn-sm" onclick="document.querySelector('#scoringRuleForm [name=ruleId]').value=''">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btnCancelEditRule" onclick="LeadScoring.cancelEdit()" style="display: none; border-color: #fca5a5; color: #dc2626; background: #fef2f2;">
+                                    <i class="fas fa-times"></i> Hủy chỉnh sửa
+                                </button>
+                                <button type="reset" class="btn btn-secondary btn-sm" onclick="LeadScoring.cancelEdit()">
                                     <i class="fas fa-redo"></i> Nhập lại
                                 </button>
-                                <button type="submit" class="btn btn-primary btn-sm">
+                                <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitRule">
                                     <i class="fas fa-save"></i> Lưu tiêu chí chấm điểm
                                 </button>
                             </div>
@@ -170,7 +173,7 @@
                                 <c:choose>
                                     <c:when test="${not empty rules}">
                                         <c:forEach var="rule" items="${rules}" varStatus="status">
-                                            <tr>
+                                            <tr id="rule-row-${rule.ruleId}" class="rule-row-item">
                                                 <td style="text-align: center; color: var(--color-text-secondary); font-weight: 500;">
                                                     ${status.count}
                                                 </td>
@@ -217,9 +220,23 @@
                                                     </span>
                                                 </td>
                                                 <td style="text-align: center;">
-                                                    <button type="button" class="btn btn-secondary btn-sm" onclick="LeadScoring.deleteRule('${rule.ruleId}')" title="Xóa quy tắc này" style="padding: 4px 8px;">
-                                                        <i class="fas fa-trash-alt" style="color: #dc2626;"></i>
-                                                    </button>
+                                                    <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                                                        <button type="button"
+                                                                class="btn btn-secondary btn-sm btn-edit-rule"
+                                                                data-rule-id="<c:out value='${rule.ruleId}'/>"
+                                                                data-criterion="<c:out value='${rule.criterion}'/>"
+                                                                data-operator="<c:out value='${rule.operator}'/>"
+                                                                data-condition-value="<c:out value='${rule.conditionValue}'/>"
+                                                                data-score="<c:out value='${rule.score}'/>"
+                                                                title="Chỉnh sửa quy tắc này"
+                                                                aria-label="Sửa quy tắc #<c:out value='${rule.ruleId}'/>"
+                                                                style="padding: 4px 8px; color: #0284c7;">
+                                                            <i class="fas fa-pencil-alt"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-secondary btn-sm" onclick="LeadScoring.deleteRule('${rule.ruleId}')" title="Xóa quy tắc này" aria-label="Xóa quy tắc #${rule.ruleId}" style="padding: 4px 8px;">
+                                                            <i class="fas fa-trash-alt" style="color: #dc2626;"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </c:forEach>
