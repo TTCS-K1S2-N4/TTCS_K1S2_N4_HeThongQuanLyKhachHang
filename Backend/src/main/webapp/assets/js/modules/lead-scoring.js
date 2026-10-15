@@ -1,7 +1,7 @@
 /**
  * =========================================================
  * CRM SYSTEM - LEAD SCORING JAVASCRIPT MODULE (S4-05)
- * Author: FE03 - Mạnh
+ * Author: FE03 - Lead Scoring & Lead Filter
  * Handlers: Scoring rules list/create/delete, threshold config, client validation
  * =========================================================
  */
@@ -11,11 +11,13 @@
 
     const LeadScoring = {
         contextPath: '',
+        notificationTimeout: null,
 
         init: function (options) {
             this.contextPath = (options && options.contextPath) ? options.contextPath : '';
             this.bindEvents();
             this.updateCriterionOptions();
+            this.bindThresholdRealtimePreview();
         },
 
         bindEvents: function () {
@@ -36,6 +38,51 @@
         },
 
         /**
+         * Real-time preview for Hot/Warm/Cold thresholds on the visual bar and badges
+         */
+        bindThresholdRealtimePreview: function () {
+            const hotInput = document.querySelector('input[name="hotThreshold"]');
+            const warmInput = document.querySelector('input[name="warmThreshold"]');
+            const lblHot = document.getElementById('lblHotThreshold');
+            const lblWarm = document.getElementById('lblWarmThreshold');
+            const lblCold = document.getElementById('lblColdThreshold');
+            const thresholdWarning = document.getElementById('thresholdWarning');
+
+            const updateLabels = () => {
+                if (!hotInput || !warmInput) return;
+                const hotVal = parseInt(hotInput.value, 10);
+                const warmVal = parseInt(warmInput.value, 10);
+
+                if (!isNaN(hotVal) && lblHot) {
+                    lblHot.textContent = hotVal;
+                }
+                if (!isNaN(warmVal) && lblWarm) {
+                    lblWarm.textContent = warmVal;
+                }
+                if (!isNaN(warmVal) && lblCold) {
+                    lblCold.textContent = '< ' + warmVal;
+                }
+
+                // Inline validation check
+                if (thresholdWarning) {
+                    if (!isNaN(hotVal) && !isNaN(warmVal) && hotVal <= warmVal) {
+                        thresholdWarning.style.display = 'block';
+                        thresholdWarning.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ngưỡng Lead Nóng (' + hotVal + ') phải lớn hơn ngưỡng Lead Ấm (' + warmVal + ').';
+                    } else {
+                        thresholdWarning.style.display = 'none';
+                    }
+                }
+            };
+
+            if (hotInput) {
+                hotInput.addEventListener('input', updateLabels);
+            }
+            if (warmInput) {
+                warmInput.addEventListener('input', updateLabels);
+            }
+        },
+
+        /**
          * Update predefined options / helper text according to Criterion (Industry, Company Size, Source, Interest)
          */
         updateCriterionOptions: function () {
@@ -50,13 +97,17 @@
                 let suggestions = [];
 
                 if (selected === 'INDUSTRY') {
-                    suggestions = ['Công nghệ thông tin', 'Tài chính / Ngân hàng', 'Bất động sản', 'Sản xuất', 'Bán lẻ', 'Y tế', 'Giáo dục', 'Khác'];
+                    suggestions = ['Công nghệ thông tin', 'Tài chính / Ngân hàng', 'Bất động sản', 'Sản xuất', 'Bán lẻ', 'Y tế', 'Giáo dục', 'Xây dựng', 'Logistics', 'Khác'];
+                    conditionValueInput.placeholder = 'VD: Công nghệ thông tin, Bất động sản...';
                 } else if (selected === 'COMPANY_SIZE') {
                     suggestions = ['Dưới 10', '10-50', '50-100', '100-500', 'Trên 500'];
+                    conditionValueInput.placeholder = 'VD: 100-500, Trên 500...';
                 } else if (selected === 'SOURCE') {
                     suggestions = ['Website', 'Facebook', 'Google Ads', 'Giới thiệu', 'Sự kiện', 'Email Marketing', 'Cold Call', 'Khác'];
+                    conditionValueInput.placeholder = 'VD: Website, Facebook, Google Ads...';
                 } else if (selected === 'INTEREST') {
-                    suggestions = ['Cao', 'Trung bình', 'Thấp', 'Rất cao'];
+                    suggestions = ['Rất cao', 'Cao', 'Trung bình', 'Thấp'];
+                    conditionValueInput.placeholder = 'VD: Rất cao, Cao...';
                 }
 
                 suggestions.forEach(item => {
@@ -87,14 +138,15 @@
                 return;
             }
             if (scoreStr === '' || isNaN(parseInt(scoreStr, 10))) {
-                this.showNotification('Điểm số phải là số nguyên hợp lệ.', 'error');
+                this.showNotification('Điểm số phải là số nguyên hợp lệ (VD: 20 hoặc -10).', 'error');
                 return;
             }
 
             const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerText = 'Đang lưu...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
             }
 
             const params = new URLSearchParams();
@@ -128,14 +180,14 @@
                 setTimeout(() => window.location.reload(), 600);
             })
             .catch(err => {
-                console.warn('Backend endpoint /lead-scoring/rules response:', err);
-                // Graceful fallback for demo or when backend is in candidate state
+                console.warn('Backend endpoint /lead-scoring/rules fallback to standard submit:', err);
+                // Graceful fallback for standard form post
                 form.submit();
             })
             .finally(() => {
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerText = 'Lưu tiêu chí';
+                    submitBtn.innerHTML = originalBtnHtml;
                 }
             });
         },
@@ -144,7 +196,7 @@
          * Delete Scoring Rule
          */
         deleteRule: function (ruleId) {
-            if (!confirm('Bạn có chắc chắn muốn xóa quy tắc chấm điểm này?')) return;
+            if (!confirm('Bạn có chắc chắn muốn xóa quy tắc chấm điểm này khỏi hệ thống?')) return;
 
             const params = new URLSearchParams();
             params.append('ruleId', ruleId);
@@ -166,7 +218,7 @@
                 }
             })
             .catch(err => {
-                console.warn('Backend endpoint /lead-scoring/rules/delete response:', err);
+                console.warn('Backend endpoint /lead-scoring/rules/delete fallback:', err);
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = this.contextPath + '/lead-scoring/rules/delete';
@@ -198,14 +250,15 @@
             }
 
             if (hotVal <= warmVal) {
-                this.showNotification('Ngưỡng Lead Nóng phải lớn hơn ngưỡng Lead Ấm.', 'error');
+                this.showNotification('Ngưỡng Lead Nóng (' + hotVal + ') phải lớn hơn ngưỡng Lead Ấm (' + warmVal + ').', 'error');
                 return;
             }
 
             const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerText = 'Đang lưu...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
             }
 
             const params = new URLSearchParams();
@@ -222,32 +275,85 @@
             })
             .then(res => {
                 if (res.ok) {
-                    this.showNotification('Cập nhật ngưỡng phân loại Nóng/Ấm/Lạnh thành công!', 'success');
+                    this.showNotification('Cập nhật ngưỡng phân loại Nóng / Ấm / Lạnh thành công!', 'success');
                     setTimeout(() => window.location.reload(), 600);
                 } else {
                     throw new Error('HTTP ' + res.status);
                 }
             })
             .catch(err => {
-                console.warn('Backend endpoint /lead-scoring/config response:', err);
+                console.warn('Backend endpoint /lead-scoring/config fallback:', err);
                 form.submit();
             })
             .finally(() => {
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerText = 'Lưu ngưỡng phân loại';
+                    submitBtn.innerHTML = originalBtnHtml;
                 }
             });
         },
 
         /**
-         * Helper display notification using Shared Toast
+         * Helper display notification: prioritizes window.showToast if available.
+         * Falls back to in-page banner #leadScoringAlert only when Toast is unavailable.
+         * Uses safe DOM textContent to prevent XSS.
          */
         showNotification: function (message, type) {
+            // 1. Ưu tiên Shared Toast nếu có để tránh hiển thị trùng lặp
             if (typeof window.showToast === 'function') {
                 window.showToast(type || 'info', message);
                 return;
             }
+
+            // 2. Fallback: hiển thị banner #leadScoringAlert an toàn qua DOM API (chống XSS)
+            const existingAlert = document.getElementById('leadScoringAlert');
+            if (existingAlert) {
+                if (this.notificationTimeout) {
+                    clearTimeout(this.notificationTimeout);
+                }
+                const isError = (type === 'error');
+                existingAlert.className = 'alert ' + (isError ? 'alert-danger' : 'alert-success') + ' scoring-notification-banner';
+                existingAlert.replaceChildren();
+
+                const contentWrapper = document.createElement('div');
+                contentWrapper.style.display = 'flex';
+                contentWrapper.style.alignItems = 'center';
+                contentWrapper.style.gap = '8px';
+
+                const icon = document.createElement('i');
+                icon.className = 'fas ' + (isError ? 'fa-exclamation-circle' : 'fa-check-circle');
+
+                const msgSpan = document.createElement('span');
+                msgSpan.textContent = message;
+
+                contentWrapper.appendChild(icon);
+                contentWrapper.appendChild(msgSpan);
+
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.setAttribute('aria-label', 'Đóng thông báo');
+                closeBtn.style.background = 'none';
+                closeBtn.style.border = 'none';
+                closeBtn.style.fontSize = '16px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.style.color = 'inherit';
+                closeBtn.style.opacity = '0.7';
+                closeBtn.addEventListener('click', function () {
+                    existingAlert.style.display = 'none';
+                });
+
+                existingAlert.appendChild(contentWrapper);
+                existingAlert.appendChild(closeBtn);
+                existingAlert.style.display = 'flex';
+
+                this.notificationTimeout = setTimeout(() => {
+                    existingAlert.style.display = 'none';
+                }, 4500);
+                return;
+            }
+
+            // 3. Fallback cuối cùng nếu không có cả Toast lẫn banner container
             console.warn('[LeadScoring] Toast notification:', type, message);
         }
     };
