@@ -24,10 +24,10 @@
             <div class="alert alert-danger">${errorMessage}</div>
         </c:if>
 
-        <form action="${pageContext.request.contextPath}/public/leads" method="post" id="publicLeadForm" class="lead-form">
-            <input type="hidden" name="formId" value="${param.formId}">
-            <!-- sourceKey logic backend might use -->
-            <input type="hidden" name="sourceKey" value="${param.sourceKey}">
+        <form action="${pageContext.request.contextPath}/leads/public-form" method="post" id="publicLeadForm" class="lead-form">
+            <input type="hidden" name="formId" value="${webForm.formId}">
+            <!-- Honeypot chống spam: field ẩn, bot sẽ tự điền, người thật không nhìn thấy -->
+            <input type="text" name="website_hp" id="website_hp" style="display:none;" tabindex="-1" autocomplete="off">
 
             <div class="form-group">
                 <label for="fullName">Họ tên <span class="required">*</span></label>
@@ -50,8 +50,8 @@
             </div>
 
             <div class="form-group">
-                <label for="interest">Nhu cầu quan tâm</label>
-                <textarea id="interest" name="interest" class="form-control" rows="4">${param.interest}</textarea>
+                <label for="notes">Nhu cầu quan tâm</label>
+                <textarea id="notes" name="notes" class="form-control" rows="4">${param.notes}</textarea>
             </div>
 
             <div class="form-actions">
