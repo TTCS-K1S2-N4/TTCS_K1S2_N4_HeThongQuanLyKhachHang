@@ -57,6 +57,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/create", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/execute", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/preview", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/customers/import-preview", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import/template", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/import", "ACCOUNT_CREATE");
         protectedUrlMap.put("/customers/edit", "ACCOUNT_EDIT");
@@ -72,6 +73,7 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/customers/support", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/risk", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/care/config", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/customers/care/mark-contacted", "ACCOUNT_EDIT");
         protectedUrlMap.put("/customers/care", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/360", "ACCOUNT_VIEW");
         protectedUrlMap.put("/customers/timeline", "ACCOUNT_VIEW");
@@ -85,6 +87,7 @@ public class AuthorizationFilter implements Filter {
         // Quản lý người liên hệ (Contacts - Sprint 03 S3-02)
         protectedUrlMap.put("/contacts/create", "ACCOUNT_CREATE");
         protectedUrlMap.put("/contacts/edit", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/contacts/delete", "ACCOUNT_DELETE");
         protectedUrlMap.put("/contacts/primary", "ACCOUNT_EDIT");
         protectedUrlMap.put("/contacts/transfer", "ACCOUNT_EDIT");
         protectedUrlMap.put("/contacts/detail", "ACCOUNT_VIEW");
@@ -108,6 +111,10 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/deals/edit", "DEAL_EDIT");
         protectedUrlMap.put("/deals/detail", "DEAL_VIEW");
         protectedUrlMap.put("/deals", "DEAL_VIEW");
+        protectedUrlMap.put("/opportunities/create", "DEAL_CREATE");
+        protectedUrlMap.put("/opportunities/edit", "DEAL_EDIT");
+        protectedUrlMap.put("/opportunities/detail", "DEAL_VIEW");
+        protectedUrlMap.put("/opportunities", "DEAL_VIEW");
 
         protectedUrlMap.put("/activities/detail", "ACTIVITY_VIEW");
         protectedUrlMap.put("/activities", "ACTIVITY_VIEW");

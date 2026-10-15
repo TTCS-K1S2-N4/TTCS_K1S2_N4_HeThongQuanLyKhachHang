@@ -6,7 +6,21 @@ import java.util.List;
 
 public class CustomerHierarchyService {
     
-    private CustomerRelationshipDAO relationshipDAO = new CustomerRelationshipDAO();
+    private CustomerRelationshipDAO relationshipDAO;
+
+    public CustomerHierarchyService() {
+        this.relationshipDAO = new CustomerRelationshipDAO();
+    }
+
+    public CustomerHierarchyService(CustomerRelationshipDAO relationshipDAO) {
+        this.relationshipDAO = (relationshipDAO != null) ? relationshipDAO : new CustomerRelationshipDAO();
+    }
+
+    public void setRelationshipDAO(CustomerRelationshipDAO dao) {
+        if (dao != null) {
+            this.relationshipDAO = dao;
+        }
+    }
     
     public List<CustomerRelationship> getChildren(int parentId) {
         return relationshipDAO.getChildren(parentId);
@@ -17,7 +31,7 @@ public class CustomerHierarchyService {
     }
     
     public boolean addRelationship(int parentId, int childId, String type) {
-        if (parentId == childId) {
+        if (parentId <= 0 || childId <= 0 || parentId == childId) {
             return false;
         }
         
@@ -26,7 +40,7 @@ public class CustomerHierarchyService {
             return false;
         }
         
-        return relationshipDAO.addRelationship(parentId, childId, type);
+        return relationshipDAO.addRelationship(parentId, childId, type != null && !type.trim().isEmpty() ? type : "SUBSIDIARY");
     }
     
     private boolean isAncestor(int targetAncestorId, int currentId, java.util.Set<Integer> visited) {
@@ -42,7 +56,17 @@ public class CustomerHierarchyService {
         return false;
     }
     
+    public CustomerRelationship getRelationshipById(int relationshipId) {
+        if (relationshipId <= 0) {
+            return null;
+        }
+        return relationshipDAO.findById(relationshipId);
+    }
+
     public boolean deleteRelationship(int relationshipId) {
+        if (relationshipId <= 0) {
+            return false;
+        }
         return relationshipDAO.deleteRelationship(relationshipId);
     }
 }

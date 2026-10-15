@@ -134,6 +134,12 @@
                                                     </form>
                                                 </c:if>
                                                 <a class="btn btn-secondary btn-sm" href="${transferUrl}">Chuyển công ty</a>
+                                                <form method="post" action="${pageContext.request.contextPath}/contacts/delete"
+                                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa người liên hệ này không? Thao tác này không thể hoàn tác.');">
+                                                    <input type="hidden" name="contactId" value="<c:out value='${ct.contactId}'/>">
+                                                    <input type="hidden" name="customerId" value="<c:out value='${ct.customerId}'/>">
+                                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Xóa</button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

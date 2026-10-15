@@ -90,7 +90,7 @@
                 </div>
                 <div class="page-actions" style="display: flex; gap: 8px;">
                     <button class="btn btn-primary" onclick="openOppModal()"><i class="fas fa-plus"></i> Thêm cơ hội</button>
-                    <a href="${pageContext.request.contextPath}/deals/export?keyword=<c:out value='${keyword}'/>&filterFieldId=${filterFieldId}&filterFieldValue=<c:out value='${filterFieldValue}'/>" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">
+                    <a href="${pageContext.request.contextPath}/deals/export?keyword=${keyword}&filterFieldId=${filterFieldId}&filterFieldValue=${filterFieldValue}" class="btn btn-secondary" style="background: white; border: 1px solid var(--color-border);">
                         <i class="fas fa-file-export"></i> Xuất CSV
                     </a>
                 </div>
@@ -99,7 +99,7 @@
             <form action="${pageContext.request.contextPath}/deals" method="get" class="deals-toolbar">
                 <div class="search-group-inline">
                     <i class="fas fa-search search-icon"></i>
-                    <input class="form-control" name="keyword" type="search" placeholder="Tìm theo tiêu đề..." value="<c:out value='${keyword}'/>">
+                    <input class="form-control" name="keyword" type="search" placeholder="Tìm theo tiêu đề..." value="${keyword}">
                 </div>
                 <c:if test="${not empty customFieldDefinitions}">
                     <div style="display: flex; gap: 8px; align-items: center;">
@@ -109,7 +109,7 @@
                                 <option value="${def.fieldId}" ${filterFieldId == def.fieldId ? 'selected' : ''}><c:out value="${def.fieldLabel}"/></option>
                             </c:forEach>
                         </select>
-                        <input type="text" name="filterFieldValue" class="form-control" placeholder="Giá trị..." value="<c:out value='${filterFieldValue}'/>" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; max-width: 160px;">
+                        <input type="text" name="filterFieldValue" class="form-control" placeholder="Giá trị..." value="${filterFieldValue}" style="background: white; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 12px; max-width: 160px;">
                     </div>
                 </c:if>
                 <div class="filter-actions">
@@ -154,12 +154,23 @@
                                                 <strong style="color: var(--color-gray-900);"><fmt:formatNumber value="${item.amount}" type="currency" currencySymbol="₫"/></strong>
                                             </td>
                                             <td>
-                                                <span class="badge" style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: ${item.probability >= 100 ? '#dcfce7' : item.probability <= 0 ? '#fee2e2' : '#e0f2fe'}; color: ${item.probability >= 100 ? '#166534' : item.probability <= 0 ? '#991b1b' : '#0369a1'};">
-                                                    <c:choose>
-                                                        <c:when test="${not empty item.stageName}"><c:out value="${item.stageName}"/></c:when>
-                                                        <c:otherwise>Chưa chọn stage</c:otherwise>
-                                                    </c:choose>
-                                                </span>
+                                                <c:choose>
+                                                    <c:when test="${item.probability ge 100}">
+                                                        <span class="badge" style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: #dcfce7; color: #166534;">
+                                                            <c:out value="${not empty item.stageName ? item.stageName : 'Chưa chọn stage'}"/>
+                                                        </span>
+                                                    </c:when>
+                                                    <c:when test="${item.probability le 0}">
+                                                        <span class="badge" style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: #fee2e2; color: #991b1b;">
+                                                            <c:out value="${not empty item.stageName ? item.stageName : 'Chưa chọn stage'}"/>
+                                                        </span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="badge" style="padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: #e0f2fe; color: #0369a1;">
+                                                            <c:out value="${not empty item.stageName ? item.stageName : 'Chưa chọn stage'}"/>
+                                                        </span>
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </td>
                                             <td style="text-align: center;">
                                                 <strong style="color: var(--color-primary);">${item.probability}%</strong>
@@ -196,21 +207,48 @@
                     </table>
                 </div>
 
-                <c:if test="${totalPages > 1}">
+                <c:if test="${totalPages gt 1}">
                     <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding: 12px 24px;">
                         <span style="color: var(--color-text-secondary); font-size: 13px;">Trang ${currentPage} / ${totalPages}</span>
                         <ul class="pagination" style="margin: 0; display: flex; gap: 4px; list-style: none; padding: 0;">
-                            <li class="page-item ${currentPage == 1 ? 'disabled' : ''}" style="opacity: ${currentPage == 1 ? '0.5' : '1'}; pointer-events: ${currentPage == 1 ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage - 1}&keyword=<c:out value='${keyword}'/>">‹ Trước</a>
-                            </li>
-                            <c:forEach begin="${currentPage - 2 > 1 ? currentPage - 2 : 1}" end="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" var="i">
+                            <c:choose>
+                                <c:when test="${currentPage == 1}">
+                                    <li class="page-item disabled" style="opacity: 0.5; pointer-events: none;">
+                                        <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="#">‹ Trước</a>
+                                    </li>
+                                </c:when>
+                                <c:otherwise>
+                                    <li class="page-item">
+                                        <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage - 1}&keyword=${keyword}">‹ Trước</a>
+                                    </li>
+                                </c:otherwise>
+                            </c:choose>
+                            <c:set var="startPage" value="${currentPage - 2 gt 1 ? currentPage - 2 : 1}"/>
+                            <c:set var="endPage" value="${currentPage + 2 lt totalPages ? currentPage + 2 : totalPages}"/>
+                            <c:forEach begin="${startPage}" end="${endPage}" var="i">
                                 <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                    <a class="page-link btn ${currentPage == i ? 'btn-primary' : 'btn-secondary'}" style="padding: 4px 12px; ${currentPage != i ? 'background: white; border: 1px solid var(--color-border);' : ''}" href="?page=${i}&keyword=<c:out value='${keyword}'/>">${i}</a>
+                                    <c:choose>
+                                        <c:when test="${currentPage == i}">
+                                            <a class="page-link btn btn-primary" style="padding: 4px 12px;" href="?page=${i}&keyword=${keyword}">${i}</a>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${i}&keyword=${keyword}">${i}</a>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </li>
                             </c:forEach>
-                            <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}" style="opacity: ${currentPage == totalPages ? '0.5' : '1'}; pointer-events: ${currentPage == totalPages ? 'none' : 'auto'};">
-                                <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage + 1}&keyword=<c:out value='${keyword}'/>">Sau ›</a>
-                            </li>
+                            <c:choose>
+                                <c:when test="${currentPage == totalPages}">
+                                    <li class="page-item disabled" style="opacity: 0.5; pointer-events: none;">
+                                        <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="#">Sau ›</a>
+                                    </li>
+                                </c:when>
+                                <c:otherwise>
+                                    <li class="page-item">
+                                        <a class="page-link btn btn-secondary" style="padding: 4px 12px; background: white; border: 1px solid var(--color-border);" href="?page=${currentPage + 1}&keyword=${keyword}">Sau ›</a>
+                                    </li>
+                                </c:otherwise>
+                            </c:choose>
                         </ul>
                     </div>
                 </c:if>
@@ -242,7 +280,7 @@
                 <select id="oppStageSelect" name="pipelineStageId" class="form-control" onchange="onStageChange(this)" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
                     <option value="" data-prob="0" data-condition="">-- Chọn giai đoạn --</option>
                     <c:forEach var="st" items="${pipelineStages}">
-                        <option value="${st.pipelineStageId}" data-prob="${st.defaultProbability}" data-condition="<c:out value='${st.exitCondition}'/>" data-name="<c:out value='${st.stageName}'/>">
+                        <option value="${st.pipelineStageId}" data-prob="${st.defaultProbability}" data-condition="${st.exitCondition}" data-name="${st.stageName}">
                             <c:out value="${st.stageName}"/> (${st.defaultProbability}%)
                         </option>
                     </c:forEach>
@@ -304,7 +342,7 @@
                                 <c:when test="${def.fieldType == 'SELECT'}">
                                     <select name="customField_${def.fieldId}" class="form-control" ${def.required ? 'required' : ''} style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
                                         <option value="">-- Chọn --</option>
-                                        <c:forEach var="opt" items="${def.options.split('[,;\\\\n]+')}">
+                                        <c:forEach var="opt" items="${def.optionArray}">
                                             <option value="${opt.trim()}"><c:out value="${opt.trim()}"/></option>
                                         </c:forEach>
                                     </select>
@@ -406,13 +444,20 @@
         .then(async res => {
             const data = await res.json();
             if (!res.ok) {
-                alert('Lỗi: ' + (data.error || 'Thao tác không hợp lệ') + (data.details ? '\n- ' + data.details.join('\n- ') : ''));
+                const errMsg = (data.error || 'Thao tác không hợp lệ') + (data.details ? ': ' + data.details.join(', ') : '');
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', errMsg);
+                }
             } else {
                 closeOppModal();
                 window.location.reload();
             }
         })
-        .catch(err => alert('Lỗi kết nối máy chủ.'));
+        .catch(err => {
+            if (typeof window.showToast === 'function') {
+                window.showToast('error', 'Lỗi kết nối máy chủ.');
+            }
+        });
     }
 </script>
 

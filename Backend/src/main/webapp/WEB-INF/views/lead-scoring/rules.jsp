@@ -43,7 +43,6 @@
 
             <!-- Global Feedback Notifications -->
             <div id="leadScoringAlert" class="alert" style="display: none; margin-bottom: 16px;"></div>
-
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-danger scoring-notification-banner" style="margin-bottom: 16px;">
                     <div style="display: flex; align-items: center; gap: 8px;">

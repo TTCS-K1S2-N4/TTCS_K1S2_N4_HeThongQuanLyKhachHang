@@ -183,8 +183,8 @@ public class CustomerCareServlet extends HttpServlet {
                 }
             }
 
-            if (days == null || days <= 0) {
-                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Số ngày cấu hình không hợp lệ (> 0).");
+            if (days == null || days <= 0 || days > 365) {
+                sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, "Số ngày cấu hình không hợp lệ (từ 1 đến 365 ngày).");
                 return;
             }
 
@@ -196,7 +196,7 @@ public class CustomerCareServlet extends HttpServlet {
                     out.print("{\"success\": " + updated + ", \"message\": \"Cập nhật cấu hình ngày định kỳ thành công.\", \"inactiveThresholdDays\": " + days + "}");
                     out.flush();
                 } else {
-                    resp.sendRedirect(req.getContextPath() + "/customers/care?success=config");
+                    resp.sendRedirect(req.getContextPath() + "/customers/care?inactiveDays=" + days + "&success=config");
                 }
             } catch (ValidationException e) {
                 sendErrorResponse(req, resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
@@ -206,7 +206,7 @@ public class CustomerCareServlet extends HttpServlet {
             return;
         }
 
-        // 2. POST /customers/{customerId}/care/mark-contacted
+        // 2. POST /customers/care/mark-contacted hoặc /customers/care/{customerId}/mark-contacted
         Integer customerId = extractCustomerIdForMarkContacted(req);
         String note = null;
 
@@ -214,11 +214,15 @@ public class CustomerCareServlet extends HttpServlet {
             String body = readRequestBody(req);
             if (customerId == null) {
                 customerId = extractJsonInt(body, "customerId");
+                if (customerId == null) customerId = extractJsonInt(body, "id");
             }
             note = extractJsonString(body, "note");
         } else {
             if (customerId == null) {
                 String cIdStr = req.getParameter("customerId");
+                if (cIdStr == null || cIdStr.trim().isEmpty()) {
+                    cIdStr = req.getParameter("id");
+                }
                 if (cIdStr != null && !cIdStr.trim().isEmpty()) {
                     try { customerId = Integer.parseInt(cIdStr.trim()); } catch (NumberFormatException ignored) {}
                 }
@@ -260,12 +264,12 @@ public class CustomerCareServlet extends HttpServlet {
     }
 
     private Integer extractCustomerIdForMarkContacted(HttpServletRequest req) {
-        String uri = req.getRequestURI();
-        if (uri != null) {
-            Matcher m = MARK_CONTACTED_PATTERN.matcher(uri);
-            if (m.matches()) {
-                try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {}
-            }
+        String param = req.getParameter("customerId");
+        if (param == null || param.trim().isEmpty()) {
+            param = req.getParameter("id");
+        }
+        if (param != null && !param.trim().isEmpty()) {
+            try { return Integer.parseInt(param.trim()); } catch (NumberFormatException ignored) {}
         }
 
         String pathInfo = req.getPathInfo();
@@ -275,14 +279,19 @@ public class CustomerCareServlet extends HttpServlet {
             if (m.find()) {
                 try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {}
             }
+            Pattern p2 = Pattern.compile("^/(\\d+)");
+            Matcher m2 = p2.matcher(pathInfo);
+            if (m2.find()) {
+                try { return Integer.parseInt(m2.group(1)); } catch (NumberFormatException ignored) {}
+            }
         }
 
-        String param = req.getParameter("customerId");
-        if (param == null || param.trim().isEmpty()) {
-            param = req.getParameter("id");
-        }
-        if (param != null && !param.trim().isEmpty()) {
-            try { return Integer.parseInt(param.trim()); } catch (NumberFormatException ignored) {}
+        String uri = req.getRequestURI();
+        if (uri != null) {
+            Matcher m = MARK_CONTACTED_PATTERN.matcher(uri);
+            if (m.matches()) {
+                try { return Integer.parseInt(m.group(1)); } catch (NumberFormatException ignored) {}
+            }
         }
         return null;
     }

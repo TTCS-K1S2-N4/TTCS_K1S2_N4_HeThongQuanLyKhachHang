@@ -42,7 +42,7 @@
             </div>
 
             <!-- Global Feedback Notifications -->
-            <c:if test="${not empty errorMessage}">
+            <c:if test="${not empty errorMessage and empty param.error and empty param.err}">
                 <div class="alert alert-danger scoring-notification-banner" style="margin-bottom: 16px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i class="fas fa-exclamation-circle"></i>
@@ -50,7 +50,7 @@
                     </div>
                 </div>
             </c:if>
-            <c:if test="${not empty successMessage}">
+            <c:if test="${not empty successMessage and empty param.success}">
                 <div class="alert alert-success scoring-notification-banner" style="margin-bottom: 16px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i class="fas fa-check-circle"></i>
@@ -241,5 +241,51 @@
         </div>
     </main>
 </div>
+<script>
+    (function() {
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlErr = urlParams.get('error') || urlParams.get('err');
+            var urlSuccess = urlParams.get('success');
+            var urlMsg = urlParams.get('msg');
+            var hasParamToast = false;
+
+            // Tránh hiển thị trùng lặp nếu server đã render thông báo (qua global toast.jsp hoặc inline banner)
+            var hasServerSuccess = (document.querySelector('.global-success-message') && document.querySelector('.global-success-message').value.trim() !== '') ||
+                                   document.querySelector('.scoring-notification-banner.alert-success');
+            var hasServerError = (document.querySelector('.global-error-message') && document.querySelector('.global-error-message').value.trim() !== '') ||
+                                 document.querySelector('.scoring-notification-banner.alert-danger');
+
+            if (urlErr) {
+                if (!hasServerError && typeof window.showToast === 'function') {
+                    window.showToast('error', urlErr === '1' ? 'Đã xảy ra lỗi khi xử lý bộ lọc.' : urlErr);
+                }
+                urlParams.delete('error');
+                urlParams.delete('err');
+                hasParamToast = true;
+            } else if (urlSuccess) {
+                if (!hasServerSuccess && typeof window.showToast === 'function') {
+                    window.showToast('success', urlSuccess === '1' || urlSuccess === 'true' ? 'Thao tác bộ lọc thành công!' : urlSuccess);
+                }
+                urlParams.delete('success');
+                hasParamToast = true;
+            } else if (urlMsg) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('info', urlMsg);
+                }
+                urlParams.delete('msg');
+                hasParamToast = true;
+            }
+
+            if (hasParamToast && window.history && window.history.replaceState) {
+                var remainingQuery = urlParams.toString();
+                var newUrl = window.location.pathname + (remainingQuery ? ('?' + remainingQuery) : '') + window.location.hash;
+                window.history.replaceState(null, document.title, newUrl);
+            }
+        } catch (e) {
+            console.error('Error handling URL params in leads/saved-filters.jsp:', e);
+        }
+    })();
+</script>
 </body>
 </html>

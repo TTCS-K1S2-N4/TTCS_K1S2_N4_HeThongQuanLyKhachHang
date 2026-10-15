@@ -41,9 +41,23 @@
                         <h2 class="card-title" style="font-size: 18px; margin: 0; display: flex; align-items: center; gap: 10px;">
                             <i class="fas fa-handshake" style="color: var(--color-primary);"></i> <c:out value="${opportunity.title}"/>
                         </h2>
-                        <span class="badge" style="padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 600; background: ${opportunity.probability >= 100 ? '#dcfce7' : opportunity.probability <= 0 ? '#fee2e2' : '#e0f2fe'}; color: ${opportunity.probability >= 100 ? '#166534' : opportunity.probability <= 0 ? '#991b1b' : '#0369a1'};">
-                            <c:out value="${opportunity.stageName != null ? opportunity.stageName : 'Chưa chọn stage'}"/> (${opportunity.probability}%)
-                        </span>
+                        <c:choose>
+                            <c:when test="${opportunity.probability ge 100}">
+                                <span class="badge" style="padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 600; background: #dcfce7; color: #166534;">
+                                    <c:out value="${opportunity.stageName != null ? opportunity.stageName : 'Chưa chọn stage'}"/> (${opportunity.probability}%)
+                                </span>
+                            </c:when>
+                            <c:when test="${opportunity.probability le 0}">
+                                <span class="badge" style="padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 600; background: #fee2e2; color: #991b1b;">
+                                    <c:out value="${opportunity.stageName != null ? opportunity.stageName : 'Chưa chọn stage'}"/> (${opportunity.probability}%)
+                                </span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge" style="padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: 600; background: #e0f2fe; color: #0369a1;">
+                                    <c:out value="${opportunity.stageName != null ? opportunity.stageName : 'Chưa chọn stage'}"/> (${opportunity.probability}%)
+                                </span>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                     <div class="card-body" style="padding: 24px;">
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
@@ -74,22 +88,44 @@
 
                         <!-- Won / Loss Reason & Competitor Info (S2-10) -->
                         <c:if test="${not empty opportunity.reasonName or not empty opportunity.competitorName}">
-                            <div style="margin-top: 20px; padding: 16px; border-radius: 8px; background: ${opportunity.probability >= 100 ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${opportunity.probability >= 100 ? '#bbf7d0' : '#fecaca'};">
-                                <c:if test="${not empty opportunity.reasonName}">
-                                    <div style="margin-bottom: 8px;">
-                                        <strong style="color: ${opportunity.probability >= 100 ? '#166534' : '#991b1b'};">
-                                            <i class="fas ${opportunity.probability >= 100 ? 'fa-trophy' : 'fa-times-circle'}"></i> Lý do ${opportunity.probability >= 100 ? 'Thắng' : 'Thua'}:
-                                        </strong>
-                                        <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.reasonName}"/></span>
+                            <c:choose>
+                                <c:when test="${opportunity.probability ge 100}">
+                                    <div style="margin-top: 20px; padding: 16px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                        <c:if test="${not empty opportunity.reasonName}">
+                                            <div style="margin-bottom: 8px;">
+                                                <strong style="color: #166534;">
+                                                    <i class="fas fa-trophy"></i> Lý do Thắng:
+                                                </strong>
+                                                <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.reasonName}"/></span>
+                                            </div>
+                                        </c:if>
+                                        <c:if test="${not empty opportunity.competitorName}">
+                                            <div>
+                                                <strong style="color: #991b1b;"><i class="fas fa-user-ninja"></i> Đối thủ cạnh tranh:</strong>
+                                                <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.competitorName}"/></span>
+                                            </div>
+                                        </c:if>
                                     </div>
-                                </c:if>
-                                <c:if test="${not empty opportunity.competitorName}">
-                                    <div>
-                                        <strong style="color: #991b1b;"><i class="fas fa-user-ninja"></i> Đối thủ cạnh tranh:</strong>
-                                        <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.competitorName}"/></span>
+                                </c:when>
+                                <c:otherwise>
+                                    <div style="margin-top: 20px; padding: 16px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca;">
+                                        <c:if test="${not empty opportunity.reasonName}">
+                                            <div style="margin-bottom: 8px;">
+                                                <strong style="color: #991b1b;">
+                                                    <i class="fas fa-times-circle"></i> Lý do Thua:
+                                                </strong>
+                                                <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.reasonName}"/></span>
+                                            </div>
+                                        </c:if>
+                                        <c:if test="${not empty opportunity.competitorName}">
+                                            <div>
+                                                <strong style="color: #991b1b;"><i class="fas fa-user-ninja"></i> Đối thủ cạnh tranh:</strong>
+                                                <span style="font-size: 15px; font-weight: 500; margin-left: 6px;"><c:out value="${opportunity.competitorName}"/></span>
+                                            </div>
+                                        </c:if>
                                     </div>
-                                </c:if>
-                            </div>
+                                </c:otherwise>
+                            </c:choose>
                         </c:if>
 
                         <c:if test="${not empty customFieldValues}">

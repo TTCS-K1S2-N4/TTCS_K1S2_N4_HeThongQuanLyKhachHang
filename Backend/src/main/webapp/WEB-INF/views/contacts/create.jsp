@@ -114,29 +114,12 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label class="form-label" for="buyingRole">Vai trò trong quyết định mua <span class="form-required">*</span></label>
-                                        <select id="buyingRole" name="buyingRole" class="form-control" required>
-                                            <option value="">-- Chọn vai trò --</option>
-                                            <c:choose>
-                                                <c:when test="${not empty buyingRoles}">
-                                                    <c:forEach var="code" items="${buyingRoles}">
-                                                        <option value="<c:out value='${code}'/>" ${code == selectedRole ? 'selected' : ''}>
-                                                            <c:choose>
-                                                                <c:when test="${code == 'DECIDER' or code == 'DECISION_MAKER'}">Người quyết định</c:when>
-                                                                <c:when test="${code == 'INFLUENCER'}">Người ảnh hưởng</c:when>
-                                                                <c:when test="${code == 'END_USER'}">Người dùng cuối</c:when>
-                                                                <c:when test="${code == 'BLOCKER'}">Người cản trở</c:when>
-                                                                <c:otherwise><c:out value="${code}"/></c:otherwise>
-                                                            </c:choose>
-                                                        </option>
-                                                    </c:forEach>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <option value="DECISION_MAKER" ${selectedRole == 'DECISION_MAKER' ? 'selected' : ''}>Người quyết định</option>
-                                                    <option value="INFLUENCER" ${selectedRole == 'INFLUENCER' ? 'selected' : ''}>Người ảnh hưởng</option>
-                                                    <option value="END_USER" ${selectedRole == 'END_USER' ? 'selected' : ''}>Người dùng cuối</option>
-                                                    <option value="BLOCKER" ${selectedRole == 'BLOCKER' ? 'selected' : ''}>Người cản trở</option>
-                                                </c:otherwise>
-                                            </c:choose>
+                                        <select id="buyingRole" name="buyingRole" class="form-control" required style="border-radius: 8px;">
+                                            <option value="">-- Chọn vai trò trong quyết định mua --</option>
+                                            <option value="DECIDER" ${selectedRole == 'DECIDER' or selectedRole == 'DECISION_MAKER' ? 'selected' : ''}>Người quyết định (Ký hợp đồng, duyệt ngân sách)</option>
+                                            <option value="INFLUENCER" ${selectedRole == 'INFLUENCER' ? 'selected' : ''}>Người ảnh hưởng (Đánh giá chuyên môn, tư vấn)</option>
+                                            <option value="END_USER" ${selectedRole == 'END_USER' ? 'selected' : ''}>Người dùng cuối (Trực tiếp sử dụng)</option>
+                                            <option value="BLOCKER" ${selectedRole == 'BLOCKER' ? 'selected' : ''}>Người cản trở (Nghi ngại, rào cản thương vụ)</option>
                                         </select>
                                         <c:if test="${not empty errors.buyingRole}">
                                             <p class="form-error"><c:out value="${errors.buyingRole}"/></p>
@@ -144,18 +127,20 @@
                                     </div>
                                     <div class="form-group">
                                         <span class="form-label">Đầu mối chính</span>
-                                        <label class="contact-check" for="isPrimary">
+                                        <label class="contact-check" for="isPrimary" style="cursor: pointer; font-weight: 500;">
                                             <input id="isPrimary" name="isPrimary" type="checkbox" value="true"
-                                                ${not empty form and form.primary ? 'checked' : ''}>
+                                                ${not empty form and form.primary ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
                                             Đặt làm đầu mối chính của khách hàng
                                         </label>
-                                        <p class="form-help">Mỗi khách hàng chỉ có một đầu mối chính; đầu mối hiện tại (nếu có) sẽ bị thay thế.</p>
+                                        <p class="form-help" style="color: #64748b; font-size: 12.5px; margin-top: 4px;">Mỗi khách hàng chỉ có một đầu mối chính; đầu mối hiện tại (nếu có) sẽ tự động được chuyển thành phụ.</p>
                                     </div>
                                 </div>
 
-                                <div class="contact-form-actions">
-                                    <a class="btn btn-secondary" href="${listUrl}">Hủy</a>
-                                    <button class="btn btn-primary" type="submit">Lưu người liên hệ</button>
+                                <div class="contact-form-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border);">
+                                    <a class="btn btn-secondary" href="${pageContext.request.contextPath}/customers/360?id=${customerId}#tab-contacts" style="padding: 9px 18px; border-radius: 8px;">Hủy / Quay lại</a>
+                                    <button class="btn btn-primary" type="submit" style="padding: 9px 22px; border-radius: 8px; font-weight: 600; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); border: none; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.28);">
+                                        <i class="fas fa-save" style="margin-right: 6px;"></i> Lưu người liên hệ
+                                    </button>
                                 </div>
                             </form>
                         </div>

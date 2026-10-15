@@ -31,7 +31,7 @@ public class AccountListServlet extends HttpServlet {
         Integer requestedPageSize = parseOptionalInt(pageSizeStr);
 
         int pageSize = (requestedPageSize != null && (requestedPageSize == 10 || requestedPageSize == 20 || requestedPageSize == 50))
-                ? requestedPageSize : 10;
+                ? requestedPageSize : 20;
         int page = requestedPage != null && requestedPage > 0 ? requestedPage : 1;
 
         int totalAccounts = accountService.countTotalAccounts(keyword, teamId, roleId, status);

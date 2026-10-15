@@ -95,17 +95,6 @@
                     </div>
                 </form>
 
-                <c:if test="${not empty error}">
-                    <div class="alert alert-danger" style="margin-bottom: 16px; padding: 12px; background: #fee2e2; color: #dc2626; border-radius: 6px;">
-                        <c:out value="${error}"/>
-                    </div>
-                </c:if>
-                <c:if test="${not empty message}">
-                    <div class="alert alert-success" style="margin-bottom: 16px; padding: 12px; background: #dcfce7; color: #16a34a; border-radius: 6px;">
-                        <c:out value="${message}"/>
-                    </div>
-                </c:if>
-
                 <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <div class="card-header">
                         <h2 class="card-title" style="font-size: 16px; display: flex; align-items: center; gap: 8px;">
@@ -169,5 +158,59 @@
             </div>
         </main>
     </div>
+<c:if test="${not empty error}">
+    <input type="hidden" id="toast-campaign-err" value="<c:out value='${error}'/>">
+</c:if>
+<c:if test="${not empty message}">
+    <input type="hidden" id="toast-campaign-msg" value="<c:out value='${message}'/>">
+</c:if>
+<script>
+    (function() {
+        var errInput = document.getElementById('toast-campaign-err');
+        var msgInput = document.getElementById('toast-campaign-msg');
+        if (errInput && errInput.value && typeof window.showToast === 'function') {
+            window.showToast('error', errInput.value);
+        }
+        if (msgInput && msgInput.value && typeof window.showToast === 'function') {
+            window.showToast('success', msgInput.value);
+        }
+
+        try {
+            var urlParams = new URLSearchParams(window.location.search);
+            var urlErr = urlParams.get('error');
+            var urlSuccess = urlParams.get('success');
+            var urlMsg = urlParams.get('msg');
+            var hasParamToast = false;
+
+            if (urlErr) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('error', urlErr === '1' ? 'Đã xảy ra lỗi khi xử lý chiến dịch.' : urlErr);
+                }
+                urlParams.delete('error');
+                hasParamToast = true;
+            } else if (urlSuccess) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('success', urlSuccess === '1' || urlSuccess === 'true' ? 'Thao tác chiến dịch thành công!' : urlSuccess);
+                }
+                urlParams.delete('success');
+                hasParamToast = true;
+            } else if (urlMsg) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('info', urlMsg);
+                }
+                urlParams.delete('msg');
+                hasParamToast = true;
+            }
+
+            if (hasParamToast && window.history && window.history.replaceState) {
+                var remainingQuery = urlParams.toString();
+                var newUrl = window.location.pathname + (remainingQuery ? ('?' + remainingQuery) : '') + window.location.hash;
+                window.history.replaceState(null, document.title, newUrl);
+            }
+        } catch (e) {
+            console.error('Error handling URL params in campaigns/list.jsp:', e);
+        }
+    })();
+</script>
 </body>
 </html>

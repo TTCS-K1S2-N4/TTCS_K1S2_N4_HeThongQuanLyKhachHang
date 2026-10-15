@@ -5,784 +5,733 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Hồ sơ cá nhân | CRM System</title>
+    <title>Hồ sơ cá nhân &amp; Chữ ký báo giá | Frostline CRM</title>
 
-    <!-- CSS dùng chung của dự án -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <script>
+        // Tự động thêm timestamp chống cache nếu truy cập URL chưa có tham số version
+        if (!window.location.search.includes('v=') && !window.location.search.includes('t=')) {
+            var sep = window.location.href.includes('?') ? '&' : '?';
+            window.location.replace(window.location.href.split('#')[0] + sep + 't=' + Date.now());
+        }
+    </script>
+
+    <!-- Google Fonts & Font Awesome 6.5.1 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- CSS dùng chung của hệ thống -->
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/reset.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/layout.css">
     <link rel="stylesheet" href="../../assets/css/responsive.css">
 
-    <!-- CSS riêng của trang hồ sơ -->
-    <link rel="stylesheet" href="../../assets/css/modules/profile.css">
+    <!-- CSS riêng cao cấp của trang hồ sơ -->
+    <link rel="stylesheet" href="../../assets/css/modules/profile.css?v=20261013_v4">
 </head>
 
 <body>
 
-<main class="main-content">
-
-    <div class="content-container">
-
-        <!-- PAGE HEADER -->
-        <header class="page-header">
-            <div>
-                <span class="page-eyebrow">TÀI KHOẢN CỦA TÔI</span>
-
-                <h1 class="page-title">
-                    Hồ sơ cá nhân
-                </h1>
-
-                <p class="page-description">
-                    Quản lý thông tin cá nhân và ảnh đại diện của bạn.
-                </p>
+<!-- FROSTLINE BRAND TOPBAR -->
+<nav class="frost-brand-topbar">
+    <div class="brand-topbar-inner">
+        <a href="../../index.jsp" class="frost-brand-logo">
+            <span class="logo-frost-symbol"><i class="fa-solid fa-snowflake"></i></span>
+            <div class="logo-text-block">
+                <span class="logo-brand-title">Frostline CRM</span>
+                <span class="logo-brand-sub">Enterprise Edition</span>
             </div>
+        </a>
+        <div class="brand-topbar-nav">
+            <a href="../../index.jsp" class="nav-chip"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="../../customers" class="nav-chip"><i class="fa-solid fa-users"></i> Khách hàng</a>
+            <a href="../../accounts/list" class="nav-chip"><i class="fa-solid fa-user-gear"></i> Quản lý tài khoản</a>
+        </div>
+        <div class="brand-topbar-actions">
+            <a href="../../index.jsp" class="btn-back-home" title="Về trang điều khiển">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại Dashboard
+            </a>
+        </div>
+    </div>
+</nav>
+
+<main class="profile-main-wrapper">
+
+    <div class="profile-page-container">
+
+        <!-- TOP NAVIGATION & BREADCRUMBS -->
+        <header class="profile-top-nav">
+            <nav class="profile-breadcrumbs" aria-label="Breadcrumb">
+                <a href="../../index.jsp" title="Về trang chủ">
+                    <i class="fa-solid fa-house" style="font-size: 12px;"></i>
+                    <span>Trang chủ</span>
+                </a>
+                <span class="divider">/</span>
+                <span style="color: var(--frost-slate-600);">Tài khoản của tôi</span>
+                <span class="divider">/</span>
+                <span class="current">Hồ sơ cá nhân &amp; Chữ ký</span>
+            </nav>
 
             <div>
-                <a href="../../index.jsp" id="backButton" class="btn btn-secondary" title="Quay lại trang trước" onclick="if (window.history.length > 1) { window.history.back(); return false; }">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Quay lại
+                <a href="../../index.jsp" id="backButton" class="btn-profile-back" title="Quay lại trang trước" 
+                   onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Quay lại</span>
                 </a>
             </div>
         </header>
 
+        <!-- PAGE HERO TITLE -->
+        <div class="profile-hero-header">
+            <span class="profile-eyebrow-tag">
+                <i class="fa-solid fa-user-shield"></i> TÀI KHOẢN CỦA TÔI
+            </span>
+            <h1 class="profile-main-title">
+                Hồ sơ cá nhân &amp; Chữ ký điện tử
+            </h1>
+            <p class="profile-main-desc">
+                Quản lý thông tin liên hệ và thiết lập chữ ký email tự động chèn vào báo giá gửi tới khách hàng.
+            </p>
+        </div>
 
-        <!-- PROFILE LAYOUT -->
-        <section class="profile-container">
+        <!-- 2-COLUMN PROFILE LAYOUT -->
+        <div class="profile-layout-grid">
 
-            <!-- =================================
-                 PERSONAL INFORMATION
-            ================================== -->
-
-            <section class="profile-card profile-form-section">
-
-                <div class="card-heading">
+            <!-- =========================================================
+                 COLUMN 1: FORM THÔNG TIN CÁ NHÂN & CHỮ KÝ BÁO GIÁ
+                 ========================================================= -->
+            <section class="profile-card-frost">
+                <div class="profile-card-header">
                     <div>
-                        <h2 class="section-title">
-                            Thông tin cơ bản
+                        <h2>
+                            <i class="fa-solid fa-id-badge" style="color: var(--frost-blue-600);"></i>
+                            Thông tin cơ bản &amp; Chữ ký
                         </h2>
-
-                        <p class="section-description">
-                            Cập nhật thông tin cá nhân của bạn.
-                        </p>
+                        <p>Cập nhật số điện thoại và chữ ký báo giá của bạn trên hệ thống.</p>
                     </div>
                 </div>
 
+                <div class="profile-card-body">
+                    <form id="profileForm" action="../../profile/update" method="POST" class="profile-form-grid" novalidate>
 
-                <form
-                    id="profileForm"
-                    action="../../profile/update"
-                    method="POST"
-                    class="profile-form"
-                >
+                        <!-- FULL NAME (SỬA ĐƯỢC) -->
+                        <div class="form-group-profile">
+                            <label class="form-label-profile" for="fullName">
+                                <span class="label-title">
+                                    Họ và tên <span class="required-star">*</span>
+                                </span>
+                            </label>
+                            <div class="input-control-wrapper">
+                                <i class="fa-regular fa-user input-leading-icon"></i>
+                                <input type="text" name="fullName" id="fullName" class="form-input-profile" 
+                                       placeholder="Nhập họ và tên đầy đủ của bạn" autocomplete="name" required>
+                            </div>
+                            <span class="field-help-hint">Họ và tên hiển thị trên hệ thống và các hợp đồng, báo giá.</span>
+                        </div>
 
-                    <!-- FULL NAME -->
-                    <div class="form-group">
-                        <label for="fullName">
-                            Họ và tên
-                            <span class="required-mark">*</span>
-                        </label>
+                        <!-- EMAIL (KHÔNG TỰ ĐỔI ĐƯỢC - CHỈ XEM) -->
+                        <div class="form-group-profile">
+                            <label class="form-label-profile" for="email">
+                                <span class="label-title">
+                                    Email công ty
+                                </span>
+                                <span class="badge-readonly-lock" title="Tài khoản email do quản trị viên quản lý">
+                                    <i class="fa-solid fa-lock"></i> Chỉ xem / Cố định
+                                </span>
+                            </label>
+                            <div class="input-control-wrapper is-readonly">
+                                <i class="fa-regular fa-envelope input-leading-icon"></i>
+                                <input type="email" id="email" class="form-input-profile" 
+                                       placeholder="Email tài khoản" autocomplete="email" readonly aria-readonly="true">
+                            </div>
+                            <span class="field-help-hint">
+                                <i class="fa-solid fa-circle-info" style="color: var(--frost-slate-400);"></i>
+                                Email duy nhất dùng để đăng nhập. Liên hệ Quản trị hệ thống nếu cần đổi địa chỉ.
+                            </span>
+                        </div>
 
-                        <input
-                            type="text"
-                            name="fullName"
-                            id="fullName"
-                            class="form-control"
-                            placeholder="Nhập họ và tên của bạn"
-                            autocomplete="name"
-                            required
-                        >
-                    </div>
+                        <!-- PHONE (SỬA ĐƯỢC - KIỂM TRA ĐỊNH DẠNG SĐT VIỆT NAM) -->
+                        <div class="form-group-profile">
+                            <label class="form-label-profile" for="phone">
+                                <span class="label-title">
+                                    Số điện thoại di động <span class="required-star">*</span>
+                                </span>
+                            </label>
+                            <div class="input-control-wrapper">
+                                <i class="fa-solid fa-phone input-leading-icon"></i>
+                                <input type="tel" name="phone" id="phone" class="form-input-profile" 
+                                       placeholder="Ví dụ: 0912345678 (10 chữ số)" autocomplete="tel" required>
+                            </div>
+                            <!-- Live Vietnam Phone Feedback -->
+                            <div id="phoneValidationFeedback" class="phone-validation-feedback"></div>
+                            <span class="field-help-hint" id="phoneHelpHint">
+                                Định dạng di động Việt Nam: 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09.
+                            </span>
+                        </div>
 
+                        <!-- CHỮ KÝ EMAIL (SỬA ĐƯỢC - DÙNG CHO BÁO GIÁ) -->
+                        <div class="form-group-profile signature-box-wrapper">
+                            <div class="signature-toolbar">
+                                <label class="form-label-profile" for="emailSignature" style="margin: 0;">
+                                    <span class="label-title">
+                                        Chữ ký Email báo giá
+                                    </span>
+                                </label>
+                                <button type="button" class="btn-insert-template" id="btnInsertTemplate" title="Chèn mẫu chữ ký doanh nghiệp chuẩn">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Chèn mẫu chữ ký chuẩn
+                                </button>
+                            </div>
 
-                    <!-- EMAIL -->
-                    <div class="form-group">
-                        <label for="email">
-                            Email
-                            <span class="readonly-label">Chỉ xem</span>
-                        </label>
+                            <textarea name="emailSignature" id="emailSignature" class="form-textarea-signature" 
+                                      rows="4" placeholder="Nhập lời chào và chữ ký email sẽ xuất hiện cuối email báo giá..."></textarea>
+                            <span class="field-help-hint">
+                                <i class="fa-solid fa-paper-plane" style="color: var(--frost-blue-600);"></i>
+                                Chữ ký này sẽ được tự động đính kèm ở chân thư khi bạn gửi Báo giá cho khách hàng.
+                            </span>
 
-                        <input
-                            type="email"
-                            id="email"
-                            class="form-control readonly-field"
-                            placeholder="Email tài khoản"
-                            autocomplete="email"
-                            readonly
-                            aria-readonly="true"
-                        >
+                            <!-- LIVE SIGNATURE PREVIEW IN QUOTE FOOTER -->
+                            <div class="quote-signature-preview-card">
+                                <div class="preview-card-header">
+                                    <span><i class="fa-regular fa-eye"></i> Xem trước chữ ký khi gửi báo giá</span>
+                                    <span style="font-size: 11px; color: var(--frost-slate-400); font-weight: normal;">Khách hàng sẽ nhìn thấy</span>
+                                </div>
+                                <div id="signaturePreviewBox" class="preview-signature-content">
+                                    <em>Chưa thiết lập chữ ký email. Bấm "Chèn mẫu chữ ký chuẩn" hoặc nhập chữ ký phía trên để xem trước.</em>
+                                </div>
+                            </div>
+                        </div>
 
-                        <small class="field-hint">
-                            Email tài khoản được quản lý bởi hệ thống.
-                        </small>
-                    </div>
+                        <!-- TEAM & ROLES (KHÔNG TỰ ĐỔI ĐƯỢC - CHỈ XEM) -->
+                        <div class="form-group-profile">
+                            <label class="form-label-profile">
+                                <span class="label-title">
+                                    Phòng ban &amp; Quyền hạn được cấp
+                                </span>
+                                <span class="badge-readonly-lock">
+                                    <i class="fa-solid fa-lock"></i> Chỉ xem / Do Admin phân bổ
+                                </span>
+                            </label>
 
+                            <div class="org-attributes-grid">
+                                <div class="org-attr-item">
+                                    <span class="org-attr-label">
+                                        <i class="fa-solid fa-users"></i> Nhóm kinh doanh
+                                    </span>
+                                    <span id="teamDisplay" class="org-attr-val" style="color: var(--frost-blue-700);">
+                                        Đang tải...
+                                    </span>
+                                </div>
+                                <div class="org-attr-item">
+                                    <span class="org-attr-label">
+                                        <i class="fa-solid fa-shield-halved"></i> Vai trò hệ thống
+                                    </span>
+                                    <span id="rolesDisplay" class="org-attr-val" style="color: var(--frost-slate-900);">
+                                        Đang tải...
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="field-help-hint">Nhóm kinh doanh và vai trò do Quản trị hệ thống quyết định theo địa bàn công tác.</span>
+                        </div>
 
-                    <!-- PHONE -->
-                    <div class="form-group">
-                        <label for="phone">
-                            Số điện thoại
-                            <span class="required-mark">*</span>
-                        </label>
+                        <!-- SUBMIT ACTION BAR -->
+                        <div class="profile-actions-bar">
+                            <button type="submit" id="saveProfileButton" class="btn-primary-frost">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi hồ sơ
+                            </button>
+                        </div>
 
-                        <input
-                            type="tel"
-                            name="phone"
-                            id="phone"
-                            class="form-control"
-                            placeholder="Nhập số điện thoại"
-                            autocomplete="tel"
-                            required
-                        >
-                    </div>
+                        <!-- PROFILE STATUS TOAST -->
+                        <div id="profileMessage" class="toast-message" role="status" aria-live="polite"></div>
 
-
-                    <!-- EMAIL SIGNATURE -->
-                    <div class="form-group">
-                        <label for="emailSignature">
-                            Chữ ký Email
-                        </label>
-
-                        <textarea
-                            name="emailSignature"
-                            id="emailSignature"
-                            class="form-control signature-field"
-                            rows="5"
-                            placeholder="Nhập chữ ký email của bạn..."
-                        ></textarea>
-
-                        <small class="field-hint">
-                            Chữ ký được sử dụng trong nội dung email của bạn.
-                        </small>
-                    </div>
-
-
-                    <!-- TEAM -->
-                    <div class="form-group">
-                        <label for="team">
-                            Phòng ban / Team
-                            <span class="readonly-label">Chỉ xem</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="team"
-                            class="form-control readonly-field"
-                            placeholder="Thông tin phòng ban"
-                            readonly
-                            aria-readonly="true"
-                        >
-                    </div>
-
-
-                    <!-- ROLES -->
-                    <div class="form-group">
-                        <label for="roles">
-                            Vai trò
-                            <span class="readonly-label">Chỉ xem</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="roles"
-                            class="form-control readonly-field"
-                            placeholder="Vai trò trong hệ thống"
-                            readonly
-                            aria-readonly="true"
-                        >
-                    </div>
-
-
-                    <!-- FORM ACTION -->
-                    <div class="form-actions">
-                        <button
-                            type="submit"
-                            id="saveProfileButton"
-                            class="btn btn-primary"
-                        >
-                            Lưu thông tin
-                        </button>
-                    </div>
-
-
-                    <!-- PROFILE MESSAGE -->
-                    <div
-                        id="profileMessage"
-                        class="toast-message"
-                        role="status"
-                        aria-live="polite"
-                    ></div>
-
-                </form>
-
+                    </form>
+                </div>
             </section>
 
-
-            <!-- =================================
-                 AVATAR
-            ================================== -->
-
-            <aside class="profile-card profile-avatar-section">
-
-                <div class="avatar-heading">
-                    <h2 class="section-title">
-                        Ảnh đại diện
-                    </h2>
-
-                    <p class="section-description">
-                        Cá nhân hóa hồ sơ bằng ảnh đại diện của bạn.
-                    </p>
-                </div>
-
-
-                <!-- AVATAR PREVIEW -->
-                <div class="avatar-preview-container">
-
-                    <div class="avatar-frame" id="avatarFrame" title="Nhấp để thay đổi ảnh đại diện">
-
-                        <img
-                            id="avatarPreview"
-                            src="../../assets/images/default-avatar.png"
-                            alt="Ảnh đại diện"
-                            class="avatar-img"
-                        >
-
-                        <!-- Fallback nếu ảnh mặc định bị lỗi -->
-                        <div
-                            id="avatarFallback"
-                            class="avatar-fallback"
-                            aria-label="Ảnh đại diện mặc định"
-                        >
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="avatar-fallback-svg">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
+            <!-- =========================================================
+                 COLUMN 2: ẢNH ĐẠI DIỆN & BẢO MẬT TÀI KHOẢN
+                 ========================================================= -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- AVATAR CARD -->
+                <section class="profile-card-frost avatar-card">
+                    <div class="profile-card-header" style="justify-content: center; text-align: center;">
+                        <div>
+                            <h2 style="justify-content: center;">
+                                <i class="fa-regular fa-image" style="color: var(--frost-blue-600);"></i>
+                                Ảnh đại diện
+                            </h2>
+                            <p>Cá nhân hóa hồ sơ bằng ảnh chân dung chuyên nghiệp.</p>
                         </div>
-
-                        <div class="avatar-edit-badge" id="avatarEditBadge" title="Chỉnh sửa ảnh đại diện" role="button" tabindex="0" aria-label="Thay đổi ảnh đại diện">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                        </div>
-
                     </div>
 
-                    <div class="avatar-status">
-                        <span class="status-dot"></span>
-                        Ảnh đại diện tài khoản
+                    <div class="profile-card-body">
+                        <div class="avatar-card-inner">
+                            <!-- AVATAR PREVIEW FRAME WITH CAMERA BUTTON -->
+                            <div class="avatar-frame-luxury" id="avatarFrame" title="Bấm vào để chọn ảnh đại diện mới">
+                                <img id="avatarPreview" src="../../assets/images/default-avatar.png" alt="Ảnh đại diện" class="avatar-img-round">
+
+                                <div id="avatarFallback" class="avatar-fallback-round" style="display: none;">
+                                    U
+                                </div>
+
+                                <div class="avatar-camera-btn" id="avatarEditBadge" title="Đổi ảnh đại diện">
+                                    <i class="fa-solid fa-camera"></i>
+                                </div>
+                            </div>
+
+                            <div class="avatar-status-pill">
+                                <span class="status-dot-pulse"></span>
+                                Ảnh hồ sơ trực tuyến
+                            </div>
+
+                            <p class="avatar-upload-specs">
+                                Chấp nhận định dạng <strong>JPG, PNG</strong><br>Dung lượng tối đa không quá <strong>2MB</strong>.
+                            </p>
+
+                            <!-- HIDDEN AVATAR UPLOAD FORM -->
+                            <form id="avatarForm" action="../../profile/avatar" method="POST" enctype="multipart/form-data" class="avatar-form">
+                                <input type="file" id="avatarInput" name="avatar" accept="image/jpeg,image/png" style="display: none;">
+                                <div id="avatarMessage" class="toast-message" role="status" aria-live="polite"></div>
+                            </form>
+                        </div>
                     </div>
+                </section>
 
-                    <small id="avatarHint" class="upload-hint" style="margin-top: 10px; text-align: center;">
-                        Định dạng JPG, PNG · Dung lượng tối đa 2MB
-                    </small>
-
+                <!-- SECURITY & ACCOUNT SUMMARY CARD -->
+                <div class="security-summary-card">
+                    <h4>
+                        <i class="fa-solid fa-shield-halved" style="color: var(--frost-blue-600);"></i>
+                        Bảo mật tài khoản
+                    </h4>
+                    <ul class="security-checklist">
+                        <li>
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Bảo vệ phiên làm việc với mã hóa TLS 256-bit</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Chữ ký báo giá được chuẩn hóa gửi khách hàng</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Xác thực mật khẩu băm BCrypt an toàn</span>
+                        </li>
+                    </ul>
+                    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--frost-slate-200);">
+                        <a href="../../auth/change-password" style="font-size: 13px; color: var(--frost-blue-600); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-key"></i> Đổi mật khẩu đăng nhập &rarr;
+                        </a>
+                    </div>
                 </div>
+            </div>
 
-
-                <!-- AVATAR FORM -->
-                <form
-                    id="avatarForm"
-                    action="../../profile/avatar"
-                    method="POST"
-                    enctype="multipart/form-data"
-                    class="avatar-form"
-                >
-
-                    <!-- Input file ẩn -->
-                    <input
-                        type="file"
-                        id="avatarInput"
-                        name="avatar"
-                        accept="image/jpeg,image/png"
-                        required
-                        aria-describedby="avatarHint"
-                        style="display: none;"
-                    >
-
-                    <!-- Thông báo trạng thái -->
-                    <div
-                        id="avatarMessage"
-                        class="toast-message"
-                        role="status"
-                        aria-live="polite"
-                    ></div>
-
-                </form>
-
-            </aside>
-
-        </section>
+        </div>
 
     </div>
 
 </main>
 
 
+<!-- JAVASCRIPT: LOGIC TẢI HỒ SƠ, KIỂM TRA SĐT VIỆT NAM, CHỮ KÝ BÁO GIÁ & UPLOAD AVATAR -->
 <script>
+(function() {
+    /* =========================================
+       DOM ELEMENTS
+    ========================================= */
+    const profileForm = document.getElementById('profileForm');
+    const profileMessage = document.getElementById('profileMessage');
+    const saveProfileButton = document.getElementById('saveProfileButton');
 
-/* =========================================
-   PROFILE ELEMENTS
-========================================= */
+    const fullNameInput = document.getElementById('fullName');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone');
+    const emailSignatureInput = document.getElementById('emailSignature');
+    const btnInsertTemplate = document.getElementById('btnInsertTemplate');
+    const signaturePreviewBox = document.getElementById('signaturePreviewBox');
+    const phoneValidationFeedback = document.getElementById('phoneValidationFeedback');
 
-const profileForm = document.getElementById('profileForm');
-const profileMessage = document.getElementById('profileMessage');
+    const teamDisplay = document.getElementById('teamDisplay');
+    const rolesDisplay = document.getElementById('rolesDisplay');
 
-const avatarForm = document.getElementById('avatarForm');
-const avatarInput = document.getElementById('avatarInput');
-const avatarPreview = document.getElementById('avatarPreview');
-const avatarFallback = document.getElementById('avatarFallback');
-const avatarMessage = document.getElementById('avatarMessage');
-const avatarEditBadge = document.getElementById('avatarEditBadge');
-const avatarFrame = document.getElementById('avatarFrame');
+    const avatarForm = document.getElementById('avatarForm');
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarFallback = document.getElementById('avatarFallback');
+    const avatarMessage = document.getElementById('avatarMessage');
+    const avatarEditBadge = document.getElementById('avatarEditBadge');
+    const avatarFrame = document.getElementById('avatarFrame');
 
-const saveProfileButton =
-    document.getElementById('saveProfileButton');
+    let previewImageUrl = null;
+    let currentUserData = null;
 
-const uploadAvatarButton =
-    document.getElementById('uploadAvatarButton');
+    /* =========================================
+       VIETNAM PHONE VALIDATION (Regex standard)
+       Regex: 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09
+    ========================================= */
+    const VN_PHONE_REGEX = /^0(3|5|7|8|9)[0-9]{8}$/;
 
-let previewImageUrl = null;
-
-
-/* =========================================
-   PENCIL & AVATAR CLICK TRIGGER FILE PICKER
-========================================= */
-
-if (avatarEditBadge) {
-    avatarEditBadge.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (avatarInput) avatarInput.click();
-    });
-    avatarEditBadge.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (avatarInput) avatarInput.click();
+    function validateVietnamesePhone(phoneVal) {
+        if (!phoneVal || phoneVal.trim() === '') {
+            return {
+                valid: false,
+                message: 'Số điện thoại không được để trống.'
+            };
         }
+        const cleaned = phoneVal.trim().replace(/[\s\-\.]/g, '');
+        if (!VN_PHONE_REGEX.test(cleaned)) {
+            return {
+                valid: false,
+                message: 'Số điện thoại không đúng định dạng di động Việt Nam (10 số, bắt đầu bằng 03, 05, 07, 08, 09).'
+            };
+        }
+        return {
+            valid: true,
+            cleaned: cleaned,
+            message: '✓ Số điện thoại hợp lệ (Định dạng ĐTDĐ Việt Nam).'
+        };
+    }
+
+    function updatePhoneValidationUI() {
+        const val = phoneInput.value;
+        if (!val || val.trim() === '') {
+            phoneValidationFeedback.className = 'phone-validation-feedback is-invalid';
+            phoneValidationFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Số điện thoại không được để trống.';
+            phoneInput.classList.remove('valid-input');
+            phoneInput.classList.add('invalid-input');
+            return false;
+        }
+
+        const res = validateVietnamesePhone(val);
+        if (res.valid) {
+            phoneValidationFeedback.className = 'phone-validation-feedback is-valid';
+            phoneValidationFeedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + res.message;
+            phoneInput.classList.remove('invalid-input');
+            phoneInput.classList.add('valid-input');
+            return true;
+        } else {
+            phoneValidationFeedback.className = 'phone-validation-feedback is-invalid';
+            phoneValidationFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + res.message;
+            phoneInput.classList.remove('valid-input');
+            phoneInput.classList.add('invalid-input');
+            return false;
+        }
+    }
+
+    phoneInput.addEventListener('input', function() {
+        // Chỉ cho phép nhập số
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        updatePhoneValidationUI();
+        updateSignaturePreview();
     });
-}
 
-if (avatarFrame) {
-    avatarFrame.addEventListener('click', function() {
-        if (avatarInput) avatarInput.click();
-    });
-}
+    phoneInput.addEventListener('blur', updatePhoneValidationUI);
 
-
-/* =========================================
-   MESSAGE HELPER
-========================================= */
-
-function showMessage(element, message, type) {
-    element.textContent = message;
-    element.className = 'toast-message ' + type;
-    element.style.display = 'block';
-}
-
-function hideMessage(element) {
-    element.textContent = '';
-    element.className = 'toast-message';
-    element.style.display = 'none';
-}
-
-
-/* =========================================
-   BACKEND RESPONSE HELPER
-========================================= */
-
-async function readResponse(res) {
-    const contentType = res.headers.get('content-type') || '';
-    const text = await res.text();
-
-    if (!contentType.includes('application/json')) {
-        console.error('Unexpected response:', {
-            status: res.status,
-            contentType,
-            body: text
-        });
-
-        throw new Error(
-            `Backend không trả JSON (HTTP ${res.status}).`
-        );
-    }
-
-    let data;
-    try {
-        data = text ? JSON.parse(text) : {};
-    } catch (e) {
-        console.error('Invalid JSON:', text);
-        throw new Error('Backend trả về JSON không hợp lệ.');
-    }
-
-    if (!res.ok) {
-        throw new Error(
-            data.message || data.error || `Yêu cầu thất bại (${res.status})`
-        );
-    }
-
-    return data;
-}
-
-
-/* =========================================
-   LOAD PROFILE
-========================================= */
-
-fetch('../../profile', {
-    headers: {
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-    }
-})
-
-    .then(async res => {
-        const data = await readResponse(res);
-        return data;
-    })
-
-    .then(data => {
-
-        if (!data.profile) {
+    /* =========================================
+       LIVE SIGNATURE PREVIEW & TEMPLATE INSERTION
+    ========================================= */
+    function updateSignaturePreview() {
+        const signatureText = emailSignatureInput.value.trim();
+        if (!signatureText) {
+            signaturePreviewBox.innerHTML = '<em>Chưa thiết lập chữ ký email. Bấm "Chèn mẫu chữ ký chuẩn" hoặc nhập nội dung phía trên để xem trước.</em>';
             return;
         }
 
-        if (document.getElementById('fullName')) {
-            document.getElementById('fullName').value = data.profile.fullName || '';
+        // Escape HTML
+        const safeText = signatureText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+
+        signaturePreviewBox.innerHTML = `
+            <div style="font-family: inherit;">
+                <div style="color: var(--frost-slate-800); font-size: 13.5px; line-height: 1.6;">${safeText}</div>
+                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-shield-halved" style="color: #2563eb;"></i> <strong>Frostline CRM</strong> • Hệ thống Quản trị & Báo giá Doanh nghiệp
+                </div>
+            </div>
+        `;
+    }
+
+    emailSignatureInput.addEventListener('input', updateSignaturePreview);
+
+    // Chèn mẫu chữ ký chuẩn doanh nghiệp
+    btnInsertTemplate.addEventListener('click', function() {
+        const name = fullNameInput.value.trim() || (currentUserData ? currentUserData.fullName : 'Họ và tên của bạn');
+        const phone = phoneInput.value.trim() || (currentUserData ? currentUserData.phone : '09xx xxx xxx');
+        const email = emailInput.value.trim() || (currentUserData ? currentUserData.email : 'email@congty.com');
+        const role = (currentUserData && currentUserData.roles) ? (Array.isArray(currentUserData.roles) ? currentUserData.roles.join(', ') : currentUserData.roles) : 'Nhân viên kinh doanh';
+        const team = (currentUserData && (currentUserData.team || currentUserData.department)) ? (currentUserData.team || currentUserData.department) : 'Phòng Kinh doanh';
+
+        const template = `Trân trọng,\n${name}\nChức vụ: ${role} | ${team}\nCông ty Cổ phần Frostline CRM\nHotline: ${phone}\nEmail: ${email}`;
+
+        emailSignatureInput.value = template;
+        updateSignaturePreview();
+        emailSignatureInput.focus();
+    });
+
+    fullNameInput.addEventListener('input', function() {
+        updateSignaturePreview();
+    });
+
+    /* =========================================
+       AVATAR CLICK & TRIGGER FILE PICKER
+    ========================================= */
+    if (avatarEditBadge) {
+        avatarEditBadge.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (avatarInput) avatarInput.click();
+        });
+    }
+
+    if (avatarFrame) {
+        avatarFrame.addEventListener('click', function() {
+            if (avatarInput) avatarInput.click();
+        });
+    }
+
+    /* =========================================
+       MESSAGE HELPER
+    ========================================= */
+    function showMessage(element, message, type) {
+        let iconHtml = '';
+        if (type === 'success') iconHtml = '<i class="fa-solid fa-circle-check"></i> ';
+        else if (type === 'error') iconHtml = '<i class="fa-solid fa-circle-xmark"></i> ';
+        else if (type === 'loading') iconHtml = '<i class="fa-solid fa-spinner fa-spin"></i> ';
+
+        element.innerHTML = iconHtml + message;
+        element.className = 'toast-message ' + type;
+        element.style.display = 'flex';
+    }
+
+    function hideMessage(element) {
+        element.textContent = '';
+        element.className = 'toast-message';
+        element.style.display = 'none';
+    }
+
+    async function readResponse(res) {
+        const contentType = res.headers.get('content-type') || '';
+        const text = await res.text();
+
+        if (!contentType.includes('application/json')) {
+            throw new Error(`Máy chủ không phản hồi JSON (HTTP ${res.status}).`);
         }
 
-        if (document.getElementById('email')) {
-            document.getElementById('email').value = data.profile.email || '';
+        let data;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            throw new Error('Máy chủ trả về định dạng JSON không hợp lệ.');
         }
 
-        if (document.getElementById('phone')) {
-            document.getElementById('phone').value = data.profile.phone || '';
+        if (!res.ok) {
+            throw new Error(data.message || data.error || `Yêu cầu thất bại (${res.status})`);
         }
 
-        if (document.getElementById('emailSignature')) {
-            document.getElementById('emailSignature').value = data.profile.emailSignature || '';
+        return data;
+    }
+
+    /* =========================================
+       LOAD PROFILE FROM BACKEND
+    ========================================= */
+    fetch('../../profile', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => readResponse(res))
+    .then(data => {
+        if (!data || !data.profile) return;
+        currentUserData = data.profile;
+
+        if (fullNameInput) fullNameInput.value = data.profile.fullName || '';
+        if (emailInput) emailInput.value = data.profile.email || '';
+        if (phoneInput) {
+            phoneInput.value = data.profile.phone || '';
+            if (phoneInput.value) updatePhoneValidationUI();
+        }
+        if (emailSignatureInput) {
+            emailSignatureInput.value = data.profile.emailSignature || '';
+            updateSignaturePreview();
         }
 
-        const teamVal = data.profile.team || data.profile.department || '';
-        if (document.getElementById('team')) {
-            document.getElementById('team').value = teamVal;
-        }
+        const teamVal = data.profile.team || data.profile.department || 'Chưa thuộc nhóm';
+        if (teamDisplay) teamDisplay.textContent = teamVal;
 
         const rolesVal = Array.isArray(data.profile.roles)
             ? data.profile.roles.join(', ')
-            : (data.profile.role || '');
-        if (document.getElementById('roles')) {
-            document.getElementById('roles').value = rolesVal;
-        }
+            : (data.profile.role || 'Thành viên hệ thống');
+        if (rolesDisplay) rolesDisplay.textContent = rolesVal;
 
         if (data.profile.avatarUrl) {
             avatarPreview.src = data.profile.avatarUrl;
             avatarPreview.style.display = 'block';
             avatarFallback.style.display = 'none';
-        }
-
-    })
-
-    .catch(err => {
-
-        showMessage(
-            profileMessage,
-            err.message || 'Không thể tải thông tin hồ sơ.',
-            'error'
-        );
-
-        console.error('Profile loading error:', err);
-
-    });
-
-
-/* =========================================
-   UPDATE PROFILE
-========================================= */
-
-profileForm.addEventListener('submit', function(e) {
-
-    e.preventDefault();
-
-    hideMessage(profileMessage);
-
-    if (saveProfileButton) saveProfileButton.disabled = true;
-
-    showMessage(
-        profileMessage,
-        'Đang lưu thông tin...',
-        'loading'
-    );
-
-    const formData = new FormData(this);
-
-    const urlEncodedData =
-        new URLSearchParams(formData).toString();
-
-    fetch(this.action, {
-        method: this.method,
-
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-
-        body: urlEncodedData
-    })
-
-    .then(async res => {
-
-        const data = await readResponse(res);
-
-        if (!res.ok) {
-            throw new Error(
-                data.error || data.message || 'Lỗi cập nhật hồ sơ.'
-            );
-        }
-
-        return data;
-
-    })
-
-    .then(data => {
-
-        showMessage(
-            profileMessage,
-            data.message || 'Cập nhật hồ sơ thành công!',
-            'success'
-        );
-
-    })
-
-    .catch(err => {
-
-        showMessage(
-            profileMessage,
-            err.message || 'Không thể kết nối máy chủ.',
-            'error'
-        );
-
-        console.error('Profile update error:', err);
-
-    })
-
-    .finally(() => {
-        if (saveProfileButton) saveProfileButton.disabled = false;
-    });
-
-});
-
-
-/* =========================================
-   AVATAR FALLBACK
-========================================= */
-
-avatarPreview.addEventListener('error', function() {
-    this.style.display = 'none';
-    avatarFallback.style.display = 'flex';
-});
-
-avatarPreview.addEventListener('load', function() {
-    this.style.display = 'block';
-    avatarFallback.style.display = 'none';
-});
-
-
-/* =========================================
-   AVATAR PREVIEW & AUTO UPLOAD
-========================================= */
-
-avatarInput.addEventListener('change', function() {
-
-    const file = this.files[0];
-
-    hideMessage(avatarMessage);
-
-    if (!file) {
-        return;
-    }
-
-    const allowedTypes = [
-        'image/jpeg',
-        'image/png'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-
-        showMessage(
-            avatarMessage,
-            'Chỉ chấp nhận ảnh JPG hoặc PNG.',
-            'error'
-        );
-
-        this.value = '';
-        return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-
-        showMessage(
-            avatarMessage,
-            'Dung lượng ảnh không được vượt quá 2MB.',
-            'error'
-        );
-
-        this.value = '';
-        return;
-    }
-
-    if (previewImageUrl) {
-        URL.revokeObjectURL(previewImageUrl);
-    }
-
-    previewImageUrl = URL.createObjectURL(file);
-
-    avatarPreview.src = previewImageUrl;
-    avatarPreview.style.display = 'block';
-    avatarFallback.style.display = 'none';
-
-    // Tự động gửi form upload avatar sau khi chọn file hợp lệ
-    if (typeof avatarForm.requestSubmit === 'function') {
-        avatarForm.requestSubmit();
-    } else {
-        avatarForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-    }
-
-});
-
-
-/* =========================================
-   UPLOAD AVATAR
-========================================= */
-
-avatarForm.addEventListener('submit', function(e) {
-
-    e.preventDefault();
-
-    const file = avatarInput.files[0];
-
-    hideMessage(avatarMessage);
-
-    if (!file) {
-
-        showMessage(
-            avatarMessage,
-            'Vui lòng chọn ảnh đại diện.',
-            'error'
-        );
-
-        return;
-    }
-
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-
-        showMessage(
-            avatarMessage,
-            'Chỉ chấp nhận định dạng JPG hoặc PNG.',
-            'error'
-        );
-
-        return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-
-        showMessage(
-            avatarMessage,
-            'Dung lượng ảnh không được vượt quá 2MB.',
-            'error'
-        );
-
-        return;
-    }
-
-    const formData = new FormData(this);
-
-    if (uploadAvatarButton) uploadAvatarButton.disabled = true;
-
-    showMessage(
-        avatarMessage,
-        'Đang tải ảnh lên...',
-        'loading'
-    );
-
-    fetch(this.action, {
-        method: this.method,
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-
-    .then(async res => {
-        const data = await readResponse(res);
-        return data;
-    })
-
-    .then(data => {
-
-        if (data.avatarUrl) {
-
-            avatarPreview.src = data.avatarUrl;
-            avatarPreview.style.display = 'block';
-            avatarFallback.style.display = 'none';
-
-            showMessage(
-                avatarMessage,
-                'Cập nhật ảnh đại diện thành công!',
-                'success'
-            );
-
-            if (previewImageUrl) {
-                URL.revokeObjectURL(previewImageUrl);
-                previewImageUrl = null;
-            }
-
         } else {
-
-            showMessage(
-                avatarMessage,
-                'Máy chủ chưa trả về đường dẫn ảnh đại diện.',
-                'error'
-            );
-
+            const initial = (data.profile.fullName && data.profile.fullName.length > 0)
+                ? data.profile.fullName.substring(0, 1).toUpperCase()
+                : 'U';
+            avatarFallback.textContent = initial;
+            avatarFallback.style.display = 'flex';
+            avatarPreview.style.display = 'none';
         }
-
     })
-
     .catch(err => {
-
-        showMessage(
-            avatarMessage,
-            err.message || 'Lỗi kết nối máy chủ.',
-            'error'
-        );
-
-        console.error('Avatar upload error:', err);
-
-    })
-
-    .finally(() => {
-        if (uploadAvatarButton) uploadAvatarButton.disabled = false;
+        showMessage(profileMessage, err.message || 'Không thể tải thông tin hồ sơ.', 'error');
+        console.error('Profile loading error:', err);
     });
 
-});
+    /* =========================================
+       UPDATE PROFILE SUBMIT
+    ========================================= */
+    profileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        hideMessage(profileMessage);
 
+        const fullName = fullNameInput.value.trim();
+        if (!fullName) {
+            showMessage(profileMessage, 'Họ và tên không được để trống.', 'error');
+            fullNameInput.focus();
+            return;
+        }
 
-/* =========================================
-   CLEANUP TEMPORARY IMAGE URL
-========================================= */
+        const phoneVal = phoneInput.value.trim();
+        const phoneCheck = validateVietnamesePhone(phoneVal);
+        if (!phoneCheck.valid) {
+            showMessage(profileMessage, phoneCheck.message, 'error');
+            phoneInput.focus();
+            updatePhoneValidationUI();
+            return;
+        }
 
-window.addEventListener('beforeunload', function() {
+        if (saveProfileButton) saveProfileButton.disabled = true;
+        showMessage(profileMessage, 'Đang lưu thông tin hồ sơ...', 'loading');
 
-    if (previewImageUrl) {
-        URL.revokeObjectURL(previewImageUrl);
+        const formData = new FormData(this);
+        const urlEncodedData = new URLSearchParams(formData).toString();
+
+        fetch(this.action, {
+            method: this.method,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: urlEncodedData
+        })
+        .then(res => readResponse(res))
+        .then(data => {
+            showMessage(profileMessage, data.message || 'Cập nhật hồ sơ và chữ ký email thành công!', 'success');
+            // Cập nhật lại dữ liệu hiện tại
+            if (currentUserData) {
+                currentUserData.fullName = fullName;
+                currentUserData.phone = phoneVal;
+                currentUserData.emailSignature = emailSignatureInput.value.trim();
+            }
+        })
+        .catch(err => {
+            showMessage(profileMessage, err.message || 'Không thể kết nối máy chủ.', 'error');
+            console.error('Profile update error:', err);
+        })
+        .finally(() => {
+            if (saveProfileButton) saveProfileButton.disabled = false;
+        });
+    });
+
+    /* =========================================
+       AVATAR PREVIEW & UPLOAD
+    ========================================= */
+    avatarPreview.addEventListener('error', function() {
+        this.style.display = 'none';
+        avatarFallback.style.display = 'flex';
+    });
+
+    avatarPreview.addEventListener('load', function() {
+        this.style.display = 'block';
+        avatarFallback.style.display = 'none';
+    });
+
+    avatarInput.addEventListener('change', function() {
+        const file = this.files[0];
+        hideMessage(avatarMessage);
+        if (!file) return;
+
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            showMessage(avatarMessage, 'Chỉ chấp nhận ảnh định dạng JPG hoặc PNG.', 'error');
+            this.value = '';
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            showMessage(avatarMessage, 'Dung lượng ảnh không được vượt quá 2MB.', 'error');
+            this.value = '';
+            return;
+        }
+
+        if (previewImageUrl) {
+            URL.revokeObjectURL(previewImageUrl);
+        }
+
+        previewImageUrl = URL.createObjectURL(file);
+        avatarPreview.src = previewImageUrl;
+        avatarPreview.style.display = 'block';
+        avatarFallback.style.display = 'none';
+
+        // Tự động upload ảnh sau khi chọn hợp lệ
+        uploadAvatar();
+    });
+
+    function uploadAvatar() {
+        const file = avatarInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData(avatarForm);
+        showMessage(avatarMessage, 'Đang tải ảnh đại diện lên...', 'loading');
+
+        fetch(avatarForm.action, {
+            method: avatarForm.method,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(res => readResponse(res))
+        .then(data => {
+            if (data.avatarUrl) {
+                avatarPreview.src = data.avatarUrl;
+                avatarPreview.style.display = 'block';
+                avatarFallback.style.display = 'none';
+                showMessage(avatarMessage, 'Cập nhật ảnh đại diện thành công!', 'success');
+                if (previewImageUrl) {
+                    URL.revokeObjectURL(previewImageUrl);
+                    previewImageUrl = null;
+                }
+            } else {
+                showMessage(avatarMessage, 'Máy chủ chưa trả về đường dẫn ảnh.', 'error');
+            }
+        })
+        .catch(err => {
+            showMessage(avatarMessage, err.message || 'Lỗi kết nối khi tải ảnh lên.', 'error');
+            console.error('Avatar upload error:', err);
+        });
     }
 
-});
+    window.addEventListener('beforeunload', function() {
+        if (previewImageUrl) {
+            URL.revokeObjectURL(previewImageUrl);
+        }
+    });
 
+})();
 </script>
 
 </body>

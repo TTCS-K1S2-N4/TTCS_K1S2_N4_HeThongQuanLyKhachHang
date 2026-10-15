@@ -27,10 +27,17 @@ import java.util.List;
 public class ContactDetailServlet extends HttpServlet {
 
     private ContactService contactService = new ContactService();
+    private com.crm.dao.CustomerDAO customerDAO = new com.crm.dao.CustomerDAO();
 
     public void setContactService(ContactService contactService) {
         if (contactService != null) {
             this.contactService = contactService;
+        }
+    }
+
+    public void setCustomerDAO(com.crm.dao.CustomerDAO customerDAO) {
+        if (customerDAO != null) {
+            this.customerDAO = customerDAO;
         }
     }
 
@@ -65,6 +72,8 @@ public class ContactDetailServlet extends HttpServlet {
 
         try {
             ContactResponse contact = contactService.getContactById(contactId, userId, effectiveRoles);
+            List<com.crm.model.ContactCompanyHistory> historyList = contactService.getTransferHistory(contactId, userId, effectiveRoles);
+            com.crm.model.Customer customer = customerDAO.findById(contact.getCustomerId());
 
             if (isJsonRequest(req)) {
                 resp.setContentType("application/json;charset=UTF-8");
@@ -77,11 +86,14 @@ public class ContactDetailServlet extends HttpServlet {
                         "\"email\": " + (contact.getEmail() != null ? "\"" + escapeJson(contact.getEmail()) + "\"" : "null") + "," +
                         "\"phone\": " + (contact.getPhone() != null ? "\"" + escapeJson(contact.getPhone()) + "\"" : "null") + "," +
                         "\"buyingRole\": \"" + escapeJson(contact.getBuyingRole()) + "\"," +
-                        "\"isPrimary\": " + contact.isPrimary() +
+                        "\"isPrimary\": " + contact.isPrimary() + "," +
+                        "\"history\": " + serializeHistoryList(historyList) +
                         "}");
                 out.flush();
             } else {
                 req.setAttribute("contact", contact);
+                req.setAttribute("customer", customer);
+                req.setAttribute("history", historyList);
                 req.getRequestDispatcher("/WEB-INF/views/contacts/detail.jsp").forward(req, resp);
             }
         } catch (ValidationException e) {
@@ -91,6 +103,31 @@ public class ContactDetailServlet extends HttpServlet {
         } catch (Exception e) {
             sendErrorResponse(req, resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Lỗi máy chủ nội bộ: " + e.getMessage());
         }
+    }
+
+    private String serializeHistoryList(List<com.crm.model.ContactCompanyHistory> historyList) {
+        if (historyList == null || historyList.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < historyList.size(); i++) {
+            com.crm.model.ContactCompanyHistory h = historyList.get(i);
+            if (i > 0) sb.append(",");
+            sb.append("{")
+              .append("\"historyId\": ").append(h.getHistoryId()).append(",")
+              .append("\"contactId\": ").append(h.getContactId()).append(",")
+              .append("\"fromCustomerId\": ").append(h.getFromCustomerId()).append(",")
+              .append("\"fromCustomerName\": ").append(h.getFromCustomerName() != null ? "\"" + escapeJson(h.getFromCustomerName()) + "\"" : "null").append(",")
+              .append("\"toCustomerId\": ").append(h.getToCustomerId()).append(",")
+              .append("\"toCustomerName\": ").append(h.getToCustomerName() != null ? "\"" + escapeJson(h.getToCustomerName()) + "\"" : "null").append(",")
+              .append("\"transferredAt\": ").append(h.getTransferredAt() != null ? "\"" + escapeJson(h.getTransferredAt().toString()) + "\"" : "null").append(",")
+              .append("\"reason\": ").append(h.getReason() != null ? "\"" + escapeJson(h.getReason()) + "\"" : "null").append(",")
+              .append("\"transferredBy\": ").append(h.getTransferredBy() != null ? h.getTransferredBy() : "null").append(",")
+              .append("\"transferredByName\": ").append(h.getTransferredByName() != null ? "\"" + escapeJson(h.getTransferredByName()) + "\"" : "null")
+              .append("}");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     private boolean isJsonRequest(HttpServletRequest req) {

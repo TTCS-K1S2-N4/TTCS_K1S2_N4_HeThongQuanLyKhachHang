@@ -15,6 +15,7 @@ public class CustomFieldDefinition {
     private String status;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private int usageCount;
 
     public CustomFieldDefinition() {
     }
@@ -130,5 +131,28 @@ public class CustomFieldDefinition {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean getIsRequired() {
+        return isRequired;
+    }
+
+    public void setIsRequired(boolean isRequired) {
+        this.isRequired = isRequired;
+    }
+
+    public int getUsageCount() {
+        return usageCount;
+    }
+
+    public void setUsageCount(int usageCount) {
+        this.usageCount = usageCount;
+    }
+
+    public String[] getOptionArray() {
+        if (options == null || options.trim().isEmpty()) {
+            return new String[0];
+        }
+        return options.split("[,;\\n]+");
     }
 }

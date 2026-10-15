@@ -31,10 +31,18 @@ public class CategoryService {
 
     public List<Category> getCategories(String categoryType) {
         try {
+            List<Category> list;
             if (categoryType != null && !categoryType.trim().isEmpty()) {
-                return categoryDAO.findByType(categoryType.trim());
+                list = categoryDAO.findByType(categoryType.trim());
+            } else {
+                list = categoryDAO.findAll();
             }
-            return categoryDAO.findAll();
+            if (list != null) {
+                for (Category c : list) {
+                    c.setUsageCount(categoryDAO.countUsage(c.getCategoryType(), c.getCategoryName()));
+                }
+            }
+            return list;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi lấy danh sách danh mục: ", e);
             throw new RuntimeException("Lỗi hệ thống khi lấy danh sách danh mục: " + e.getMessage(), e);

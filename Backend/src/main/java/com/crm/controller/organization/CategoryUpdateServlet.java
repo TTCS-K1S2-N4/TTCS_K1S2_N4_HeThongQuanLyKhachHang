@@ -132,6 +132,7 @@ public class CategoryUpdateServlet extends HttpServlet {
         } else {
             req.setAttribute("errors", errors);
             req.setAttribute("category", category);
+            req.setAttribute("categories", categoryService.getCategories(category != null ? category.getCategoryType() : null));
             req.getRequestDispatcher("/WEB-INF/views/categories/list.jsp").forward(req, resp);
         }
     }

@@ -1,6 +1,8 @@
 package com.crm.controller.opportunity;
 
+import com.crm.dao.AuditLogDAO;
 import com.crm.dao.OpportunityDAO;
+import com.crm.model.AuditLog;
 import com.crm.model.Opportunity;
 import com.crm.service.CustomFieldService;
 
@@ -43,6 +45,7 @@ public class OpportunitySaveServlet extends HttpServlet {
     private void handleSave(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json;charset=UTF-8");
         PrintWriter out = resp.getWriter();
+        Integer userId = (Integer) req.getSession().getAttribute("userId");
 
         String idStr = req.getParameter("opportunityId");
         String title = req.getParameter("title");
@@ -178,7 +181,20 @@ public class OpportunitySaveServlet extends HttpServlet {
         if (isEdit) {
             int oppId = Integer.parseInt(idStr.trim());
             opp.setOpportunityId(oppId);
+            Opportunity oldOpp = opportunityDAO.findById(oppId);
             success = opportunityDAO.update(opp);
+            if (success && oldOpp != null && amount != null && (oldOpp.getAmount() == null || Math.abs(oldOpp.getAmount() - amount) > 0.001)) {
+                try {
+                    AuditLog targetLog = new AuditLog();
+                    targetLog.setAction("TARGET_UPDATE");
+                    targetLog.setUserId(userId != null ? userId : 1);
+                    targetLog.setTargetUserId(oppId);
+                    targetLog.setDetails("Cập nhật chỉ tiêu / doanh số cơ hội: " + opp.getTitle());
+                    targetLog.setOldValue("Chỉ tiêu cũ: " + (oldOpp.getAmount() != null ? String.format("%,.0f VNĐ", oldOpp.getAmount()) : "0 VNĐ"));
+                    targetLog.setNewValue("Chỉ tiêu mới: " + String.format("%,.0f VNĐ", amount));
+                    new AuditLogDAO().insertLog(targetLog);
+                } catch (Exception ignored) {}
+            }
         } else {
             success = opportunityDAO.insert(opp);
         }

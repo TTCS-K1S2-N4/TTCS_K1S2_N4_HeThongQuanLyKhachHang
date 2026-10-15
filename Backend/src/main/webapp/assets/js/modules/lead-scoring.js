@@ -294,9 +294,18 @@
         },
 
         /**
-         * Helper display notification with auto-dismiss and close icon
+         * Helper display notification: prioritizes window.showToast if available.
+         * Falls back to in-page banner #leadScoringAlert only when Toast is unavailable.
+         * Uses safe DOM textContent to prevent XSS.
          */
         showNotification: function (message, type) {
+            // 1. Ưu tiên Shared Toast nếu có để tránh hiển thị trùng lặp
+            if (typeof window.showToast === 'function') {
+                window.showToast(type || 'info', message);
+                return;
+            }
+
+            // 2. Fallback: hiển thị banner #leadScoringAlert an toàn qua DOM API (chống XSS)
             const existingAlert = document.getElementById('leadScoringAlert');
             if (existingAlert) {
                 if (this.notificationTimeout) {
@@ -304,13 +313,38 @@
                 }
                 const isError = (type === 'error');
                 existingAlert.className = 'alert ' + (isError ? 'alert-danger' : 'alert-success') + ' scoring-notification-banner';
-                existingAlert.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
-                        <span>${message}</span>
-                    </div>
-                    <button type="button" onclick="document.getElementById('leadScoringAlert').style.display='none'" style="background: none; border: none; font-size: 16px; cursor: pointer; color: inherit; opacity: 0.7;">&times;</button>
-                `;
+                existingAlert.replaceChildren();
+
+                const contentWrapper = document.createElement('div');
+                contentWrapper.style.display = 'flex';
+                contentWrapper.style.alignItems = 'center';
+                contentWrapper.style.gap = '8px';
+
+                const icon = document.createElement('i');
+                icon.className = 'fas ' + (isError ? 'fa-exclamation-circle' : 'fa-check-circle');
+
+                const msgSpan = document.createElement('span');
+                msgSpan.textContent = message;
+
+                contentWrapper.appendChild(icon);
+                contentWrapper.appendChild(msgSpan);
+
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.setAttribute('aria-label', 'Đóng thông báo');
+                closeBtn.style.background = 'none';
+                closeBtn.style.border = 'none';
+                closeBtn.style.fontSize = '16px';
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.style.color = 'inherit';
+                closeBtn.style.opacity = '0.7';
+                closeBtn.addEventListener('click', function () {
+                    existingAlert.style.display = 'none';
+                });
+
+                existingAlert.appendChild(contentWrapper);
+                existingAlert.appendChild(closeBtn);
                 existingAlert.style.display = 'flex';
 
                 this.notificationTimeout = setTimeout(() => {
@@ -318,7 +352,9 @@
                 }, 4500);
                 return;
             }
-            alert(message);
+
+            // 3. Fallback cuối cùng nếu không có cả Toast lẫn banner container
+            console.warn('[LeadScoring] Toast notification:', type, message);
         }
     };
 

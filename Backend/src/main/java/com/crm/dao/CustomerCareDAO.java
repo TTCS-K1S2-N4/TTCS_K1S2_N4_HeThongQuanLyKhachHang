@@ -52,21 +52,48 @@ public class CustomerCareDAO {
     }
 
     public boolean recordContacted(int customerId, int contactedBy, String note) {
-        String sql = "INSERT INTO customer_care (customer_id, last_contacted_at, last_contacted_by, note) " +
-                     "VALUES (?, CURRENT_TIMESTAMP, ?, ?) " +
-                     "ON DUPLICATE KEY UPDATE " +
-                     "last_contacted_at = CURRENT_TIMESTAMP, " +
-                     "last_contacted_by = VALUES(last_contacted_by), " +
-                     "note = VALUES(note), " +
-                     "updated_at = CURRENT_TIMESTAMP";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, contactedBy);
-            ps.setString(3, note != null ? note : "");
-            return ps.executeUpdate() > 0;
+        String careSql = "INSERT INTO customer_care (customer_id, last_contacted_at, last_contacted_by, note) " +
+                         "VALUES (?, CURRENT_TIMESTAMP, ?, ?) " +
+                         "ON DUPLICATE KEY UPDATE " +
+                         "last_contacted_at = CURRENT_TIMESTAMP, " +
+                         "last_contacted_by = VALUES(last_contacted_by), " +
+                         "note = VALUES(note), " +
+                         "updated_at = CURRENT_TIMESTAMP";
+
+        String actSql = "INSERT INTO activities (title, description, owner_id, customer_id, activity_type, created_at) " +
+                        "VALUES (?, ?, ?, ?, 'CARE', CURRENT_TIMESTAMP)";
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement psCare = conn.prepareStatement(careSql);
+                 PreparedStatement psAct = conn.prepareStatement(actSql)) {
+
+                // 1. Ghi nhận mốc chăm sóc vào bảng customer_care
+                psCare.setInt(1, customerId);
+                psCare.setInt(2, contactedBy);
+                psCare.setString(3, note != null ? note : "");
+                psCare.executeUpdate();
+
+                // 2. Ghi nhận sự kiện tương tác vào bảng activities
+                String actTitle = "Chăm sóc khách hàng định kỳ";
+                String actDesc = (note != null && !note.trim().isEmpty()) ? note : "Đã liên hệ chăm sóc khách hàng định kỳ từ danh sách";
+                psAct.setString(1, actTitle);
+                psAct.setString(2, actDesc);
+                psAct.setInt(3, contactedBy);
+                psAct.setInt(4, customerId);
+                psAct.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (SQLException ex) {
+                conn.rollback();
+                LOGGER.log(Level.SEVERE, "Lỗi transaction ghi nhận chăm sóc khách hàng: " + customerId, ex);
+                return false;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Lỗi ghi nhận đã chăm sóc khách hàng: " + customerId, e);
+            LOGGER.log(Level.SEVERE, "Lỗi kết nối CSDL khi ghi nhận chăm sóc khách hàng: " + customerId, e);
             return false;
         }
     }
@@ -111,8 +138,19 @@ public class CustomerCareDAO {
         List<CustomerCareResponse> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT c.customer_id, c.customer_name, c.phone, c.owner_id, u.full_name AS owner_name, ")
-           .append("cc.last_contacted_at, ")
-           .append("TIMESTAMPDIFF(DAY, COALESCE(cc.last_contacted_at, c.created_at), CURRENT_TIMESTAMP) AS days_inactive, ")
+           .append("CASE ")
+           .append("    WHEN cc.last_contacted_at IS NULL THEN act.last_activity_at ")
+           .append("    WHEN act.last_activity_at IS NULL THEN cc.last_contacted_at ")
+           .append("    ELSE GREATEST(cc.last_contacted_at, act.last_activity_at) ")
+           .append("END AS latest_contacted_at, ")
+           .append("TIMESTAMPDIFF(DAY, COALESCE( ")
+           .append("    CASE ")
+           .append("        WHEN cc.last_contacted_at IS NULL THEN act.last_activity_at ")
+           .append("        WHEN act.last_activity_at IS NULL THEN cc.last_contacted_at ")
+           .append("        ELSE GREATEST(cc.last_contacted_at, act.last_activity_at) ")
+           .append("    END, ")
+           .append("    c.created_at ")
+           .append("), CURRENT_TIMESTAMP) AS days_inactive, ")
            .append("COALESCE(( ")
            .append("    SELECT SUM(o.amount) FROM opportunities o ")
            .append("    LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id ")
@@ -127,7 +165,20 @@ public class CustomerCareDAO {
            .append("FROM customers c ")
            .append("LEFT JOIN users u ON c.owner_id = u.user_id ")
            .append("LEFT JOIN customer_care cc ON c.customer_id = cc.customer_id ")
-           .append("WHERE TIMESTAMPDIFF(DAY, COALESCE(cc.last_contacted_at, c.created_at), CURRENT_TIMESTAMP) >= ? ");
+           .append("LEFT JOIN ( ")
+           .append("    SELECT customer_id, MAX(created_at) AS last_activity_at ")
+           .append("    FROM activities ")
+           .append("    GROUP BY customer_id ")
+           .append(") act ON act.customer_id = c.customer_id ")
+           .append("WHERE (c.status IS NULL OR c.status NOT IN ('Ngừng hợp tác', 'STOPPED')) ")
+           .append("AND TIMESTAMPDIFF(DAY, COALESCE( ")
+           .append("    CASE ")
+           .append("        WHEN cc.last_contacted_at IS NULL THEN act.last_activity_at ")
+           .append("        WHEN act.last_activity_at IS NULL THEN cc.last_contacted_at ")
+           .append("        ELSE GREATEST(cc.last_contacted_at, act.last_activity_at) ")
+           .append("    END, ")
+           .append("    c.created_at ")
+           .append("), CURRENT_TIMESTAMP) >= ? ");
 
         if (ownerIds != null) {
             String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
@@ -161,7 +212,7 @@ public class CustomerCareDAO {
                     resp.setPhone(rs.getString("phone"));
                     resp.setOwnerId(rs.getInt("owner_id"));
                     resp.setOwnerName(rs.getString("owner_name"));
-                    resp.setLastContactedAt(rs.getTimestamp("last_contacted_at"));
+                    resp.setLastContactedAt(rs.getTimestamp("latest_contacted_at"));
                     resp.setDaysInactive(rs.getLong("days_inactive"));
                     resp.setContractValue(rs.getDouble("contract_value"));
                     resp.setCareStatus(resp.getDaysInactive() > inactiveDays ? "CẦN CHĂM SÓC" : "ĐẾN HẠN");
@@ -181,7 +232,20 @@ public class CustomerCareDAO {
         sql.append("SELECT COUNT(*) ")
            .append("FROM customers c ")
            .append("LEFT JOIN customer_care cc ON c.customer_id = cc.customer_id ")
-           .append("WHERE TIMESTAMPDIFF(DAY, COALESCE(cc.last_contacted_at, c.created_at), CURRENT_TIMESTAMP) >= ? ");
+           .append("LEFT JOIN ( ")
+           .append("    SELECT customer_id, MAX(created_at) AS last_activity_at ")
+           .append("    FROM activities ")
+           .append("    GROUP BY customer_id ")
+           .append(") act ON act.customer_id = c.customer_id ")
+           .append("WHERE (c.status IS NULL OR c.status NOT IN ('Ngừng hợp tác', 'STOPPED')) ")
+           .append("AND TIMESTAMPDIFF(DAY, COALESCE( ")
+           .append("    CASE ")
+           .append("        WHEN cc.last_contacted_at IS NULL THEN act.last_activity_at ")
+           .append("        WHEN act.last_activity_at IS NULL THEN cc.last_contacted_at ")
+           .append("        ELSE GREATEST(cc.last_contacted_at, act.last_activity_at) ")
+           .append("    END, ")
+           .append("    c.created_at ")
+           .append("), CURRENT_TIMESTAMP) >= ? ");
 
         if (ownerIds != null) {
             String inClause = String.join(",", java.util.Collections.nCopies(ownerIds.size(), "?"));
