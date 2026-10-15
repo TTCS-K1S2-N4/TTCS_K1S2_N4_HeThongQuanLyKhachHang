@@ -35,6 +35,21 @@
             if (thresholdForm) {
                 thresholdForm.addEventListener('submit', (e) => this.handleThresholdSubmit(e));
             }
+
+            // Event delegation cho nút Sửa quy tắc (đọc qua dataset / data-* attributes, chống lỗi nháy đơn/kép)
+            document.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.btn-edit-rule');
+                if (editBtn) {
+                    e.preventDefault();
+                    const dataset = editBtn.dataset;
+                    const ruleId = dataset.ruleId || editBtn.getAttribute('data-rule-id');
+                    const criterion = dataset.criterion || editBtn.getAttribute('data-criterion');
+                    const operator = dataset.operator || editBtn.getAttribute('data-operator');
+                    const conditionValue = dataset.conditionValue || editBtn.getAttribute('data-condition-value');
+                    const score = dataset.score || editBtn.getAttribute('data-score');
+                    this.editRule(ruleId, criterion, operator, conditionValue, score);
+                }
+            });
         },
 
         /**
@@ -63,14 +78,29 @@
                     lblCold.textContent = '< ' + warmVal;
                 }
 
-                // Inline validation check
+                // Inline validation check & submit disable
+                const thresholdSubmitBtn = document.querySelector('#thresholdConfigForm button[type="submit"]');
+                const isInvalid = (!isNaN(hotVal) && !isNaN(warmVal) && hotVal <= warmVal);
                 if (thresholdWarning) {
-                    if (!isNaN(hotVal) && !isNaN(warmVal) && hotVal <= warmVal) {
+                    if (isInvalid) {
                         thresholdWarning.style.display = 'block';
-                        thresholdWarning.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ngưỡng Lead Nóng (' + hotVal + ') phải lớn hơn ngưỡng Lead Ấm (' + warmVal + ').';
+                        thresholdWarning.textContent = '';
+                        const warnIcon = document.createElement('i');
+                        warnIcon.className = 'fas fa-exclamation-triangle';
+                        warnIcon.style.marginRight = '6px';
+                        thresholdWarning.appendChild(warnIcon);
+                        thresholdWarning.appendChild(document.createTextNode('Ngưỡng Lead Nóng (' + hotVal + ') phải lớn hơn ngưỡng Lead Ấm (' + warmVal + ').'));
+                        if (hotInput) hotInput.style.borderColor = '#ef4444';
+                        if (warmInput) warmInput.style.borderColor = '#ef4444';
                     } else {
                         thresholdWarning.style.display = 'none';
+                        thresholdWarning.textContent = '';
+                        if (hotInput) hotInput.style.borderColor = '';
+                        if (warmInput) warmInput.style.borderColor = '';
                     }
+                }
+                if (thresholdSubmitBtn) {
+                    thresholdSubmitBtn.disabled = isInvalid;
                 }
             };
 
@@ -116,6 +146,116 @@
                     conditionValueDatalist.appendChild(opt);
                 });
             }
+        },
+
+        /**
+         * Edit Scoring Rule: populate form, set edit mode UI, highlight row, and smooth scroll
+         */
+        editRule: function (ruleId, criterion, operator, conditionValue, score) {
+            const form = document.getElementById('scoringRuleForm');
+            if (!form) return;
+
+            const ruleIdInput = form.querySelector('[name="ruleId"]');
+            const criterionSelect = form.querySelector('[name="criterion"]');
+            const operatorSelect = form.querySelector('[name="operator"]');
+            const conditionValueInput = form.querySelector('[name="conditionValue"]');
+            const scoreInput = form.querySelector('[name="score"]');
+            const formTitle = document.getElementById('ruleFormTitle');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const cancelBtn = document.getElementById('btnCancelEditRule');
+
+            if (ruleIdInput) ruleIdInput.value = ruleId || '';
+            if (criterionSelect) {
+                criterionSelect.value = criterion || 'INDUSTRY';
+                this.updateCriterionOptions();
+            }
+            if (operatorSelect) operatorSelect.value = operator || 'EQUALS';
+            if (conditionValueInput) conditionValueInput.value = conditionValue || '';
+            if (scoreInput) scoreInput.value = (score !== undefined && score !== null) ? score : '';
+
+            // Update UI state to Edit Mode safely without innerHTML
+            if (formTitle) {
+                formTitle.textContent = '';
+                const editIcon = document.createElement('i');
+                editIcon.className = 'fas fa-edit';
+                editIcon.style.color = '#f59e0b';
+                editIcon.style.marginRight = '6px';
+                formTitle.appendChild(editIcon);
+
+                const titleText = document.createTextNode('Chỉnh sửa tiêu chí #' + (ruleId || ''));
+                formTitle.appendChild(titleText);
+
+                const badge = document.createElement('span');
+                badge.className = 'rule-edit-badge';
+                const penIcon = document.createElement('i');
+                penIcon.className = 'fas fa-pen';
+                penIcon.style.marginRight = '4px';
+                badge.appendChild(penIcon);
+                badge.appendChild(document.createTextNode('Đang sửa'));
+                formTitle.appendChild(badge);
+            }
+            if (submitBtn) {
+                submitBtn.textContent = '';
+                const checkIcon = document.createElement('i');
+                checkIcon.className = 'fas fa-check';
+                checkIcon.style.marginRight = '4px';
+                submitBtn.appendChild(checkIcon);
+                submitBtn.appendChild(document.createTextNode('Cập nhật quy tắc'));
+            }
+            if (cancelBtn) {
+                cancelBtn.style.display = 'inline-flex';
+            }
+
+            // Highlight table row
+            document.querySelectorAll('.rule-row-item').forEach(tr => tr.classList.remove('editing-rule-row'));
+            const targetRow = document.getElementById('rule-row-' + ruleId);
+            if (targetRow) {
+                targetRow.classList.add('editing-rule-row');
+            }
+
+            // Smooth scroll to form
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (conditionValueInput) conditionValueInput.focus();
+        },
+
+        /**
+         * Cancel editing rule, revert to Create mode
+         */
+        cancelEdit: function () {
+            const form = document.getElementById('scoringRuleForm');
+            if (!form) return;
+
+            form.reset();
+            const ruleIdInput = form.querySelector('[name="ruleId"]');
+            if (ruleIdInput) ruleIdInput.value = '';
+
+            const formTitle = document.getElementById('ruleFormTitle');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const cancelBtn = document.getElementById('btnCancelEditRule');
+
+            if (formTitle) {
+                formTitle.textContent = '';
+                const plusIcon = document.createElement('i');
+                plusIcon.className = 'fas fa-plus-circle';
+                plusIcon.style.color = 'var(--color-primary)';
+                plusIcon.style.marginRight = '6px';
+                formTitle.appendChild(plusIcon);
+                formTitle.appendChild(document.createTextNode('Thêm mới hoặc chỉnh sửa tiêu chí'));
+            }
+            if (submitBtn) {
+                submitBtn.textContent = '';
+                const saveIcon = document.createElement('i');
+                saveIcon.className = 'fas fa-plus';
+                saveIcon.style.marginRight = '4px';
+                submitBtn.appendChild(saveIcon);
+                submitBtn.appendChild(document.createTextNode('Lưu tiêu chí'));
+            }
+            if (cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
+
+            this.updateCriterionOptions();
+            document.querySelectorAll('.rule-row-item').forEach(tr => tr.classList.remove('editing-rule-row'));
         },
 
         /**

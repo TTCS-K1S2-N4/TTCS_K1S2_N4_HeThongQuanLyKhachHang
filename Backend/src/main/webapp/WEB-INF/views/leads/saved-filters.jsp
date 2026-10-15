@@ -73,7 +73,7 @@
                     </div>
                     <div>
                         <span class="rule-table-count" style="font-size: 13px; padding: 4px 10px;">
-                            ${not empty savedFilters ? savedFilters.size() : 3} bộ lọc
+                            ${not empty savedFilters ? savedFilters.size() : 0} bộ lọc
                         </span>
                     </div>
                 </div>
@@ -107,33 +107,41 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                                                <div class="saved-filter-criteria-chips" data-query="<c:out value='${rawQuery}'/>" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                                                     <c:choose>
-                                                        <c:when test="${rawQuery.contains('classification=HOT')}">
+                                                        <c:when test="${rawQuery.contains('classification=HOT') || filter.classification == 'HOT'}">
                                                             <span class="badge badge-hot"><i class="fas fa-fire"></i> Phân loại: Nóng</span>
                                                         </c:when>
-                                                        <c:when test="${rawQuery.contains('classification=WARM')}">
+                                                        <c:when test="${rawQuery.contains('classification=WARM') || filter.classification == 'WARM'}">
                                                             <span class="badge badge-warm"><i class="fas fa-sun"></i> Phân loại: Ấm</span>
                                                         </c:when>
-                                                        <c:when test="${rawQuery.contains('classification=COLD')}">
+                                                        <c:when test="${rawQuery.contains('classification=COLD') || filter.classification == 'COLD'}">
                                                             <span class="badge badge-cold"><i class="fas fa-snowflake"></i> Phân loại: Lạnh</span>
                                                         </c:when>
                                                     </c:choose>
-                                                    <c:if test="${rawQuery.contains('overdue=true')}">
+                                                    <c:if test="${rawQuery.contains('overdue=true') || filter.overdue}">
                                                         <span class="badge badge-sla-overdue"><i class="fas fa-exclamation-triangle"></i> Quá SLA</span>
                                                     </c:if>
-                                                    <c:if test="${rawQuery.contains('status=NEW')}">
-                                                        <span class="badge badge-neutral">Trạng thái: Mới tạo</span>
-                                                    </c:if>
-                                                    <c:if test="${rawQuery.contains('status=CONTACTED')}">
-                                                        <span class="badge badge-warning">Đang liên hệ</span>
-                                                    </c:if>
+                                                    <c:choose>
+                                                        <c:when test="${rawQuery.contains('status=NEW') || filter.status == 'NEW'}">
+                                                            <span class="badge badge-info"><i class="fas fa-plus-circle"></i> Trạng thái: Mới tạo</span>
+                                                        </c:when>
+                                                        <c:when test="${rawQuery.contains('status=CONTACTED') || filter.status == 'CONTACTED'}">
+                                                            <span class="badge badge-warning"><i class="fas fa-phone"></i> Trạng thái: Đang liên hệ</span>
+                                                        </c:when>
+                                                        <c:when test="${rawQuery.contains('status=QUALIFIED') || filter.status == 'QUALIFIED'}">
+                                                            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Trạng thái: Đã xác định NC</span>
+                                                        </c:when>
+                                                        <c:when test="${rawQuery.contains('status=CONVERTED') || filter.status == 'CONVERTED'}">
+                                                            <span class="badge" style="background:#dcfce7; color:#15803d; border: 1px solid #86efac;"><i class="fas fa-exchange-alt"></i> Trạng thái: Đã chuyển đổi</span>
+                                                        </c:when>
+                                                        <c:when test="${rawQuery.contains('status=UNQUALIFIED') || filter.status == 'UNQUALIFIED'}">
+                                                            <span class="badge badge-neutral"><i class="fas fa-ban"></i> Trạng thái: Không tiềm năng</span>
+                                                        </c:when>
+                                                    </c:choose>
                                                     <c:if test="${rawQuery.contains('ownerId=MY') || rawQuery.contains('ownerScope=MY')}">
-                                                        <span class="badge badge-neutral"><i class="fas fa-user"></i> Của tôi</span>
+                                                        <span class="badge badge-neutral"><i class="fas fa-user"></i> Phụ trách: Của tôi</span>
                                                     </c:if>
-                                                    <span style="font-size: 12px; color: var(--color-text-secondary); margin-left: 4px; font-family: ui-monospace, monospace;">
-                                                        (<c:out value="${rawQuery}"/>)
-                                                    </span>
                                                 </div>
                                             </td>
                                             <td>
@@ -159,66 +167,22 @@
                                     </c:forEach>
                                 </c:when>
                                 <c:otherwise>
-                                    <!-- Hiển thị các mẫu bộ lọc gợi ý khi chưa có trong CSDL -->
                                     <tr>
-                                        <td style="text-align: center; color: var(--color-text-secondary);">1</td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <i class="fas fa-star" style="color: #f59e0b; font-size: 13px;"></i>
-                                                <strong style="color: var(--color-gray-900); font-size: 14px;">Lead Nóng cần gọi sáng nay</strong>
+                                        <td colspan="5" style="text-align: center; padding: 48px 16px;">
+                                            <div class="empty-state-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                                <div class="empty-state-icon" style="font-size: 40px; color: #94a3b8; margin-bottom: 12px;">
+                                                    <i class="fas fa-bookmark"></i>
+                                                </div>
+                                                <div class="empty-state-title" style="font-size: 16px; font-weight: 600; color: var(--color-gray-900); margin-bottom: 6px;">
+                                                    Chưa có bộ lọc nào được lưu
+                                                </div>
+                                                <div class="empty-state-desc" style="font-size: 13px; color: var(--color-text-secondary); max-width: 480px; margin: 0 auto 16px; line-height: 1.5;">
+                                                    Hãy vào trang <strong>Danh sách Lead</strong>, tùy chọn các điều kiện lọc mong muốn và bấm <strong>"Lưu bộ lọc này"</strong> để tái sử dụng nhanh chóng mỗi ngày.
+                                                </div>
+                                                <a href="${pageContext.request.contextPath}/leads" class="btn btn-primary btn-sm">
+                                                    <i class="fas fa-filter"></i> Đến trang lọc Lead ngay
+                                                </a>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                                <span class="badge badge-hot"><i class="fas fa-fire"></i> Phân loại: Nóng</span>
-                                                <span class="badge badge-neutral">Trạng thái: Mới tạo</span>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-neutral" style="font-size: 11px;">Mẫu gợi ý</span></td>
-                                        <td style="text-align: center;">
-                                            <a href="${pageContext.request.contextPath}/leads?classification=HOT&status=NEW" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-check"></i> Áp dụng
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; color: var(--color-text-secondary);">2</td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <i class="fas fa-star" style="color: #f59e0b; font-size: 13px;"></i>
-                                                <strong style="color: var(--color-gray-900); font-size: 14px;">Lead quá SLA phản hồi</strong>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                                <span class="badge badge-sla-overdue"><i class="fas fa-exclamation-triangle"></i> Quá SLA: Có</span>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-neutral" style="font-size: 11px;">Mẫu gợi ý</span></td>
-                                        <td style="text-align: center;">
-                                            <a href="${pageContext.request.contextPath}/leads?overdue=true" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-check"></i> Áp dụng
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="text-align: center; color: var(--color-text-secondary);">3</td>
-                                        <td>
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <i class="fas fa-star" style="color: #f59e0b; font-size: 13px;"></i>
-                                                <strong style="color: var(--color-gray-900); font-size: 14px;">Lead của tôi phụ trách</strong>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                                <span class="badge badge-neutral"><i class="fas fa-user"></i> Người phụ trách: Tôi</span>
-                                            </div>
-                                        </td>
-                                        <td><span class="badge badge-neutral" style="font-size: 11px;">Mẫu gợi ý</span></td>
-                                        <td style="text-align: center;">
-                                            <a href="${pageContext.request.contextPath}/leads?ownerId=MY" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-check"></i> Áp dụng
-                                            </a>
                                         </td>
                                     </tr>
                                 </c:otherwise>
@@ -286,6 +250,82 @@
             console.error('Error handling URL params in leads/saved-filters.jsp:', e);
         }
     })();
+
+    function renderSavedFilterCriteriaChips() {
+        var chipContainers = document.querySelectorAll('.saved-filter-criteria-chips');
+        chipContainers.forEach(function(container) {
+            var rawQuery = container.getAttribute('data-query');
+            if (!rawQuery) {
+                if (container.children.length === 0) {
+                    var emptySpan = document.createElement('span');
+                    emptySpan.className = 'badge badge-neutral';
+                    emptySpan.style.color = '#94a3b8';
+                    emptySpan.innerHTML = '<i class="fas fa-asterisk"></i> Tất cả Lead (Bộ lọc mặc định)';
+                    container.appendChild(emptySpan);
+                }
+                return;
+            }
+            try {
+                if (rawQuery.charAt(0) === '?') rawQuery = rawQuery.substring(1);
+                var params = new URLSearchParams(rawQuery);
+
+                function addChip(html, customClass, style) {
+                    var span = document.createElement('span');
+                    span.className = customClass || 'badge badge-neutral';
+                    if (style) span.style.cssText = style;
+                    span.innerHTML = html;
+                    container.appendChild(span);
+                }
+
+                // Keyword
+                var kw = params.get('keyword') || params.get('search');
+                if (kw && kw.trim()) {
+                    var safeKw = document.createTextNode(kw.trim()).textContent;
+                    addChip('<i class="fas fa-search"></i> Từ khóa: <strong>' + safeKw + '</strong>');
+                }
+
+                // Source
+                var src = params.get('source');
+                if (src && src.trim()) {
+                    var safeSrc = document.createTextNode(src.trim()).textContent;
+                    addChip('<i class="fas fa-share-alt"></i> Nguồn: <strong>' + safeSrc + '</strong>', 'badge badge-neutral', 'background:#f0fdf4; color:#166534; border: 1px solid #bbf7d0;');
+                }
+
+                // Dates formatted DD/MM/YYYY
+                var fromDate = params.get('fromDate');
+                var toDate = params.get('toDate');
+                function fmtDate(dStr) {
+                    if (!dStr) return '';
+                    var parts = dStr.split('-');
+                    if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+                    return dStr;
+                }
+                if (fromDate) {
+                    addChip('<i class="far fa-calendar-alt"></i> Từ: <strong>' + fmtDate(fromDate) + '</strong>');
+                }
+                if (toDate) {
+                    addChip('<i class="far fa-calendar-alt"></i> Đến: <strong>' + fmtDate(toDate) + '</strong>');
+                }
+
+                // Specific numeric owner
+                var ownerId = params.get('ownerId');
+                if (ownerId && ownerId !== 'MY' && !isNaN(ownerId)) {
+                    addChip('<i class="fas fa-user-check"></i> Phụ trách ID: <strong>#' + ownerId + '</strong>');
+                }
+
+                if (container.children.length === 0) {
+                    addChip('<i class="fas fa-asterisk"></i> Tất cả Lead (Bộ lọc mặc định)', 'badge badge-neutral', 'color:#94a3b8;');
+                }
+            } catch (err) {
+                console.error('Lỗi phân tích tiêu chí bộ lọc:', err);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderSavedFilterCriteriaChips);
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        renderSavedFilterCriteriaChips();
+    }
 </script>
 </body>
 </html>
