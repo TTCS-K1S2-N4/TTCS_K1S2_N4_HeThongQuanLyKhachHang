@@ -1,144 +1,318 @@
 /* leads.css - Presentation styling for Lead module S4-01 & S4-02 */
 
-/* Public Form Styles */
+/* =========================================================
+   1. PUBLIC FORM & EMBED STYLES (S4-01)
+   ========================================================= */
+
 .public-form-body {
-    background-color: #f4f7f6;
+    background-color: #f8fafc;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
 .public-form-container {
-    background: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    max-width: 500px;
+    background: #ffffff;
+    padding: 32px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+    max-width: 520px;
     width: 100%;
+    box-sizing: border-box;
 }
+
 .public-form-title {
     text-align: center;
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 24px;
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 700;
 }
+
+.public-form-desc {
+    color: #64748b;
+    font-size: 14px;
+    text-align: center;
+    margin-top: -4px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
 .btn-block {
     width: 100%;
     padding: 12px;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 600;
 }
 
-/* Common form styles for Leads */
+/* Embed code UI */
+.embed-code-container {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.embed-code-container textarea {
+    width: 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #0f172a;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.embed-code-container textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* =========================================================
+   2. COMMON LEAD FORMS (Create, Edit, Web Form) (S4-01 & S4-02)
+   ========================================================= */
+
 .form-card {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
 }
+
 .lead-form .form-group {
-    margin-bottom: 15px;
-}
-.lead-form label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 5px;
-}
-.required {
-    color: red;
-}
-.form-control {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    margin-bottom: 18px;
 }
 
-/* Tables */
+.lead-form label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 6px;
+}
+
+.required {
+    color: #dc2626;
+    margin-left: 2px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #0f172a;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+
+/* =========================================================
+   3. TABLES & RESPONSIVENESS (S4-01 & S4-02)
+   ========================================================= */
+
 .table-responsive {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
 }
+
 .leads-table {
     width: 100%;
     border-collapse: collapse;
-}
-.leads-table th, .leads-table td {
-    border-bottom: 1px solid #eee;
-    padding: 10px;
-    text-align: left;
+    font-size: 13px;
 }
 
-/* Detail page */
+.leads-table th, 
+.leads-table td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.leads-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.leads-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* =========================================================
+   4. DETAIL PAGE (S4-02)
+   ========================================================= */
+
 .detail-card {
     max-width: 800px;
     margin: 0 auto;
 }
+
 .detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
+
 .detail-item.full-width {
     grid-column: span 2;
 }
+
 .detail-label {
-    font-weight: bold;
-    color: #666;
+    font-weight: 600;
+    color: #64748b;
     font-size: 12px;
     text-transform: uppercase;
-}
-.detail-value {
-    font-size: 16px;
-    color: #333;
-    padding-top: 5px;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+    display: block;
 }
 
-/* Badges */
+.detail-value {
+    font-size: 15px;
+    color: #0f172a;
+    font-weight: 500;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .detail-item.full-width {
+        grid-column: span 1;
+    }
+}
+
+/* =========================================================
+   5. IMPORT EXCEL PREVIEW & VALIDATION (S4-02)
+   ========================================================= */
+
+.preview-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-item strong {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.stat-item.valid {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.stat-item.invalid {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.stat-item.duplicate {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+/* Import Row Highlight Classes */
+.row-error {
+    background-color: #fff5f5 !important;
+}
+
+.row-error:hover {
+    background-color: #fee2e2 !important;
+}
+
+.row-duplicate {
+    background-color: #fffdf0 !important;
+}
+
+.row-duplicate:hover {
+    background-color: #fef3c7 !important;
+}
+
+.row-valid {
+    background-color: #ffffff;
+}
+
+.row-valid:hover {
+    background-color: #f0fdf4 !important;
+}
+
+.error-text {
+    color: #dc2626;
+    font-size: 12px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* =========================================================
+   6. STATUS & COMPATIBILITY BADGES (Preserved for S4-02 & S4-05)
+   ========================================================= */
+
 .badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
+    line-height: 1;
 }
+
 .status-Mới { background: #e3f2fd; color: #1976d2; }
 .score-HOT { background: #ffebee; color: #d32f2f; }
 .score-WARM { background: #fff3e0; color: #f57c00; }
 .score-COLD { background: #e0f7fa; color: #0097a7; }
-
-/* Embed code UI */
-.embed-code-container {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
-.embed-code-container textarea {
-    font-family: monospace;
-    font-size: 14px;
-    resize: vertical;
-}
-
-/* Import preview */
-.preview-stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-}
-.stat-item {
-    padding: 10px 15px;
-    border-radius: 4px;
-}
-.stat-item.valid {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-.stat-item.invalid {
-    background: #ffebee;
-    color: #c62828;
-}
-.row-error {
-    background-color: #fff8f8;
-}
-.error-text {
-    color: #d32f2f;
-    font-size: 12px;
-}
