@@ -7,6 +7,7 @@ public class LeadAssignmentHistory {
     private int leadId;
     private Integer ruleId;
     private Integer assignedTo;
+    private Integer performedBy;
     private String status;
     private Timestamp assignedAt;
     private String rejectReason;
@@ -22,6 +23,9 @@ public class LeadAssignmentHistory {
 
     public Integer getAssignedTo() { return assignedTo; }
     public void setAssignedTo(Integer assignedTo) { this.assignedTo = assignedTo; }
+
+    public Integer getPerformedBy() { return performedBy; }
+    public void setPerformedBy(Integer performedBy) { this.performedBy = performedBy; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
