@@ -544,7 +544,7 @@
                                           onclick="applySavedFilter(this)">
                                         <c:out value="${sf.filterName}"/>
                                     </span>
-                                    <button type="button" onclick="deleteSavedFilter(event, ${sf.filterId})" style="border: none; background: none; color: #2563eb; cursor: pointer; font-weight: bold; padding: 0 2px; font-size: 14px;" title="Xóa bộ lọc">&times;</button>
+                                    <button type="button" data-filter-id="${sf.filterId}" onclick="deleteSavedFilter(event, this.dataset.filterId)" style="border: none; background: none; color: #2563eb; cursor: pointer; font-weight: bold; padding: 0 2px; font-size: 14px;" title="Xóa bộ lọc">&times;</button>
                                 </div>
                             </c:forEach>
                         </div>
