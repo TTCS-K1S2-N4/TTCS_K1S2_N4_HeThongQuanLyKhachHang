@@ -18,7 +18,7 @@ public class LeadScoringRuleDAO {
     private static final Logger LOGGER = Logger.getLogger(LeadScoringRuleDAO.class.getName());
 
     public LeadScoringRuleDAO() {
-        ensureTablesExist();
+        // Constructor nhẹ không chạy lệnh DDL runtime
     }
 
     private void ensureTablesExist() {

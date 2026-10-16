@@ -3,6 +3,7 @@ package com.crm.controller.leadscoring;
 import com.crm.dto.LeadScoringRuleRequest;
 import com.crm.model.LeadScoringRule;
 import com.crm.service.LeadScoringService;
+import com.crm.util.JsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -186,7 +187,7 @@ public class LeadScoringRuleServlet extends HttpServlet {
         resp.setStatus(statusCode);
         if (isJson) {
             resp.setContentType("application/json; charset=UTF-8");
-            resp.getWriter().write("{\"success\":false,\"message\":\"" + escapeJson(message) + "\"}");
+            resp.getWriter().write(JsonUtil.errorResponse(message));
         } else {
             req.setAttribute("errorMessage", message);
             doGet(req, resp);
@@ -201,16 +202,17 @@ public class LeadScoringRuleServlet extends HttpServlet {
 
     private String buildRulesJson(List<LeadScoringRule> rules, int hotThreshold, int warmThreshold) {
         StringBuilder sb = new StringBuilder("{");
-        sb.append("\"hotThreshold\":").append(hotThreshold).append(",");
-        sb.append("\"warmThreshold\":").append(warmThreshold).append(",");
-        sb.append("\"rules\":[");
+        sb.append("\"success\":true,")
+          .append("\"hotThreshold\":").append(hotThreshold).append(",")
+          .append("\"warmThreshold\":").append(warmThreshold).append(",")
+          .append("\"rules\":[");
         for (int i = 0; i < rules.size(); i++) {
             LeadScoringRule r = rules.get(i);
             sb.append("{")
               .append("\"ruleId\":").append(r.getRuleId()).append(",")
-              .append("\"criterion\":\"").append(escapeJson(r.getCriterion())).append("\",")
-              .append("\"operator\":\"").append(escapeJson(r.getOperator())).append("\",")
-              .append("\"conditionValue\":\"").append(escapeJson(r.getConditionValue())).append("\",")
+              .append("\"criterion\":\"").append(JsonUtil.escape(r.getCriterion())).append("\",")
+              .append("\"operator\":\"").append(JsonUtil.escape(r.getOperator())).append("\",")
+              .append("\"conditionValue\":\"").append(JsonUtil.escape(r.getConditionValue())).append("\",")
               .append("\"score\":").append(r.getScore()).append(",")
               .append("\"isActive\":").append(r.isActive())
               .append("}");
@@ -218,10 +220,5 @@ public class LeadScoringRuleServlet extends HttpServlet {
         }
         sb.append("]}");
         return sb.toString();
-    }
-
-    private String escapeJson(String input) {
-        if (input == null) return "";
-        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }

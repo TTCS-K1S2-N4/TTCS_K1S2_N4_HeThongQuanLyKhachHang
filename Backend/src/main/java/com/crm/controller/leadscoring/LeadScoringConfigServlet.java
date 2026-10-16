@@ -1,6 +1,7 @@
 package com.crm.controller.leadscoring;
 
 import com.crm.service.LeadScoringService;
+import com.crm.util.JsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -32,7 +33,7 @@ public class LeadScoringConfigServlet extends HttpServlet {
         int warmThreshold = scoringService.getWarmThreshold();
 
         resp.setContentType("application/json; charset=UTF-8");
-        resp.getWriter().write("{\"hotThreshold\":" + hotThreshold + ",\"warmThreshold\":" + warmThreshold + "}");
+        resp.getWriter().write("{\"success\":true,\"hotThreshold\":" + hotThreshold + ",\"warmThreshold\":" + warmThreshold + "}");
     }
 
     @Override
@@ -46,7 +47,7 @@ public class LeadScoringConfigServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             if (isJson) {
                 resp.setContentType("application/json; charset=UTF-8");
-                resp.getWriter().write("{\"success\":false,\"message\":\"Vui lòng đăng nhập.\"}");
+                resp.getWriter().write(JsonUtil.errorResponse("Vui lòng đăng nhập."));
             } else {
                 resp.sendRedirect(req.getContextPath() + "/auth/login");
             }
@@ -81,7 +82,7 @@ public class LeadScoringConfigServlet extends HttpServlet {
             if (ok) {
                 if (isJson) {
                     resp.setContentType("application/json; charset=UTF-8");
-                    resp.getWriter().write("{\"success\":true,\"message\":\"Cập nhật ngưỡng phân loại Nóng/Ấm/Lạnh thành công!\"}");
+                    resp.getWriter().write(JsonUtil.successResponse("Cập nhật ngưỡng phân loại Nóng/Ấm/Lạnh thành công!"));
                 } else {
                     req.getSession().setAttribute("successMessage", "Cập nhật ngưỡng phân loại Nóng/Ấm/Lạnh thành công!");
                     resp.sendRedirect(req.getContextPath() + "/lead-scoring/rules");
@@ -100,7 +101,7 @@ public class LeadScoringConfigServlet extends HttpServlet {
         resp.setStatus(statusCode);
         if (isJson) {
             resp.setContentType("application/json; charset=UTF-8");
-            resp.getWriter().write("{\"success\":false,\"message\":\"" + escapeJson(message) + "\"}");
+            resp.getWriter().write(JsonUtil.errorResponse(message));
         } else {
             req.getSession().setAttribute("errorMessage", message);
             resp.sendRedirect(req.getContextPath() + "/lead-scoring/rules");
@@ -111,10 +112,5 @@ public class LeadScoringConfigServlet extends HttpServlet {
         String accept = req.getHeader("Accept");
         String requestedWith = req.getHeader("X-Requested-With");
         return (accept != null && accept.contains("application/json")) || "XMLHttpRequest".equals(requestedWith);
-    }
-
-    private String escapeJson(String input) {
-        if (input == null) return "";
-        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
