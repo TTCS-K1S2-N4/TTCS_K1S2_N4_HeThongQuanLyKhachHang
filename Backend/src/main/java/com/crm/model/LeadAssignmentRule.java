@@ -4,17 +4,22 @@ import java.sql.Timestamp;
 
 public class LeadAssignmentRule {
     private int ruleId;
+    private String ruleName;
     private int priority;
     private String criterion;
     private String criterionValue;
     private Integer teamId;
     private Integer assigneeId;
+    private Integer lastAssignedUserId;
     private boolean isActive;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
     public int getRuleId() { return ruleId; }
     public void setRuleId(int ruleId) { this.ruleId = ruleId; }
+
+    public String getRuleName() { return ruleName; }
+    public void setRuleName(String ruleName) { this.ruleName = ruleName; }
 
     public int getPriority() { return priority; }
     public void setPriority(int priority) { this.priority = priority; }
@@ -30,6 +35,9 @@ public class LeadAssignmentRule {
 
     public Integer getAssigneeId() { return assigneeId; }
     public void setAssigneeId(Integer assigneeId) { this.assigneeId = assigneeId; }
+
+    public Integer getLastAssignedUserId() { return lastAssignedUserId; }
+    public void setLastAssignedUserId(Integer lastAssignedUserId) { this.lastAssignedUserId = lastAssignedUserId; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
