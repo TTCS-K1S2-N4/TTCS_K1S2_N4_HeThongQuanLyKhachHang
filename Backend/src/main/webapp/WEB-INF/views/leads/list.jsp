@@ -35,7 +35,7 @@
                     <a href="${pageContext.request.contextPath}/leads/import" class="btn btn-secondary">
                         <i class="fas fa-file-excel"></i> Nhập Excel
                     </a>
-                    <a href="${pageContext.request.contextPath}/lead-forms" class="btn btn-secondary">
+                    <a href="${pageContext.request.contextPath}/leads/web-forms" class="btn btn-secondary">
                         <i class="fas fa-code"></i> Web Forms
                     </a>
                     <a href="${pageContext.request.contextPath}/lead-scoring/rules" class="btn btn-secondary" title="Cấu hình chấm điểm Lead (Giám đốc kinh doanh)">
@@ -213,9 +213,9 @@
                             <c:choose>
                                 <c:when test="${not empty leadItems}">
                                     <c:forEach var="item" items="${leadItems}">
-                                        <c:set var="currentLeadId" value="${item.leadId != null && item.leadId > 0 ? item.leadId : item.id}"/>
-                                        <c:set var="currentCompany" value="${item.companyName != null ? item.companyName : item.company}"/>
-                                        <c:set var="currentSource" value="${item.sourceName != null ? item.sourceName : (item.source != null ? item.source : 'Chưa rõ')}"/>
+                                        <c:set var="currentLeadId" value="${item.leadId}"/>
+                                        <c:set var="currentCompany" value="${not empty item.company ? item.company : '-'}"/>
+                                        <c:set var="currentSource" value="${not empty item.sourceName ? item.sourceName : 'Chưa rõ'}"/>
                                         <c:set var="leadScore" value="${item.score != null ? item.score : 0}"/>
                                         <tr class="${item.slaOverdue ? 'row-sla-overdue' : ''}">
                                             <td>${currentLeadId}</td>
@@ -234,6 +234,9 @@
                                                     </c:if>
                                                     <c:if test="${not empty item.phone}">
                                                         <div><i class="fas fa-phone" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.phone}"/></div>
+                                                    </c:if>
+                                                    <c:if test="${empty item.email && empty item.phone}">
+                                                        <span style="color: var(--color-text-secondary);">-</span>
                                                     </c:if>
                                                 </div>
                                             </td>
@@ -286,7 +289,7 @@
                                                     <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Xem chi tiết">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="${pageContext.request.contextPath}/leads/edit?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Chỉnh sửa">
+                                                    <a href="${pageContext.request.contextPath}/leads/update?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Chỉnh sửa">
                                                         <i class="fas fa-pencil-alt"></i>
                                                     </a>
                                                     <a href="${pageContext.request.contextPath}/leads/convert?leadId=${currentLeadId}" class="btn btn-secondary btn-sm" style="color: #16a34a;" title="Chuyển đổi Lead">
