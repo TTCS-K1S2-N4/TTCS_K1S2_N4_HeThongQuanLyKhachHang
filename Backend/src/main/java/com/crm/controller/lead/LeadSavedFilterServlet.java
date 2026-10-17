@@ -3,6 +3,7 @@ package com.crm.controller.lead;
 import com.crm.dto.LeadFilterRequest;
 import com.crm.model.LeadSavedFilter;
 import com.crm.service.LeadFilterService;
+import com.crm.util.JsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -186,7 +187,7 @@ public class LeadSavedFilterServlet extends HttpServlet {
         resp.setStatus(statusCode);
         resp.setContentType("application/json; charset=UTF-8");
         PrintWriter out = resp.getWriter();
-        out.print("{\"success\":false,\"message\":\"" + escapeJson(message) + "\"}");
+        out.print(JsonUtil.errorResponse(message));
         out.flush();
     }
 
@@ -203,21 +204,16 @@ public class LeadSavedFilterServlet extends HttpServlet {
             if (i > 0) sb.append(",");
             sb.append("{")
               .append("\"filterId\":").append(f.getFilterId()).append(",")
-              .append("\"filterName\":\"").append(escapeJson(f.getFilterName())).append("\",")
-              .append("\"keyword\":\"").append(escapeJson(f.getKeyword())).append("\",")
-              .append("\"status\":\"").append(escapeJson(f.getStatus())).append("\",")
-              .append("\"source\":\"").append(escapeJson(f.getSource())).append("\",")
-              .append("\"classification\":\"").append(escapeJson(f.getClassification())).append("\",")
-              .append("\"filterQuery\":\"").append(escapeJson(f.getFilterQuery())).append("\",")
+              .append("\"filterName\":\"").append(JsonUtil.escape(f.getFilterName())).append("\",")
+              .append("\"keyword\":\"").append(JsonUtil.escape(f.getKeyword())).append("\",")
+              .append("\"status\":\"").append(JsonUtil.escape(f.getStatus())).append("\",")
+              .append("\"source\":\"").append(JsonUtil.escape(f.getSource())).append("\",")
+              .append("\"classification\":\"").append(JsonUtil.escape(f.getClassification())).append("\",")
+              .append("\"filterQuery\":\"").append(JsonUtil.escape(f.getFilterQuery())).append("\",")
               .append("\"isDefault\":").append(f.isDefault())
               .append("}");
         }
         sb.append("]");
         return sb.toString();
-    }
-
-    private String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }

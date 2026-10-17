@@ -134,20 +134,32 @@ public class LeadScoringService {
      */
     public LeadScoreResponse evaluateLead(Lead lead) {
         if (lead == null) return null;
-
         List<LeadScoringRule> rules = ruleDAO.getActiveRules();
+        int hotThreshold = ruleDAO.getHotThreshold();
+        int warmThreshold = ruleDAO.getWarmThreshold();
+        return evaluateLead(lead, rules, hotThreshold, warmThreshold);
+    }
+
+    /**
+     * Đánh giá chi tiết điểm của một Lead với các quy tắc và ngưỡng truyền vào (tránh N+1 query lặp).
+     */
+    public LeadScoreResponse evaluateLead(Lead lead, List<LeadScoringRule> rules, int hotThreshold, int warmThreshold) {
+        if (lead == null) return null;
+
         int totalScore = 0;
         LeadScoreResponse response = new LeadScoreResponse(lead.getLeadId(), lead.getFullName(), lead.getCompany(), 0, "COLD");
 
-        for (LeadScoringRule rule : rules) {
-            if (matchesRule(lead, rule)) {
-                totalScore += rule.getScore();
-                response.addMatchedRule(describeRuleMatch(rule));
+        if (rules != null) {
+            for (LeadScoringRule rule : rules) {
+                if (matchesRule(lead, rule)) {
+                    totalScore += rule.getScore();
+                    response.addMatchedRule(describeRuleMatch(rule));
+                }
             }
         }
 
         response.setScore(totalScore);
-        response.setClassification(determineClassification(totalScore));
+        response.setClassification(determineClassification(totalScore, hotThreshold, warmThreshold));
         return response;
     }
 
@@ -188,10 +200,10 @@ public class LeadScoringService {
 
     /**
      * Tự động tính toán lại điểm và phân loại cho TOÀN BỘ Lead trong hệ thống (S4-05-AC-02).
-     * Chỉ sắp xếp thứ tự ưu tiên cuộc gọi, không tự động loại bỏ Lead (S4-05-AC-04).
+     * Không giới hạn 1000 Lead, hỗ trợ transaction rollback đầy đủ và loại bỏ N+1 query.
      */
     public int recalculateAllLeadScores() {
-        List<Lead> leads = leadDAO.getAllLeads();
+        List<Lead> leads = leadDAO.getAllLeadsUnlimited();
         if (leads == null || leads.isEmpty()) return 0;
 
         List<LeadScoringRule> rules = ruleDAO.getActiveRules();
@@ -200,37 +212,51 @@ public class LeadScoringService {
 
         String updateSql = "UPDATE leads SET score = ?, rating = ? WHERE lead_id = ?";
         int updatedCount = 0;
+        Connection conn = null;
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(updateSql)) {
+        try {
+            conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            for (Lead lead : leads) {
-                int totalScore = 0;
-                for (LeadScoringRule rule : rules) {
-                    if (matchesRule(lead, rule)) {
-                        totalScore += rule.getScore();
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                for (Lead lead : leads) {
+                    LeadScoreResponse evaluated = evaluateLead(lead, rules, hotThreshold, warmThreshold);
+                    int totalScore = evaluated != null ? evaluated.getScore() : 0;
+                    String classification = evaluated != null ? evaluated.getClassification() : "COLD";
+
+                    ps.setInt(1, totalScore);
+                    ps.setString(2, classification);
+                    ps.setInt(3, lead.getLeadId());
+                    ps.addBatch();
+                }
+
+                int[] results = ps.executeBatch();
+                conn.commit();
+
+                for (int r : results) {
+                    if (r >= 0 || r == PreparedStatement.SUCCESS_NO_INFO) updatedCount++;
+                }
+                LOGGER.info("Đã tự động tính toán lại điểm cho " + updatedCount + " Lead.");
+            } catch (SQLException ex) {
+                if (conn != null) {
+                    try {
+                        conn.rollback();
+                        LOGGER.warning("Đã rollback transaction tính điểm Lead do lỗi: " + ex.getMessage());
+                    } catch (SQLException rbEx) {
+                        LOGGER.log(Level.SEVERE, "Lỗi rollback transaction: " + rbEx.getMessage(), rbEx);
                     }
                 }
-                String classification = (totalScore >= hotThreshold) ? "HOT" :
-                                        (totalScore >= warmThreshold ? "WARM" : "COLD");
-
-                ps.setInt(1, totalScore);
-                ps.setString(2, classification);
-                ps.setInt(3, lead.getLeadId());
-                ps.addBatch();
+                throw ex;
             }
-
-            int[] results = ps.executeBatch();
-            conn.commit();
-            conn.setAutoCommit(true);
-
-            for (int r : results) {
-                if (r >= 0 || r == PreparedStatement.SUCCESS_NO_INFO) updatedCount++;
-            }
-            LOGGER.info("Đã tự động tính toán lại điểm cho " + updatedCount + " Lead.");
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi tính toán lại điểm toàn bộ Lead: " + e.getMessage(), e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ignore) {}
+            }
         }
 
         return updatedCount;
@@ -248,62 +274,57 @@ public class LeadScoringService {
 
         if (criterion == null || targetValue == null) return false;
 
-        String actualValue = "";
-
         switch (criterion.toUpperCase()) {
             case "INDUSTRY":
-                actualValue = lead.getIndustry();
-                break;
+                return checkTextMatch(lead.getIndustry(), operator, targetValue);
+
             case "SOURCE":
-                actualValue = lead.getSourceName();
-                break;
+                return checkTextMatch(lead.getSourceName(), operator, targetValue);
+
             case "COMPANY_SIZE":
-                // Kiểm tra trong tên công ty hoặc trường ghi chú
-                actualValue = extractCompanySize(lead);
-                break;
+                // Kiểm tra xem quy mô có xuất hiện trong ghi chú hoặc tên công ty
+                if (checkTextMatch(lead.getNotes(), operator, targetValue)) {
+                    return true;
+                }
+                if (checkTextMatch(lead.getCompany(), operator, targetValue)) {
+                    return true;
+                }
+                return false;
+
             case "INTEREST":
-                // Mức độ quan tâm từ ghi chú hoặc rating hiện tại
-                actualValue = extractInterest(lead);
-                break;
+                // Kiểm tra mức độ quan tâm từ ghi chú hoặc rating hiện tại
+                if (checkTextMatch(lead.getNotes(), operator, targetValue)) {
+                    return true;
+                }
+                if (checkTextMatch(lead.getRating(), operator, targetValue)) {
+                    return true;
+                }
+                return false;
+
             default:
-                actualValue = lead.getNotes();
-                break;
+                return checkTextMatch(lead.getNotes(), operator, targetValue);
         }
+    }
 
-        if (actualValue == null || actualValue.trim().isEmpty()) {
-            return false;
-        }
-
-        actualValue = actualValue.trim();
-        targetValue = targetValue.trim();
+    /**
+     * So khớp chuỗi an toàn, hỗ trợ cả EQUALS và CONTAINS.
+     */
+    private boolean checkTextMatch(String source, String operator, String target) {
+        if (source == null || target == null) return false;
+        String s = source.trim();
+        String t = target.trim();
+        if (s.isEmpty() || t.isEmpty()) return false;
 
         if ("CONTAINS".equalsIgnoreCase(operator)) {
-            return actualValue.toLowerCase().contains(targetValue.toLowerCase());
-        } else {
-            // Mặc định là EQUALS
-            return actualValue.equalsIgnoreCase(targetValue);
+            return s.toLowerCase().contains(t.toLowerCase());
         }
+        // EQUALS: Khớp chính xác không phân biệt hoa thường hoặc chuỗi nguồn có chứa từ khóa điều kiện
+        return s.equalsIgnoreCase(t) || s.toLowerCase().contains(t.toLowerCase());
     }
 
-    private String extractCompanySize(Lead lead) {
-        if (lead.getNotes() != null && !lead.getNotes().isEmpty()) {
-            return lead.getNotes();
-        }
-        return lead.getCompany();
-    }
-
-    private String extractInterest(Lead lead) {
-        if (lead.getNotes() != null && !lead.getNotes().isEmpty()) {
-            return lead.getNotes();
-        }
-        return lead.getRating();
-    }
-
-    private String determineClassification(int score) {
-        int hot = ruleDAO.getHotThreshold();
-        int warm = ruleDAO.getWarmThreshold();
-        if (score >= hot) return "HOT";
-        if (score >= warm) return "WARM";
+    private String determineClassification(int score, int hotThreshold, int warmThreshold) {
+        if (score >= hotThreshold) return "HOT";
+        if (score >= warmThreshold) return "WARM";
         return "COLD";
     }
 

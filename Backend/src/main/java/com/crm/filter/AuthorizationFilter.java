@@ -151,6 +151,37 @@ public class AuthorizationFilter implements Filter {
         protectedUrlMap.put("/import/excel/preview", "IMPORT_DATA");
         protectedUrlMap.put("/import/excel/template", "IMPORT_DATA");
         protectedUrlMap.put("/import/excel", "IMPORT_DATA");
+
+        // Module Quản lý Lead (Sprint 04 S4-01 đến S4-09)
+        protectedUrlMap.put("/leads/create", "ACCOUNT_CREATE");
+        protectedUrlMap.put("/leads/update", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/detail", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/import/execute", "IMPORT_DATA");
+        protectedUrlMap.put("/leads/import/preview", "IMPORT_DATA");
+        protectedUrlMap.put("/leads/import/template", "IMPORT_DATA");
+        protectedUrlMap.put("/leads/import", "IMPORT_DATA");
+        protectedUrlMap.put("/leads/web-forms/embed-code", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/leads/web-forms", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/leads/duplicates/compare", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/duplicates", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/merge", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/link-customer", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/assign", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/accept", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/reject", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/convert", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/filters/delete", "ACCOUNT_EDIT");
+        protectedUrlMap.put("/leads/filters", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/saved-filters", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/filter", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/search", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads/list", "ACCOUNT_VIEW");
+        protectedUrlMap.put("/leads", "ACCOUNT_VIEW");
+
+        // Module Chấm điểm Lead (S4-05)
+        protectedUrlMap.put("/lead-scoring/rules/delete", "CATEGORY_MANAGE");
+        protectedUrlMap.put("/lead-scoring/rules", "CATEGORY_VIEW");
+        protectedUrlMap.put("/lead-scoring/config", "CATEGORY_MANAGE");
     }
 
     @Override
@@ -316,8 +347,8 @@ public class AuthorizationFilter implements Filter {
 
         String lower = normalizedPath.toLowerCase();
 
-        // Các URL xác thực công khai
-        if (lower.startsWith("/auth/") || lower.equals("/login") || lower.equals("/logout") || lower.equals("/forgot-password") || lower.equals("/activate")) {
+        // Các URL xác thực công khai và biểu mẫu web thu thập Lead công khai (S4-01)
+        if (lower.startsWith("/auth/") || lower.equals("/login") || lower.equals("/logout") || lower.equals("/forgot-password") || lower.equals("/activate") || lower.equals("/leads/public-form")) {
             return true;
         }
 

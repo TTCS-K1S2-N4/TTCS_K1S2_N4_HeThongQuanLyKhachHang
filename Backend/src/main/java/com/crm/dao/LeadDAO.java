@@ -13,6 +13,13 @@ public class LeadDAO {
         return getLeads(0, 1000, null, null, null, null);
     }
 
+    /**
+     * Lấy toàn bộ Lead không giới hạn số lượng (dùng cho tính toán lại điểm tự động).
+     */
+    public List<Lead> getAllLeadsUnlimited() {
+        return getLeads(0, 0, null, null, null, null);
+    }
+
     public List<Lead> getLeads(int offset, int limit, String search, String status, String rating, Integer ownerId) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(

@@ -18,7 +18,7 @@ public class LeadSavedFilterDAO {
     private static final Logger LOGGER = Logger.getLogger(LeadSavedFilterDAO.class.getName());
 
     public LeadSavedFilterDAO() {
-        ensureTableExists();
+        // Constructor nhẹ không chạy lệnh DDL runtime
     }
 
     private void ensureTableExists() {
@@ -137,10 +137,34 @@ public class LeadSavedFilterDAO {
         if (!rs.wasNull()) {
             filter.setOwnerId(oid);
         }
-        filter.setFilterQuery(rs.getString("filter_query"));
+        String fq = rs.getString("filter_query");
+        filter.setFilterQuery(fq);
+        if (fq != null && !fq.isEmpty()) {
+            filter.setSource(extractQueryParam(fq, "source"));
+            String cls = extractQueryParam(fq, "classification");
+            if (cls == null) {
+                cls = extractQueryParam(fq, "rating");
+            }
+            filter.setClassification(cls);
+        }
         filter.setDefault(rs.getBoolean("is_default"));
         filter.setCreatedAt(rs.getTimestamp("created_at"));
         filter.setUpdatedAt(rs.getTimestamp("updated_at"));
         return filter;
+    }
+
+    private String extractQueryParam(String query, String key) {
+        if (query == null || key == null) return null;
+        for (String param : query.split("&")) {
+            String[] pair = param.split("=", 2);
+            if (pair.length == 2 && key.equalsIgnoreCase(pair[0])) {
+                try {
+                    return java.net.URLDecoder.decode(pair[1], java.nio.charset.StandardCharsets.UTF_8.name());
+                } catch (Exception e) {
+                    return pair[1];
+                }
+            }
+        }
+        return null;
     }
 }
