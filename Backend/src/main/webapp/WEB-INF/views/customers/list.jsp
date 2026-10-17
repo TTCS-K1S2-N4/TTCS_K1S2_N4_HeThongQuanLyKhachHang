@@ -534,10 +534,17 @@
                             <span style="font-size: 13px; font-weight: 600; color: var(--crm-text-muted);"><i class="fas fa-star" style="color: var(--crm-accent);"></i> Bộ lọc đã lưu:</span>
                             <c:forEach var="sf" items="${savedFilters}">
                                 <div class="saved-filter-pill" style="display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1e3a8a; padding: 4px 12px; border-radius: 16px; font-size: 12.5px; border: 1px solid #bfdbfe;">
-                                    <span style="cursor: pointer; font-weight: 500;" onclick="applySavedFilter('<c:out value="${sf.keyword}"/>', '<c:out value="${sf.status}"/>', '<c:out value="${sf.industry}"/>', '<c:out value="${sf.companySize}"/>', '<c:out value="${sf.region}"/>', '<c:out value="${sf.ownerId}"/>')">
+                                    <span style="cursor: pointer; font-weight: 500;"
+                                          data-keyword="<c:out value='${sf.keyword}'/>"
+                                          data-status="<c:out value='${sf.status}'/>"
+                                          data-industry="<c:out value='${sf.industry}'/>"
+                                          data-companysize="<c:out value='${sf.companySize}'/>"
+                                          data-region="<c:out value='${sf.region}'/>"
+                                          data-ownerid="<c:out value='${sf.ownerId}'/>"
+                                          onclick="applySavedFilter(this)">
                                         <c:out value="${sf.filterName}"/>
                                     </span>
-                                    <button type="button" onclick="deleteSavedFilter(event, ${sf.filterId})" style="border: none; background: none; color: #2563eb; cursor: pointer; font-weight: bold; padding: 0 2px; font-size: 14px;" title="Xóa bộ lọc">&times;</button>
+                                    <button type="button" data-filter-id="${sf.filterId}" onclick="deleteSavedFilter(event, this.dataset.filterId)" style="border: none; background: none; color: #2563eb; cursor: pointer; font-weight: bold; padding: 0 2px; font-size: 14px;" title="Xóa bộ lọc">&times;</button>
                                 </div>
                             </c:forEach>
                         </div>
@@ -711,7 +718,7 @@
                                     end="${currentPage + 2 < totalPages ? currentPage + 2 : totalPages}" var="i">
                                     <li class="page-item ${currentPage == i ? 'active' : ''}">
                                         <a class="page-link btn ${currentPage == i ? 'btn-primary' : 'btn-secondary inactive-link'}"
-                                            style="padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: ${currentPage == i ? '600' : 'normal'};"
+                                            style="padding: 6px 14px; border-radius: 8px; font-size: 13px;"
                                             href="?page=${i}&keyword=<c:out value='${keyword}'/>&status=<c:out value='${status}'/>&industry=<c:out value='${industry}'/>&companySize=<c:out value='${companySize}'/>&region=<c:out value='${region}'/>&ownerId=${ownerId}&filterFieldId=${filterFieldId}&filterFieldValue=<c:out value='${filterFieldValue}'/>">${i}</a>
                                     </li>
                                 </c:forEach>
@@ -898,7 +905,7 @@
                             </div>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
                                 <c:forEach var="def" items="${customFieldDefinitions}">
-                                    <div style="<c:if test='${def.fieldType == \"TEXTAREA\"}'>grid-column: span 2;</c:if>">
+                                    <div class="${def.fieldType == 'TEXTAREA' ? 'grid-col-span-2' : ''}">
                                         <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: var(--color-gray-800);">
                                             <c:out value="${def.fieldLabel}"/>
                                             <c:if test="${def.required}"><span style="color:red;"> *</span></c:if>
@@ -948,10 +955,25 @@
             from { opacity: 0; transform: translateY(-16px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        .pagination .page-item.active .page-link {
+            font-weight: 600;
+        }
+        .grid-col-span-2 {
+            grid-column: span 2;
+        }
     </style>
 
     <script>
         function applySavedFilter(kw, status, industry, companySize, region, ownerId) {
+            if (kw && (kw instanceof HTMLElement || kw.dataset)) {
+                const d = kw.dataset;
+                kw = d.keyword;
+                status = d.status;
+                industry = d.industry;
+                companySize = d.companysize;
+                region = d.region;
+                ownerId = d.ownerid;
+            }
             const form = document.getElementById('filterForm');
             form.querySelector('[name="keyword"]').value = kw || '';
             form.querySelector('[name="status"]').value = status || '';
