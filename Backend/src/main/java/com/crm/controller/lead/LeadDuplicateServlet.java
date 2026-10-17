@@ -53,6 +53,9 @@ public class LeadDuplicateServlet extends HttpServlet {
 
     private void handleDuplicates(HttpServletRequest req, HttpServletResponse resp, boolean isJson) throws ServletException, IOException {
         String leadIdStr = req.getParameter("leadId");
+        if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+            leadIdStr = req.getParameter("primaryId");
+        }
 
         if (leadIdStr != null && !leadIdStr.trim().isEmpty()) {
             try {
@@ -68,8 +71,11 @@ public class LeadDuplicateServlet extends HttpServlet {
                     out.flush();
                 } else {
                     req.setAttribute("lead", lead);
+                    req.setAttribute("currentLead", lead); // Cho duplicates.jsp
                     req.setAttribute("leadCandidates", leadCandidates);
+                    req.setAttribute("duplicateLeads", leadCandidates); // Cho duplicates.jsp
                     req.setAttribute("customerCandidates", customerCandidates);
+                    req.setAttribute("suggestedCustomers", customerCandidates); // Cho duplicates.jsp
                     req.getRequestDispatcher("/WEB-INF/views/leads/duplicates.jsp").forward(req, resp);
                 }
             } catch (NumberFormatException e) {
@@ -84,8 +90,14 @@ public class LeadDuplicateServlet extends HttpServlet {
                 out.print(buildAllPairsJson(allPairs));
                 out.flush();
             } else {
-                req.setAttribute("duplicatePairs", allPairs);
-                req.getRequestDispatcher("/WEB-INF/views/leads/duplicates.jsp").forward(req, resp);
+                if (!allPairs.isEmpty()) {
+                    // Tự động chuyển hướng về Lead đầu tiên có cặp trùng để hiển thị chi tiết
+                    int firstLeadId = allPairs.get(0).getLeft().getLeadId();
+                    resp.sendRedirect(req.getContextPath() + "/leads/duplicates?leadId=" + firstLeadId);
+                    return;
+                }
+                // Nếu chưa có cặp nào trùng lặp, chuyển về /leads
+                resp.sendRedirect(req.getContextPath() + "/leads");
             }
         }
     }

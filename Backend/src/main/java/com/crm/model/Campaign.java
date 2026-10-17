@@ -52,6 +52,15 @@ public class Campaign {
         this.campaignId = campaignId;
     }
 
+    // Alias cho campaignId để tương thích JSP của FE (${item.id}, ${campaign.id})
+    public int getId() {
+        return campaignId;
+    }
+
+    public void setId(int id) {
+        this.campaignId = id;
+    }
+
     // Alias cho name để linh hoạt tương thích FE/contract
     public String getName() {
         return campaignName;

@@ -59,9 +59,30 @@ public class LeadMergeHistoryDAO {
             } catch (SQLException e) {
                 LOGGER.log(Level.FINE, "Ghi nhận khởi tạo bảng: " + e.getMessage());
             }
+
+            ensureColumnExists(conn, "leads", "campaign_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "customer_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "company", "VARCHAR(200) NULL");
+            ensureColumnExists(conn, "leads", "company_name", "VARCHAR(200) NULL");
+            ensureColumnExists(conn, "leads", "status", "VARCHAR(50) DEFAULT 'NEW'");
+
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Không thể kết nối DB trong ensureSchema của LeadMergeHistoryDAO: " + e.getMessage());
         }
+    }
+
+    private void ensureColumnExists(Connection conn, String tableName, String columnName, String columnDef) {
+        try {
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getColumns(null, null, tableName, columnName)) {
+                if (!rs.next()) {
+                    String alterSql = "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnDef;
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate(alterSql);
+                    } catch (SQLException ignored) {}
+                }
+            }
+        } catch (SQLException ignored) {}
     }
 
     /**
@@ -162,6 +183,31 @@ public class LeadMergeHistoryDAO {
             LOGGER.log(Level.SEVERE, "Lỗi khi tìm LeadMergeHistory theo id=" + mergeId, e);
         }
         return null;
+    }
+
+    /**
+     * Lấy danh sách lịch sử gộp Lead gần nhất trong toàn hệ thống.
+     */
+    public List<LeadMergeHistory> findAll(int limit) {
+        List<LeadMergeHistory> list = new ArrayList<>();
+        int max = limit > 0 ? limit : 50;
+        String sql = "SELECT h.*, u.full_name AS merged_by_name FROM lead_merge_history h " +
+                "LEFT JOIN users u ON h.merged_by = u.user_id " +
+                "ORDER BY h.merge_id DESC LIMIT ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, max);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi khi lấy danh sách LeadMergeHistory", e);
+        }
+        return list;
     }
 
     private LeadMergeHistory mapRow(ResultSet rs) throws SQLException {
