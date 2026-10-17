@@ -11,9 +11,10 @@ public class LeadWebFormDAO {
 
     public List<LeadWebForm> getAllWebForms() {
         List<LeadWebForm> list = new ArrayList<>();
-        String sql = "SELECT wf.*, u.full_name AS creator_name " +
+        String sql = "SELECT wf.*, u.full_name AS creator_name, ls.source_name " +
                      "FROM lead_web_forms wf " +
                      "LEFT JOIN users u ON wf.created_by = u.user_id " +
+                     "LEFT JOIN lead_sources ls ON wf.lead_source_id = ls.source_id " +
                      "ORDER BY wf.form_id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -28,9 +29,10 @@ public class LeadWebFormDAO {
     }
 
     public LeadWebForm getById(int formId) {
-        String sql = "SELECT wf.*, u.full_name AS creator_name " +
+        String sql = "SELECT wf.*, u.full_name AS creator_name, ls.source_name " +
                      "FROM lead_web_forms wf " +
                      "LEFT JOIN users u ON wf.created_by = u.user_id " +
+                     "LEFT JOIN lead_sources ls ON wf.lead_source_id = ls.source_id " +
                      "WHERE wf.form_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -48,8 +50,8 @@ public class LeadWebFormDAO {
 
     public boolean createWebForm(LeadWebForm form) {
         String sql = "INSERT INTO lead_web_forms (form_name, description, embed_code, allowed_domains, " +
-                     "success_redirect_url, is_active, spam_protection_enabled, fields_json, created_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "success_redirect_url, is_active, spam_protection_enabled, fields_json, lead_source_id, created_by) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, form.getFormName());
@@ -60,10 +62,15 @@ public class LeadWebFormDAO {
             ps.setBoolean(6, form.isActive());
             ps.setBoolean(7, form.isSpamProtectionEnabled());
             ps.setString(8, form.getFieldsJson());
-            if (form.getCreatedBy() != null) {
-                ps.setInt(9, form.getCreatedBy());
+            if (form.getLeadSourceId() != null) {
+                ps.setInt(9, form.getLeadSourceId());
             } else {
                 ps.setNull(9, java.sql.Types.INTEGER);
+            }
+            if (form.getCreatedBy() != null) {
+                ps.setInt(10, form.getCreatedBy());
+            } else {
+                ps.setNull(10, java.sql.Types.INTEGER);
             }
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -82,7 +89,7 @@ public class LeadWebFormDAO {
 
     public boolean updateWebForm(LeadWebForm form) {
         String sql = "UPDATE lead_web_forms SET form_name = ?, description = ?, embed_code = ?, allowed_domains = ?, " +
-                     "success_redirect_url = ?, is_active = ?, spam_protection_enabled = ?, fields_json = ? " +
+                     "success_redirect_url = ?, is_active = ?, spam_protection_enabled = ?, fields_json = ?, lead_source_id = ? " +
                      "WHERE form_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -94,7 +101,12 @@ public class LeadWebFormDAO {
             ps.setBoolean(6, form.isActive());
             ps.setBoolean(7, form.isSpamProtectionEnabled());
             ps.setString(8, form.getFieldsJson());
-            ps.setInt(9, form.getFormId());
+            if (form.getLeadSourceId() != null) {
+                ps.setInt(9, form.getLeadSourceId());
+            } else {
+                ps.setNull(9, java.sql.Types.INTEGER);
+            }
+            ps.setInt(10, form.getFormId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -125,12 +137,16 @@ public class LeadWebFormDAO {
         wf.setActive(rs.getBoolean("is_active"));
         wf.setSpamProtectionEnabled(rs.getBoolean("spam_protection_enabled"));
         wf.setFieldsJson(rs.getString("fields_json"));
+        wf.setLeadSourceId((Integer) rs.getObject("lead_source_id"));
         wf.setCreatedBy((Integer) rs.getObject("created_by"));
         wf.setCreatedAt(rs.getTimestamp("created_at"));
         wf.setUpdatedAt(rs.getTimestamp("updated_at"));
 
         try {
             wf.setCreatorName(rs.getString("creator_name"));
+        } catch (SQLException ignore) {}
+        try {
+            wf.setSourceName(rs.getString("source_name"));
         } catch (SQLException ignore) {}
 
         return wf;

@@ -241,4 +241,18 @@ public class Lead {
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
     }
+
+    // JSP / DTO Compatibility Aliases
+    public int getId() {
+        return leadId;
+    }
+
+    public String getInterest() {
+        return notes;
+    }
+
+    public String getSource() {
+        return sourceName;
+    }
 }
+

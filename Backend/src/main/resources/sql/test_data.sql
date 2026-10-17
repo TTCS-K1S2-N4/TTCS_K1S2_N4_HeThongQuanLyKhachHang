@@ -556,5 +556,47 @@ INSERT INTO audit_logs (log_id, action_type, performed_by, target_user_id, descr
 (6, 'MERGE_CUSTOMER',     801, 801, 'Gộp hồ sơ khách hàng trùng lặp #812 vào #801', 'secondary_id=812', 'primary_id=801', DATE_SUB(NOW(), INTERVAL 10 DAY))
 ON DUPLICATE KEY UPDATE description = VALUES(description);
 
+-- =============================================================================
+-- 28. BẢNG NGUỒN LEAD (lead_sources) - S401 / S402
+-- =============================================================================
+INSERT INTO lead_sources (source_id, source_code, source_name, description, is_active) VALUES
+(1, 'WEB_FORM',       'Biểu mẫu Website',            'Lead thu thập tự động từ biểu mẫu nhúng trên website', 1),
+(2, 'IMPORT_EXCEL',   'Nhập từ Excel',               'Lead được import định kỳ từ file Excel dữ liệu', 1),
+(3, 'DIRECT',         'Trực tiếp / Khách đến',       'Khách hàng tự tìm đến văn phòng hoặc liên hệ trực tiếp', 1),
+(4, 'REFERRAL',       'Giới thiệu',                  'Khách hàng được đối tác hoặc khách hàng cũ giới thiệu', 1),
+(5, 'COLD_CALL',      'Gọi điện thoại (Telesales)',  'Nguồn tiếp cận qua chiến dịch gọi điện', 1),
+(6, 'EMAIL_CAMPAIGN', 'Chiến dịch Email',            'Lead phản hồi qua các chiến dịch tiếp thị qua email', 1),
+(7, 'SOCIAL_MEDIA',   'Mạng xã hội',                 'Lead từ Facebook, LinkedIn, Zalo...', 1),
+(8, 'EVENT',          'Hội thảo / Sự kiện',          'Thu thập danh thiếp tại các hội thảo triển lãm', 1)
+ON DUPLICATE KEY UPDATE 
+    source_name = VALUES(source_name),
+    description = VALUES(description),
+    is_active = VALUES(is_active);
+
+-- =============================================================================
+-- 29. BẢNG BIỂU MẪU THU THẬP LEAD (lead_web_forms) - S401
+-- =============================================================================
+INSERT INTO lead_web_forms (form_id, form_name, description, embed_code, allowed_domains, success_redirect_url, is_active, spam_protection_enabled, lead_source_id, created_by) VALUES
+(1, 'Form Đăng Ký Tư Vấn Landing Page', 'Biểu mẫu gắn tại trang chủ và landing page giải pháp', '<iframe src="/crm/leads/public-form?formId=1" width="100%" height="600" frameborder="0"></iframe>', '*', NULL, 1, 1, 1, 6),
+(2, 'Form Liên Hệ Báo Giá Sản Phẩm', 'Thu thập yêu cầu báo giá phần mềm CRM', '<iframe src="/crm/leads/public-form?formId=2" width="100%" height="600" frameborder="0"></iframe>', '*', NULL, 1, 1, 1, 6)
+ON DUPLICATE KEY UPDATE
+    form_name = VALUES(form_name),
+    lead_source_id = VALUES(lead_source_id);
+
+-- =============================================================================
+-- 30. BẢNG ĐẦU MỐI KINH DOANH (leads) - S401 / S402
+-- =============================================================================
+INSERT INTO leads (lead_id, full_name, title, company, email, phone, lead_source_id, web_form_id, status, rating, score, industry, owner_id, notes) VALUES
+(1, 'Trần Minh Quân', 'Giám đốc Công nghệ', 'Công ty CP Công Nghệ TechX', 'quan.tran@techx.vn', '0912345671', 1, 1, 'NEW', 'HOT', 85, 'Công nghệ thông tin', 4, 'Đăng ký qua Landing Page quan tâm giải pháp CRM Cloud'),
+(2, 'Nguyễn Thị Thu Hà', 'Trưởng phòng Mua hàng', 'Tập đoàn Dược Phẩm MediCare', 'ha.nguyen@medicare.vn', '0912345672', 2, NULL, 'CONTACTED', 'WARM', 65, 'Y tế / Dược phẩm', 4, 'Import từ danh sách triển lãm thiết bị y tế 2026'),
+(3, 'Phạm Quốc Bảo', 'Trưởng phòng Kinh doanh', 'Công ty Logistics Á Châu', 'bao.pham@achau.com.vn', '0912345673', 3, NULL, 'QUALIFIED', 'WARM', 70, 'Vận tải / Logistics', 5, 'Liên hệ trực tiếp đến hotline yêu cầu tư vấn gói 50 users'),
+(4, 'Lê Hoàng Nam', 'CEO', 'Chuỗi Cửa Hàng Bán Lẻ SunStore', 'nam.le@sunstore.vn', '0912345674', 7, NULL, 'NEW', 'COLD', 40, 'Bán lẻ', 4, 'Nhắn tin qua Fanpage Facebook tìm hiểu tính năng POS tích hợp'),
+(5, 'Đặng Tuyết Mai', 'Giám đốc Marketing', 'Công ty Bất Động Sản Landmark', 'mai.dang@landmark.vn', '0912345675', 6, NULL, 'NEW', 'HOT', 90, 'Bất động sản', 4, 'Click đăng ký từ Email Campaign giới thiệu CRM Bất động sản')
+ON DUPLICATE KEY UPDATE
+    full_name = VALUES(full_name),
+    status = VALUES(status),
+    notes = VALUES(notes);
+
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
+

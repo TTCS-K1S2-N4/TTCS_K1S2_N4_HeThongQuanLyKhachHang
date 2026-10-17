@@ -274,6 +274,77 @@ public class LeadResponse {
         this.updatedAt = updatedAt;
     }
 
+    // JSP / DTO Compatibility Aliases
+    public int getId() {
+        return leadId;
+    }
+
+    public String getInterest() {
+        return notes;
+    }
+
+    public Object getSource() {
+        return new LeadSourceValue(leadSourceId, sourceName);
+    }
+
+    public static class LeadSourceValue extends Number implements Comparable<Object> {
+        private final Integer id;
+        private final String name;
+
+        public LeadSourceValue(Integer id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Integer getId() { return id; }
+        public String getName() { return name; }
+
+        @Override
+        public int intValue() { return id != null ? id : 0; }
+        @Override
+        public long longValue() { return id != null ? id.longValue() : 0L; }
+        @Override
+        public float floatValue() { return id != null ? id.floatValue() : 0.0f; }
+        @Override
+        public double doubleValue() { return id != null ? id.doubleValue() : 0.0; }
+
+        @Override
+        public String toString() {
+            return name != null && !name.trim().isEmpty() ? name : (id != null ? id.toString() : "");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null) return false;
+            if (o instanceof Number) {
+                return id != null && id.equals(((Number) o).intValue());
+            }
+            if (o instanceof String) {
+                String str = (String) o;
+                return (name != null && name.equalsIgnoreCase(str)) || (id != null && id.toString().equals(str));
+            }
+            if (o instanceof LeadSourceValue) {
+                LeadSourceValue other = (LeadSourceValue) o;
+                return (id != null && id.equals(other.id)) || (name != null && name.equalsIgnoreCase(other.name));
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return id != null ? id.hashCode() : (name != null ? name.hashCode() : 0);
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            if (o instanceof Number) {
+                return Integer.compare(this.intValue(), ((Number) o).intValue());
+            }
+            return this.toString().compareTo(String.valueOf(o));
+        }
+    }
+
     private boolean slaOverdue;
     private String classification;
 
@@ -303,3 +374,5 @@ public class LeadResponse {
         return company;
     }
 }
+
+

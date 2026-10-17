@@ -428,3 +428,123 @@ CREATE TABLE IF NOT EXISTS attachments (
     KEY idx_attachment_customer (customer_id),
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 28. BẢNG NGUỒN LEAD (lead_sources) - S401 / S402
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_sources (
+    source_id INT AUTO_INCREMENT PRIMARY KEY,
+    source_code VARCHAR(50) NOT NULL UNIQUE,
+    source_name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 29. BẢNG BIỂU MẪU THU THẬP LEAD TRÊN WEB (lead_web_forms) - S401
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_web_forms (
+    form_id INT AUTO_INCREMENT PRIMARY KEY,
+    form_name VARCHAR(150) NOT NULL,
+    description TEXT,
+    embed_code TEXT,
+    allowed_domains VARCHAR(255),
+    success_redirect_url VARCHAR(255),
+    is_active TINYINT(1) DEFAULT 1,
+    spam_protection_enabled TINYINT(1) DEFAULT 1,
+    fields_json TEXT,
+    lead_source_id INT NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_lead_web_forms_source (lead_source_id),
+    CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
+    CONSTRAINT fk_lead_web_forms_creator FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 30. BẢNG ĐẦU MỐI KINH DOANH / TIỀM NĂNG (leads) - S401 / S402
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS leads (
+    lead_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    first_name VARCHAR(100) NULL,
+    last_name VARCHAR(100) NULL,
+    title VARCHAR(100) NULL,
+    company VARCHAR(200) NULL,
+    email VARCHAR(150) NULL,
+    phone VARCHAR(20) NULL,
+    lead_source_id INT NULL,
+    web_form_id INT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'NEW',
+    rating VARCHAR(30) DEFAULT 'WARM',
+    score INT DEFAULT 0,
+    industry VARCHAR(100) NULL,
+    address TEXT NULL,
+    city VARCHAR(100) NULL,
+    state VARCHAR(100) NULL,
+    country VARCHAR(100) NULL,
+    zip_code VARCHAR(20) NULL,
+    owner_id INT NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_leads_status (status),
+    INDEX idx_leads_owner (owner_id),
+    INDEX idx_leads_email (email),
+    INDEX idx_leads_phone (phone),
+    CONSTRAINT fk_leads_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_web_form FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 31. BẢNG LỊCH SỬ GỘP LEAD (lead_merge_history)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_merge_history (
+    merge_id INT AUTO_INCREMENT PRIMARY KEY,
+    primary_lead_id INT NOT NULL,
+    duplicate_lead_id INT NOT NULL,
+    merged_by INT NULL,
+    merged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    retained_fields TEXT NULL,
+    note TEXT NULL,
+    CONSTRAINT fk_lead_merge_primary FOREIGN KEY (primary_lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
+    CONSTRAINT fk_lead_merge_user FOREIGN KEY (merged_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 32. BẢNG QUY TẮC PHÂN BỔ LEAD (lead_assignment_rules)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_assignment_rules (
+    rule_id INT AUTO_INCREMENT PRIMARY KEY,
+    rule_name VARCHAR(100) NOT NULL,
+    priority INT NOT NULL DEFAULT 1,
+    criterion VARCHAR(50) NOT NULL,
+    criterion_value VARCHAR(100) NULL,
+    assignee_id INT NULL,
+    team_id INT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_lead_rule_user FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_lead_rule_team FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 33. BẢNG LỊCH SỬ PHÂN BỔ LEAD (lead_assignment_history)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_assignment_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    lead_id INT NOT NULL,
+    rule_id INT NULL,
+    assigned_to INT NULL,
+    status VARCHAR(50) DEFAULT 'ASSIGNED',
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_lead_assign_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
+    CONSTRAINT fk_lead_assign_rule FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
+    CONSTRAINT fk_lead_assign_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

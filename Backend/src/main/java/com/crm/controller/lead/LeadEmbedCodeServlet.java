@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-@WebServlet(urlPatterns = {"/leads/web-forms/embed-code"})
+@WebServlet(urlPatterns = {"/leads/web-forms/embed-code", "/lead-forms/embed", "/lead-forms/embed-code"})
 public class LeadEmbedCodeServlet extends HttpServlet {
 
     private LeadWebFormService webFormService = new LeadWebFormService();
@@ -34,7 +34,7 @@ public class LeadEmbedCodeServlet extends HttpServlet {
             return;
         }
 
-        String formIdStr = req.getParameter("formId");
+        String formIdStr = req.getParameter("formId") != null ? req.getParameter("formId") : req.getParameter("id");
         if (formIdStr == null || formIdStr.trim().isEmpty()) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Thiếu tham số formId.");
             return;
@@ -60,7 +60,8 @@ public class LeadEmbedCodeServlet extends HttpServlet {
             } else {
                 req.setAttribute("webForm", form);
                 req.setAttribute("embedCode", embedCode);
-                req.getRequestDispatcher("/WEB-INF/views/leads/web_form_embed.jsp").forward(req, resp);
+                req.setAttribute("embedSnippet", embedCode);
+                req.getRequestDispatcher("/WEB-INF/views/leads/embed-code.jsp").forward(req, resp);
             }
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Biểu mẫu không hợp lệ.");

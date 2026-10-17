@@ -1,6 +1,8 @@
 package com.crm.controller.lead;
 
+import com.crm.dao.LeadSourceDAO;
 import com.crm.dto.LeadWebFormRequest;
+import com.crm.model.LeadSource;
 import com.crm.model.LeadWebForm;
 import com.crm.service.LeadWebFormService;
 import jakarta.servlet.ServletException;
@@ -13,10 +15,11 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/web-forms"})
+@WebServlet(urlPatterns = {"/leads/web-forms", "/lead-forms"})
 public class LeadWebFormServlet extends HttpServlet {
 
     private LeadWebFormService webFormService = new LeadWebFormService();
+    private LeadSourceDAO sourceDAO = new LeadSourceDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -36,6 +39,11 @@ public class LeadWebFormServlet extends HttpServlet {
             return;
         }
 
+        List<LeadSource> sources = sourceDAO.getActiveSources();
+        List<LeadWebForm> forms = webFormService.getAllWebForms();
+        req.setAttribute("sources", sources);
+        req.setAttribute("webForms", forms);
+
         String formIdStr = req.getParameter("id");
         if (formIdStr != null && !formIdStr.trim().isEmpty()) {
             try {
@@ -48,22 +56,27 @@ public class LeadWebFormServlet extends HttpServlet {
                 if (isJson) {
                     resp.setContentType("application/json; charset=UTF-8");
                     resp.getWriter().write(buildFormJson(form));
+                    return;
                 } else {
                     req.setAttribute("webForm", form);
-                    req.getRequestDispatcher("/WEB-INF/views/leads/web_form_detail.jsp").forward(req, resp);
+                    req.setAttribute("formName", form.getFormName());
+                    req.setAttribute("source", form.getLeadSourceId());
                 }
             } catch (NumberFormatException e) {
                 resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Biểu mẫu không hợp lệ.");
+                return;
             }
+        }
+
+        if (req.getParameter("success") != null) {
+            req.setAttribute("successMessage", "Lưu cấu hình biểu mẫu Web Form thành công!");
+        }
+
+        if (isJson) {
+            resp.setContentType("application/json; charset=UTF-8");
+            resp.getWriter().write(buildFormListJson(forms));
         } else {
-            List<LeadWebForm> forms = webFormService.getAllWebForms();
-            if (isJson) {
-                resp.setContentType("application/json; charset=UTF-8");
-                resp.getWriter().write(buildFormListJson(forms));
-            } else {
-                req.setAttribute("webForms", forms);
-                req.getRequestDispatcher("/WEB-INF/views/leads/web_forms.jsp").forward(req, resp);
-            }
+            req.getRequestDispatcher("/WEB-INF/views/leads/web-form.jsp").forward(req, resp);
         }
     }
 
@@ -85,11 +98,13 @@ public class LeadWebFormServlet extends HttpServlet {
             return;
         }
 
-        String formIdStr = req.getParameter("id");
-        String formName = req.getParameter("formName");
+        String formIdStr = req.getParameter("id") != null ? req.getParameter("id") : req.getParameter("formId");
+        String formName = req.getParameter("formName") != null ? req.getParameter("formName") : req.getParameter("name");
         String description = req.getParameter("description");
         String allowedDomains = req.getParameter("allowedDomains");
         String successRedirectUrl = req.getParameter("successRedirectUrl");
+        String sourceStr = req.getParameter("source") != null ? req.getParameter("source") : req.getParameter("leadSourceId");
+
         boolean active = req.getParameter("active") == null || "true".equalsIgnoreCase(req.getParameter("active")) || "on".equalsIgnoreCase(req.getParameter("active"));
         boolean spamProtection = req.getParameter("spamProtection") == null || "true".equalsIgnoreCase(req.getParameter("spamProtection")) || "on".equalsIgnoreCase(req.getParameter("spamProtection"));
         String fieldsJson = req.getParameter("fieldsJson");
@@ -97,11 +112,17 @@ public class LeadWebFormServlet extends HttpServlet {
         LeadWebFormRequest formReq = new LeadWebFormRequest();
         formReq.setFormName(formName);
         formReq.setDescription(description);
-        formReq.setAllowedDomains(allowedDomains);
+        formReq.setAllowedDomains(allowedDomains != null ? allowedDomains : "*");
         formReq.setSuccessRedirectUrl(successRedirectUrl);
         formReq.setActive(active);
         formReq.setSpamProtectionEnabled(spamProtection);
         formReq.setFieldsJson(fieldsJson);
+
+        if (sourceStr != null && !sourceStr.trim().isEmpty()) {
+            try {
+                formReq.setLeadSourceId(Integer.parseInt(sourceStr.trim()));
+            } catch (NumberFormatException ignore) {}
+        }
 
         String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath();
 
@@ -114,7 +135,7 @@ public class LeadWebFormServlet extends HttpServlet {
                         resp.setContentType("application/json; charset=UTF-8");
                         resp.getWriter().write("{\"status\":\"success\",\"message\":\"Cập nhật biểu mẫu thành công.\"}");
                     } else {
-                        resp.sendRedirect(req.getContextPath() + "/leads/web-forms?id=" + formId + "&success=true");
+                        resp.sendRedirect(req.getContextPath() + "/lead-forms?success=true");
                     }
                 } else {
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể cập nhật biểu mẫu.");
@@ -126,7 +147,7 @@ public class LeadWebFormServlet extends HttpServlet {
                         resp.setContentType("application/json; charset=UTF-8");
                         resp.getWriter().write("{\"status\":\"success\",\"message\":\"Tạo biểu mẫu mới thành công.\",\"formId\":" + created.getFormId() + "}");
                     } else {
-                        resp.sendRedirect(req.getContextPath() + "/leads/web-forms?id=" + created.getFormId() + "&created=true");
+                        resp.sendRedirect(req.getContextPath() + "/lead-forms?success=true");
                     }
                 } else {
                     resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể tạo biểu mẫu.");
@@ -139,7 +160,9 @@ public class LeadWebFormServlet extends HttpServlet {
                 resp.getWriter().write("{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
             } else {
                 req.setAttribute("error", e.getMessage());
-                req.getRequestDispatcher("/WEB-INF/views/leads/web_forms.jsp").forward(req, resp);
+                req.setAttribute("sources", sourceDAO.getActiveSources());
+                req.setAttribute("webForms", webFormService.getAllWebForms());
+                req.getRequestDispatcher("/WEB-INF/views/leads/web-form.jsp").forward(req, resp);
             }
         }
     }

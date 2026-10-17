@@ -67,4 +67,14 @@ public class LeadSource {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+
+    // JSP / DTO Compatibility Aliases
+    public int getId() {
+        return sourceId;
+    }
+
+    public String getName() {
+        return sourceName;
+    }
 }
+

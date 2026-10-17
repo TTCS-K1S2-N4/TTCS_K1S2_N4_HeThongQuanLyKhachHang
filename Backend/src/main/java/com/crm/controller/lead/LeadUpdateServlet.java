@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/update"})
+@WebServlet(urlPatterns = {"/leads/edit", "/leads/update"})
 public class LeadUpdateServlet extends HttpServlet {
 
     private LeadService leadService = new LeadService();
@@ -61,7 +61,7 @@ public class LeadUpdateServlet extends HttpServlet {
             } else {
                 req.setAttribute("lead", lead);
                 req.setAttribute("sources", sources);
-                req.getRequestDispatcher("/WEB-INF/views/leads/update.jsp").forward(req, resp);
+                req.getRequestDispatcher("/WEB-INF/views/leads/edit.jsp").forward(req, resp);
             }
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Lead không hợp lệ.");
@@ -99,7 +99,7 @@ public class LeadUpdateServlet extends HttpServlet {
             String company = req.getParameter("company");
             String email = req.getParameter("email");
             String phone = req.getParameter("phone");
-            String sourceIdStr = req.getParameter("leadSourceId");
+            String sourceIdStr = req.getParameter("source") != null ? req.getParameter("source") : req.getParameter("leadSourceId");
             String status = req.getParameter("status");
             String rating = req.getParameter("rating");
             String industry = req.getParameter("industry");
@@ -109,7 +109,7 @@ public class LeadUpdateServlet extends HttpServlet {
             String country = req.getParameter("country");
             String zipCode = req.getParameter("zipCode");
             String ownerIdStr = req.getParameter("ownerId");
-            String notes = req.getParameter("notes");
+            String notes = req.getParameter("interest") != null ? req.getParameter("interest") : req.getParameter("notes");
 
             LeadRequest request = new LeadRequest();
             request.setFullName(fullName);
