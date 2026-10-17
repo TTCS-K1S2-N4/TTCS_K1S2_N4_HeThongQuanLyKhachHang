@@ -34,7 +34,7 @@ public class LeadPublicFormServlet extends HttpServlet {
             }
 
             req.setAttribute("webForm", form);
-            req.getRequestDispatcher("/WEB-INF/views/leads/public_form.jsp").forward(req, resp);
+            req.getRequestDispatcher("/WEB-INF/views/leads/public-form.jsp").forward(req, resp);
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Biểu mẫu không hợp lệ.");
         }
@@ -52,6 +52,7 @@ public class LeadPublicFormServlet extends HttpServlet {
         String company = req.getParameter("company");
         String notes = req.getParameter("notes");
         String honeypot = req.getParameter("website_hp"); // Honeypot trap field
+        String campaignIdStr = req.getParameter("campaignId");
         String referer = req.getHeader("Referer");
         String clientIp = getClientIp(req);
 
@@ -60,9 +61,16 @@ public class LeadPublicFormServlet extends HttpServlet {
             return;
         }
 
+        Integer campaignId = null;
+        if (campaignIdStr != null && !campaignIdStr.trim().isEmpty()) {
+            try {
+                campaignId = Integer.parseInt(campaignIdStr.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+
         try {
             int formId = Integer.parseInt(formIdStr.trim());
-            boolean submitted = webFormService.submitPublicForm(formId, fullName, email, phone, company, notes, referer, clientIp, honeypot);
+            boolean submitted = webFormService.submitPublicForm(formId, fullName, email, phone, company, notes, referer, clientIp, honeypot, campaignId);
 
             LeadWebForm form = webFormService.getWebFormById(formId);
             String redirectUrl = (form != null && form.getSuccessRedirectUrl() != null && !form.getSuccessRedirectUrl().trim().isEmpty())
@@ -79,7 +87,7 @@ public class LeadPublicFormServlet extends HttpServlet {
                 } else {
                     req.setAttribute("successMessage", "Cảm ơn bạn đã gửi thông tin! Chúng tôi sẽ liên hệ lại sớm nhất.");
                     req.setAttribute("webForm", form);
-                    req.getRequestDispatcher("/WEB-INF/views/leads/public_form_success.jsp").forward(req, resp);
+                    req.getRequestDispatcher("/WEB-INF/views/leads/public-form.jsp").forward(req, resp);
                 }
             } else {
                 sendErrorResponse(resp, isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể gửi thông tin biểu mẫu.");

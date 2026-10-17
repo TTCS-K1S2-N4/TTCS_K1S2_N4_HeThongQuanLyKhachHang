@@ -16,11 +16,12 @@ public class LeadDAO {
     public List<Lead> getLeads(int offset, int limit, String search, String status, String rating, Integer ownerId) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name " +
+            "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name, camp.campaign_name " +
             "FROM leads l " +
             "LEFT JOIN lead_sources s ON l.lead_source_id = s.source_id " +
             "LEFT JOIN lead_web_forms wf ON l.web_form_id = wf.form_id " +
             "LEFT JOIN users u ON l.owner_id = u.user_id " +
+            "LEFT JOIN campaigns camp ON l.campaign_id = camp.campaign_id " +
             "WHERE 1=1 "
         );
 
@@ -119,11 +120,12 @@ public class LeadDAO {
     }
 
     public Lead getById(int leadId) {
-        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name " +
+        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name, camp.campaign_name " +
                      "FROM leads l " +
                      "LEFT JOIN lead_sources s ON l.lead_source_id = s.source_id " +
                      "LEFT JOIN lead_web_forms wf ON l.web_form_id = wf.form_id " +
                      "LEFT JOIN users u ON l.owner_id = u.user_id " +
+                     "LEFT JOIN campaigns camp ON l.campaign_id = camp.campaign_id " +
                      "WHERE l.lead_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -141,11 +143,12 @@ public class LeadDAO {
 
     public Lead getByEmail(String email) {
         if (email == null || email.trim().isEmpty()) return null;
-        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name " +
+        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name, camp.campaign_name " +
                      "FROM leads l " +
                      "LEFT JOIN lead_sources s ON l.lead_source_id = s.source_id " +
                      "LEFT JOIN lead_web_forms wf ON l.web_form_id = wf.form_id " +
                      "LEFT JOIN users u ON l.owner_id = u.user_id " +
+                     "LEFT JOIN campaigns camp ON l.campaign_id = camp.campaign_id " +
                      "WHERE l.email = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -163,11 +166,12 @@ public class LeadDAO {
 
     public Lead getByPhone(String phone) {
         if (phone == null || phone.trim().isEmpty()) return null;
-        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name " +
+        String sql = "SELECT l.*, s.source_name, wf.form_name AS web_form_name, u.full_name AS owner_name, camp.campaign_name " +
                      "FROM leads l " +
                      "LEFT JOIN lead_sources s ON l.lead_source_id = s.source_id " +
                      "LEFT JOIN lead_web_forms wf ON l.web_form_id = wf.form_id " +
                      "LEFT JOIN users u ON l.owner_id = u.user_id " +
+                     "LEFT JOIN campaigns camp ON l.campaign_id = camp.campaign_id " +
                      "WHERE l.phone = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -185,8 +189,8 @@ public class LeadDAO {
 
     public boolean createLead(Lead lead) {
         String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, email, phone, " +
-                     "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes, campaign_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setLeadStatementParameters(ps, lead);
@@ -208,11 +212,11 @@ public class LeadDAO {
     public boolean updateLead(Lead lead) {
         String sql = "UPDATE leads SET full_name = ?, first_name = ?, last_name = ?, title = ?, company = ?, email = ?, phone = ?, " +
                      "lead_source_id = ?, web_form_id = ?, status = ?, rating = ?, score = ?, industry = ?, address = ?, city = ?, state = ?, " +
-                     "country = ?, zip_code = ?, owner_id = ?, notes = ? WHERE lead_id = ?";
+                     "country = ?, zip_code = ?, owner_id = ?, notes = ?, campaign_id = ? WHERE lead_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             setLeadStatementParameters(ps, lead);
-            ps.setInt(21, lead.getLeadId());
+            ps.setInt(22, lead.getLeadId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -235,8 +239,8 @@ public class LeadDAO {
     public int batchCreateLeads(List<Lead> leads) {
         if (leads == null || leads.isEmpty()) return 0;
         String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, email, phone, " +
-                     "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes, campaign_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         int count = 0;
         Connection conn = null;
         try {
@@ -295,6 +299,9 @@ public class LeadDAO {
         else ps.setNull(19, Types.INTEGER);
 
         ps.setString(20, lead.getNotes());
+
+        if (lead.getCampaignId() != null && lead.getCampaignId() > 0) ps.setInt(21, lead.getCampaignId());
+        else ps.setNull(21, Types.INTEGER);
     }
 
     private Lead mapResultSet(ResultSet rs) throws SQLException {
@@ -320,12 +327,14 @@ public class LeadDAO {
         lead.setZipCode(rs.getString("zip_code"));
         lead.setOwnerId((Integer) rs.getObject("owner_id"));
         lead.setNotes(rs.getString("notes"));
+        lead.setCampaignId((Integer) rs.getObject("campaign_id"));
         lead.setCreatedAt(rs.getTimestamp("created_at"));
         lead.setUpdatedAt(rs.getTimestamp("updated_at"));
 
         try { lead.setSourceName(rs.getString("source_name")); } catch (SQLException ignore) {}
         try { lead.setWebFormName(rs.getString("web_form_name")); } catch (SQLException ignore) {}
         try { lead.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignore) {}
+        try { lead.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignore) {}
 
         return lead;
     }

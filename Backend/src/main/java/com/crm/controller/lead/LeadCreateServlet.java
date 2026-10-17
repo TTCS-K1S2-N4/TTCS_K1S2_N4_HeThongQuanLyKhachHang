@@ -40,11 +40,21 @@ public class LeadCreateServlet extends HttpServlet {
         }
 
         List<LeadSource> sources = sourceDAO.getActiveSources();
+        com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+        List<com.crm.model.Campaign> campaigns = campaignDAO.getAllCampaigns();
+        if (campaigns == null || campaigns.isEmpty()) {
+            campaigns = campaignDAO.findAll(null, null, null, null, null, com.crm.model.DataScope.ALL, 1, 100);
+        }
+        com.crm.dao.AccountDAO accountDAO = new com.crm.dao.AccountDAO();
+        List<com.crm.model.Account> accounts = accountDAO.getAllActiveAccounts();
+
         if (isJson) {
             resp.setContentType("application/json; charset=UTF-8");
             resp.getWriter().write(buildSourcesJson(sources));
         } else {
             req.setAttribute("sources", sources);
+            req.setAttribute("campaigns", campaigns);
+            req.setAttribute("accounts", accounts);
             req.getRequestDispatcher("/WEB-INF/views/leads/create.jsp").forward(req, resp);
         }
     }
@@ -85,6 +95,7 @@ public class LeadCreateServlet extends HttpServlet {
         String zipCode = req.getParameter("zipCode");
         String ownerIdStr = req.getParameter("ownerId");
         String notes = req.getParameter("notes");
+        String campaignIdStr = req.getParameter("campaignId");
 
         LeadRequest request = new LeadRequest();
         request.setFullName(fullName);
@@ -107,6 +118,9 @@ public class LeadCreateServlet extends HttpServlet {
         request.setZipCode(zipCode);
         if (ownerIdStr != null && !ownerIdStr.trim().isEmpty()) {
             try { request.setOwnerId(Integer.parseInt(ownerIdStr.trim())); } catch (NumberFormatException ignore) {}
+        }
+        if (campaignIdStr != null && !campaignIdStr.trim().isEmpty()) {
+            try { request.setCampaignId(Integer.parseInt(campaignIdStr.trim())); } catch (NumberFormatException ignore) {}
         }
         request.setNotes(notes);
 

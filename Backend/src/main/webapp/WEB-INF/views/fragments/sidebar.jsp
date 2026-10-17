@@ -30,6 +30,47 @@
     boolean canViewOrg = permissionService.hasPermissionForRoles(effectiveRoleIds, "ORG_VIEW");
     boolean canViewUsers = permissionService.hasPermissionForRoles(effectiveRoleIds, "USER_VIEW");
     boolean canViewAudit = permissionService.hasPermissionForRoles(effectiveRoleIds, "AUDIT_VIEW");
+    boolean canCreateAccount = permissionService.hasPermissionForRoles(effectiveRoleIds, "ACCOUNT_CREATE");
+    boolean canImportData = permissionService.hasPermissionForRoles(effectiveRoleIds, "IMPORT_DATA");
+
+    // Lead module role & permission detection
+    boolean isMarketing = false;
+    boolean isSalesRep = false;
+    boolean isTeamLead = false;
+    boolean isDirector = false;
+    boolean isAdmin = false;
+
+    if (currentUser != null) {
+        List<String> rCodes = currentUser.getRoleCodes();
+        if (rCodes != null && !rCodes.isEmpty()) {
+            for (String rc : rCodes) {
+                if (rc != null) {
+                    String u = rc.toUpperCase().trim();
+                    if (u.equals("MARKETING")) isMarketing = true;
+                    if (u.equals("SALES_REP") || u.contains("SALES")) isSalesRep = true;
+                    if (u.equals("TEAM_LEAD") || u.contains("LEAD")) isTeamLead = true;
+                    if (u.equals("DIRECTOR")) isDirector = true;
+                    if (u.equals("ADMIN")) isAdmin = true;
+                }
+            }
+        }
+        if (userRole != null) {
+            String ur = userRole.toLowerCase();
+            if (ur.contains("quản trị") || ur.contains("admin")) isAdmin = true;
+            if (ur.contains("marketing")) isMarketing = true;
+            if (ur.contains("giám đốc") || ur.contains("director")) isDirector = true;
+            if (ur.contains("trưởng") || ur.contains("leader")) isTeamLead = true;
+            if (ur.contains("kinh doanh") || ur.contains("sales")) isSalesRep = true;
+        }
+    }
+
+    boolean canViewLeads = canViewAccounts || isMarketing || isSalesRep || isTeamLead || isDirector || isAdmin;
+    boolean canCreateLead = canCreateAccount || isMarketing || isSalesRep || isTeamLead || isDirector || isAdmin;
+    boolean canImportLead = canImportData || canCreateAccount || isMarketing || isTeamLead || isDirector || isAdmin;
+    boolean canManageWebForms = isMarketing || isDirector || isAdmin;
+    boolean canManageDuplicates = isMarketing || isTeamLead || isDirector || isAdmin;
+    boolean canConfigureScoring = isDirector || isAdmin || isTeamLead;
+    boolean canViewSavedFilters = canViewLeads;
 
     // Route matching for active state
     String forwardUri = (String) request.getAttribute("jakarta.servlet.forward.request_uri");
@@ -43,6 +84,7 @@
             : currentUri;
 
     boolean isDashboardActive = relativePath.equals("/") || relativePath.equals("") || relativePath.equals("/dashboard") || relativePath.startsWith("/dashboard/");
+    boolean isLeadActive = !isDashboardActive && (relativePath.startsWith("/leads") || relativePath.startsWith("/lead-scoring") || relativePath.startsWith("/campaigns"));
 %>
 
 <!-- SIDEBAR NAVIGATION DRAWER (LIGHT ELEGANT THEME) -->
@@ -122,6 +164,94 @@
                     <span class="nav-icon"><i class="fa-solid fa-hand-holding-heart"></i></span>
                     <span class="nav-label">Chăm sóc định kỳ</span>
                 </a>
+            </div>
+        <% } %>
+
+        <!-- SECTION: QUẢN LÝ LEAD (TIỀM NĂNG & THU THẬP) -->
+        <% if (canViewLeads) { %>
+            <div class="nav-section-group">
+                <div class="nav-section-title">Tiềm năng & Lead</div>
+
+                <div class="nav-dropdown <%= isLeadActive ? "open" : "" %>" id="lead-nav-dropdown">
+                    <div class="nav-item-header-group">
+                        <a class="nav-item nav-item-lead-main <%= isLeadActive ? "active" : "" %>" 
+                           href="${pageContext.request.contextPath}/leads" 
+                           title="Quản lý Lead">
+                            <span class="nav-active-indicator"></span>
+                            <span class="nav-icon"><i class="fa-solid fa-bullseye"></i></span>
+                            <span class="nav-label">Quản lý Lead</span>
+                        </a>
+                        <button type="button" class="nav-toggle-btn" id="lead-toggle-btn" 
+                                aria-label="Mở rộng menu Lead" 
+                                aria-expanded="<%= isLeadActive ? "true" : "false" %>"
+                                title="Mở rộng/Thu gọn menu con">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+
+                    <div class="nav-sub-menu" id="lead-sub-menu">
+                        <a class="nav-sub-item <%= (!isDashboardActive && (relativePath.equals("/leads") || relativePath.equals("/leads/list") || relativePath.startsWith("/leads/detail"))) ? "active" : "" %>" 
+                           href="${pageContext.request.contextPath}/leads">
+                            <span class="nav-sub-dot"></span>
+                            <span class="nav-sub-text">Danh sách Lead</span>
+                        </a>
+
+                        <% if (canCreateLead) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/create")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/leads/create">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Tạo Lead</span>
+                            </a>
+                        <% } %>
+
+                        <% if (canImportLead) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/import")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/leads/import">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Nhập Lead từ Excel</span>
+                            </a>
+                        <% } %>
+
+                        <% if (canManageWebForms) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/web-forms")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/leads/web-forms">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Web Forms</span>
+                            </a>
+                        <% } %>
+
+                        <% if (canManageDuplicates) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/duplicates")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/leads/duplicates">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Phát hiện Lead trùng</span>
+                            </a>
+                        <% } %>
+
+                        <% if (canConfigureScoring) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/lead-scoring")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/lead-scoring/rules">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Cấu hình chấm điểm</span>
+                            </a>
+                        <% } %>
+
+                        <% if (canViewSavedFilters) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/saved-filters")) ? "active" : "" %>" 
+                               href="${pageContext.request.contextPath}/leads/saved-filters">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Bộ lọc đã lưu</span>
+                            </a>
+                        <% } %>
+
+                        <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/campaigns")) ? "active" : "" %>" 
+                           href="${pageContext.request.contextPath}/campaigns">
+                            <span class="nav-sub-dot"></span>
+                            <span class="nav-sub-text">Chiến dịch Marketing</span>
+                        </a>
+                    </div>
+                </div>
+
             </div>
         <% } %>
 
@@ -563,6 +693,108 @@
         letter-spacing: 0.01em;
     }
 
+    /* =========================================================
+       DROPDOWN & SUBMENU STYLES FOR MODULE LEAD
+       ========================================================= */
+    .nav-dropdown {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 3px;
+    }
+    .nav-item-header-group {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        position: relative;
+    }
+    .nav-item-header-group .nav-item-lead-main {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    .nav-toggle-btn {
+        width: 32px;
+        height: 38px;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 8px;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .nav-toggle-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #e2e8f0;
+    }
+    .nav-toggle-btn i {
+        transition: transform 0.25s ease;
+    }
+    .nav-dropdown.open .nav-toggle-btn i {
+        transform: rotate(180deg);
+    }
+    .nav-sub-menu {
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        padding: 0.35rem 0 0.25rem 0.5rem;
+        margin-left: 1.25rem;
+        border-left: 2px solid #e2e8f0;
+    }
+    .nav-dropdown.open .nav-sub-menu {
+        display: flex;
+    }
+    .nav-sub-item {
+        position: relative;
+        min-height: 34px;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.4rem 0.65rem;
+        border-radius: 7px;
+        color: #475569 !important;
+        text-decoration: none;
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-sub-item:hover {
+        color: #0f172a !important;
+        background: #f1f5f9 !important;
+        transform: translateX(2px);
+    }
+    .nav-sub-item.active {
+        color: #1d4ed8 !important;
+        font-weight: 600;
+        background: #eff6ff !important;
+    }
+    .nav-sub-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #94a3b8;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+    .nav-sub-item:hover .nav-sub-dot {
+        background: #2563eb;
+    }
+    .nav-sub-item.active .nav-sub-dot {
+        background: #2563eb;
+        transform: scale(1.3);
+        box-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+    }
+    .nav-sub-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     /* BOTTOM FOOTER */
     .sidebar-bottom-footer {
         padding-top: 1rem;
@@ -663,6 +895,11 @@
             font-size: 0.84rem;
             padding: 0.55rem 0.65rem;
         }
+        .nav-sub-item {
+            font-size: 0.78rem;
+            min-height: 32px;
+            padding: 0.35rem 0.5rem;
+        }
     }
 </style>
 
@@ -721,9 +958,22 @@
                 }
             });
 
+            // Lead submenu dropdown toggle handling
+            var leadToggleBtn = document.getElementById("lead-toggle-btn");
+            var leadDropdown = document.getElementById("lead-nav-dropdown");
+            if (leadToggleBtn && leadDropdown) {
+                leadToggleBtn.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    leadDropdown.classList.toggle("open");
+                    var isOpen = leadDropdown.classList.contains("open");
+                    leadToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                });
+            }
+
             // Close when clicking nav items on mobile
             if (sidebar) {
-                var navLinks = sidebar.querySelectorAll(".nav-item");
+                var navLinks = sidebar.querySelectorAll(".nav-item, .nav-sub-item");
                 navLinks.forEach(function(link) {
                     link.addEventListener("click", function() {
                         if (window.innerWidth <= 768) {

@@ -14,13 +14,13 @@
 <c:set var="dash" value="—" />
 <c:set var="hasLead" value="${not empty lead}" />
 <c:if test="${hasLead}">
-    <c:set var="leadActualId" value="${not empty lead.id ? lead.id : lead.leadId}" />
+    <c:set var="leadActualId" value="${lead.leadId}" />
     <c:set var="statusTrim" value="${fn:trim(lead.status)}" />
     <c:set var="isConverted" value="${statusTrim == convertedStatus or fn:toUpperCase(statusTrim) == 'CONVERTED'}" />
     <c:set var="displayName" value="${empty lead.fullName ? 'Lead chưa có tên' : lead.fullName}" />
     <c:set var="initial" value="${empty lead.fullName ? '?' : fn:toUpperCase(fn:substring(lead.fullName, 0, 1))}" />
-    <c:catch var="optErr"><c:set var="leadInterest" value="${not empty lead.interest ? lead.interest : lead.notes}" /></c:catch>
-    <c:catch var="optErr"><c:set var="leadSource" value="${not empty lead.sourceName ? lead.sourceName : lead.source}" /></c:catch>
+    <c:set var="leadInterest" value="${not empty lead.notes ? lead.notes : ''}" />
+    <c:set var="leadSource" value="${not empty lead.sourceName ? lead.sourceName : ''}" />
 </c:if>
 
 <c:set var="authUserId" value="${not empty sessionScope.userId ? sessionScope.userId : (not empty sessionScope.currentUser ? sessionScope.currentUser.accountId : '')}" />

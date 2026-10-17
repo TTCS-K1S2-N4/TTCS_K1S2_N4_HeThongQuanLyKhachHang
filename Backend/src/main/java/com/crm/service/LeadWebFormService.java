@@ -84,6 +84,11 @@ public class LeadWebFormService {
 
     public boolean submitPublicForm(int formId, String fullName, String email, String phone, String company,
                                    String notes, String refererHeader, String clientIp, String honeypot) {
+        return submitPublicForm(formId, fullName, email, phone, company, notes, refererHeader, clientIp, honeypot, null);
+    }
+
+    public boolean submitPublicForm(int formId, String fullName, String email, String phone, String company,
+                                   String notes, String refererHeader, String clientIp, String honeypot, Integer campaignId) {
         LeadWebForm form = webFormDAO.getById(formId);
         if (form == null || !form.isActive()) {
             throw new IllegalStateException("Biểu mẫu thu thập không tồn tại hoặc đã bị ngừng kích hoạt.");
@@ -123,7 +128,6 @@ public class LeadWebFormService {
             }
         }
 
-
         Lead lead = new Lead();
         lead.setFullName(fullName.trim());
         lead.setEmail(email != null ? email.trim() : null);
@@ -133,6 +137,14 @@ public class LeadWebFormService {
         lead.setWebFormId(formId);
         lead.setStatus("NEW");
         lead.setRating("WARM");
+
+        // Gắn campaign_id nếu được cấu hình / truyền vào và hợp lệ
+        if (campaignId != null && campaignId > 0) {
+            com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+            if (campaignDAO.findById(campaignId) != null) {
+                lead.setCampaignId(campaignId);
+            }
+        }
 
         // Gán Lead Source = WEB_FORM
         LeadSource webSource = sourceDAO.getByCode("WEB_FORM");

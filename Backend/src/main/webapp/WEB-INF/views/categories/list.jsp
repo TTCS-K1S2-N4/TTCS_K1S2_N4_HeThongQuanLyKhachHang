@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <fmt:setLocale value="vi_VN"/>
 <!DOCTYPE html>
 <html lang="vi">
@@ -149,7 +150,7 @@
                         <i class="fa fa-users"></i> Quy mô doanh nghiệp
                         <span class="tab-count" id="countSize">0</span>
                     </button>
-                    <button type="button" class="tab-btn ${categoryType eq 'LEAD_SOURCE' || categoryType eq 'SOURCE' ? 'active' : ''}" onclick="switchTab('LEAD_SOURCE')">
+                    <button type="button" class="tab-btn ${categoryType eq 'LEAD_SOURCE' or categoryType eq 'SOURCE' ? 'active' : ''}" onclick="switchTab('LEAD_SOURCE')">
                         <i class="fa fa-bullseye"></i> Nguồn Lead
                         <span class="tab-count" id="countSource">0</span>
                     </button>
@@ -198,7 +199,7 @@
                             <c:forEach var="c" items="${categories}">
                                 <tr data-id="${c.categoryId}"
                                     data-type="${c.categoryType}"
-                                    data-name="<c:out value='${c.categoryName}'/>"
+                                    data-name="${fn:escapeXml(c.categoryName)}"
                                     data-order="${c.displayOrder}"
                                     data-status="${c.status}"
                                     data-refs="${c.usageCount}">
@@ -210,10 +211,10 @@
                                                 ${c.displayOrder}
                                             </div>
                                             <div class="order-arrows">
-                                                <button type="button" class="order-btn-up" title="Tăng thứ tự ưu tiên (-1)" onclick="quickAdjustOrder(${c.categoryId}, -1)">
+                                                <button type="button" class="order-btn-up" title="Tăng thứ tự ưu tiên (-1)" onclick="quickAdjustOrder(this, -1)">
                                                     <i class="fa fa-chevron-up"></i>
                                                 </button>
-                                                <button type="button" class="order-btn-down" title="Giảm thứ tự ưu tiên (+1)" onclick="quickAdjustOrder(${c.categoryId}, 1)">
+                                                <button type="button" class="order-btn-down" title="Giảm thứ tự ưu tiên (+1)" onclick="quickAdjustOrder(this, 1)">
                                                     <i class="fa fa-chevron-down"></i>
                                                 </button>
                                             </div>
@@ -233,7 +234,7 @@
                                                     <i class="fa fa-users"></i> Quy mô DN
                                                 </span>
                                             </c:when>
-                                            <c:when test="${c.categoryType eq 'LEAD_SOURCE' || c.categoryType eq 'SOURCE'}">
+                                            <c:when test="${c.categoryType eq 'LEAD_SOURCE' or c.categoryType eq 'SOURCE'}">
                                                 <span class="type-badge type-source">
                                                     <i class="fa fa-bullseye"></i> Nguồn Lead
                                                 </span>
@@ -262,7 +263,7 @@
                                     <!-- Data Reference Integrity Badge -->
                                     <td>
                                         <c:choose>
-                                            <c:when test="${c.usageCount > 0}">
+                                            <c:when test="${c.usageCount gt 0}">
                                                 <span class="ref-badge ref-locked" title="Đang có ${c.usageCount} bản ghi tham chiếu trong cơ sở dữ liệu. Theo chính sách bảo toàn số liệu báo cáo gộp, giá trị này không thể xóa.">
                                                     <i class="fa fa-lock"></i> Đang dùng (${c.usageCount} bản ghi)
                                                 </span>
@@ -294,18 +295,18 @@
                                     <!-- Actions -->
                                     <td style="text-align: center;">
                                         <div class="action-btn-group">
-                                            <button type="button" class="action-btn action-edit" title="Chỉnh sửa danh mục" onclick="openEditModal(${c.categoryId}, '<c:out value="${c.categoryType}"/>', '<c:out value="${c.categoryName}"/>', ${c.displayOrder}, '<c:out value="${c.status}"/>')">
+                                            <button type="button" class="action-btn action-edit" title="Chỉnh sửa danh mục" onclick="openEditModal(this)">
                                                 <i class="fa fa-pen-to-square"></i>
                                             </button>
                                             
                                             <c:choose>
-                                                <c:when test="${c.usageCount > 0}">
+                                                <c:when test="${c.usageCount gt 0}">
                                                     <button type="button" class="action-btn action-delete" disabled style="opacity: 0.4; cursor: not-allowed;" title="Không thể xóa: Đang có ${c.usageCount} bản ghi tham chiếu dữ liệu!">
                                                         <i class="fa fa-lock"></i>
                                                     </button>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <button type="button" class="action-btn action-delete" title="Xóa danh mục này" onclick="confirmDelete(${c.categoryId}, '<c:out value="${c.categoryName}"/>', 0)">
+                                                    <button type="button" class="action-btn action-delete" title="Xóa danh mục này" onclick="confirmDelete(this)">
                                                         <i class="fa fa-trash-can"></i>
                                                     </button>
                                                 </c:otherwise>
@@ -348,10 +349,10 @@
                     <label class="form-label" for="createType">Phân hệ / Trục Danh mục <span class="req">*</span></label>
                     <select id="createType" name="categoryType" class="form-control" required>
                         <option value="">-- Chọn trục danh mục cốt lõi --</option>
-                        <option value="INDUSTRY" ${categoryType eq 'INDUSTRY' ? 'selected' : ''}>🏢 Ngành nghề khách hàng (INDUSTRY)</option>
-                        <option value="COMPANY_SIZE" ${categoryType eq 'COMPANY_SIZE' ? 'selected' : ''}>👥 Quy mô doanh nghiệp (COMPANY_SIZE)</option>
-                        <option value="LEAD_SOURCE" ${categoryType eq 'LEAD_SOURCE' || categoryType eq 'SOURCE' ? 'selected' : ''}>🎯 Nguồn Lead (LEAD_SOURCE)</option>
-                        <option value="ACTIVITY_TYPE" ${categoryType eq 'ACTIVITY_TYPE' ? 'selected' : ''}>⚡ Loại hoạt động (ACTIVITY_TYPE)</option>
+                        <option value="INDUSTRY">🏢 Ngành nghề khách hàng (INDUSTRY)</option>
+                        <option value="COMPANY_SIZE">👥 Quy mô doanh nghiệp (COMPANY_SIZE)</option>
+                        <option value="LEAD_SOURCE">🎯 Nguồn Lead (LEAD_SOURCE)</option>
+                        <option value="ACTIVITY_TYPE">⚡ Loại hoạt động (ACTIVITY_TYPE)</option>
                     </select>
                     <span class="form-hint">Lựa chọn 1 trong 4 phân hệ danh mục dùng chung theo chính sách bán hàng.</span>
                 </div>
@@ -630,7 +631,23 @@
         document.getElementById("createModal").classList.remove("show");
     }
 
-    function openEditModal(id, type, name, order, status) {
+    function openEditModal(trigger) {
+        let id, type, name, order, status;
+        if (trigger && trigger.closest) {
+            const row = trigger.closest("tr");
+            id = row.getAttribute("data-id");
+            type = row.getAttribute("data-type");
+            name = row.getAttribute("data-name");
+            order = row.getAttribute("data-order");
+            status = row.getAttribute("data-status");
+        } else {
+            id = arguments[0];
+            type = arguments[1];
+            name = arguments[2];
+            order = arguments[3];
+            status = arguments[4];
+        }
+
         document.getElementById("editCategoryId").value = id;
         document.getElementById("editCategoryType").value = type;
         
@@ -652,7 +669,19 @@
         document.getElementById("editModal").classList.remove("show");
     }
 
-    function confirmDelete(id, name, refs) {
+    function confirmDelete(trigger) {
+        let id, name, refs;
+        if (trigger && trigger.closest) {
+            const row = trigger.closest("tr");
+            id = row.getAttribute("data-id");
+            name = row.getAttribute("data-name");
+            refs = parseInt(row.getAttribute("data-refs") || "0", 10);
+        } else {
+            id = arguments[0];
+            name = arguments[1];
+            refs = arguments[2];
+        }
+
         if (refs > 0) {
             alert("CHÍNH SÁCH BẢO VỆ THAM CHIẾU:\n\nDanh mục '" + name + "' đang được tham chiếu bởi " + refs + " bản ghi trong hệ thống và KHÔNG THỂ XÓA.\n\nVui lòng chuyển trạng thái sang 'Tạm ngưng (INACTIVE)' nếu không còn nhu cầu nhập liệu mới.");
             return;
@@ -666,8 +695,16 @@
     }
 
     // 5. Quick Adjust Sort Order
-    function quickAdjustOrder(id, delta) {
-        const row = document.querySelector("#categoriesTableBody tr[data-id='" + id + "']");
+    function quickAdjustOrder(trigger, delta) {
+        let id;
+        let row;
+        if (trigger && trigger.closest) {
+            row = trigger.closest("tr");
+            id = row ? row.getAttribute("data-id") : null;
+        } else {
+            id = trigger;
+            row = document.querySelector("#categoriesTableBody tr[data-id='" + id + "']");
+        }
         if (!row) return;
         const currentOrder = parseInt(row.getAttribute("data-order") || "0", 10);
         const newOrder = Math.max(0, currentOrder + delta);

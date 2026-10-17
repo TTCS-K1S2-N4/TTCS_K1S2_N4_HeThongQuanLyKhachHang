@@ -2,6 +2,8 @@ package com.crm.dao;
 
 import com.crm.model.Campaign;
 import com.crm.model.DataScope;
+import com.crm.model.Lead;
+import com.crm.model.Opportunity;
 import com.crm.util.DBConnection;
 
 import java.math.BigDecimal;
@@ -221,6 +223,13 @@ public class CampaignDAO {
     }
 
     /**
+     * Lấy tất cả chiến dịch (dùng cho dropdown lựa chọn).
+     */
+    public List<Campaign> getAllCampaigns() {
+        return findAll(null, null, null, null, null, DataScope.ALL, 1, 1000);
+    }
+
+    /**
      * Đếm tổng số chiến dịch thỏa mãn bộ lọc.
      */
     public int countAll(String keyword, String status, String channel, Integer ownerId, List<Integer> teamUserIds, DataScope scope) {
@@ -335,5 +344,128 @@ public class CampaignDAO {
         c.setCreatedAt(rs.getTimestamp("created_at"));
         c.setUpdatedAt(rs.getTimestamp("updated_at"));
         return c;
+    }
+
+    /**
+     * Lấy danh sách Lead được gắn với chiến dịch cụ thể.
+     */
+    public List<Lead> getLeadsByCampaignId(int campaignId) {
+        List<Lead> list = new ArrayList<>();
+        String sql = "SELECT l.*, s.source_name, u.full_name AS owner_name " +
+                     "FROM leads l " +
+                     "LEFT JOIN lead_sources s ON l.lead_source_id = s.source_id " +
+                     "LEFT JOIN users u ON l.owner_id = u.user_id " +
+                     "WHERE l.campaign_id = ? " +
+                     "ORDER BY l.lead_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, campaignId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Lead l = new Lead();
+                    l.setLeadId(rs.getInt("lead_id"));
+                    l.setFullName(rs.getString("full_name"));
+                    l.setCompany(rs.getString("company"));
+                    l.setEmail(rs.getString("email"));
+                    l.setPhone(rs.getString("phone"));
+                    l.setStatus(rs.getString("status"));
+                    l.setRating(rs.getString("rating"));
+                    l.setOwnerId(rs.getObject("owner_id") != null ? rs.getInt("owner_id") : null);
+                    l.setOwnerName(rs.getString("owner_name"));
+                    l.setSourceName(rs.getString("source_name"));
+                    l.setCampaignId(rs.getInt("campaign_id"));
+                    l.setCreatedAt(rs.getTimestamp("created_at"));
+                    l.setUpdatedAt(rs.getTimestamp("updated_at"));
+                    list.add(l);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi khi lấy danh sách Lead theo Campaign id=" + campaignId, e);
+        }
+        return list;
+    }
+
+    /**
+     * Lấy danh sách Cơ hội (Opportunity) thuộc chiến dịch cụ thể.
+     */
+    public List<Opportunity> getOpportunitiesByCampaignId(int campaignId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT o.*, c.customer_name, u.full_name AS owner_name, ps.stage_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN customers c ON o.customer_id = c.customer_id " +
+                     "LEFT JOIN users u ON o.owner_id = u.user_id " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "WHERE o.campaign_id = ? " +
+                     "ORDER BY o.opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, campaignId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Opportunity opp = new Opportunity();
+                    opp.setOpportunityId(rs.getInt("opportunity_id"));
+                    opp.setTitle(rs.getString("title"));
+                    opp.setAmount(rs.getDouble("amount"));
+                    opp.setStage(rs.getString("stage"));
+                    opp.setStatus(rs.getString("status"));
+                    opp.setCustomerId(rs.getInt("customer_id"));
+                    opp.setCustomerName(rs.getString("customer_name"));
+                    opp.setOwnerId(rs.getInt("owner_id"));
+                    opp.setOwnerName(rs.getString("owner_name"));
+                    opp.setPipelineStageId(rs.getObject("pipeline_stage_id") != null ? rs.getInt("pipeline_stage_id") : null);
+                    opp.setStageName(rs.getString("stage_name"));
+                    opp.setCampaignId(rs.getInt("campaign_id"));
+                    opp.setCloseDate(rs.getTimestamp("close_date"));
+                    opp.setCreatedAt(rs.getTimestamp("created_at"));
+                    list.add(opp);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi khi lấy danh sách Opportunity theo Campaign id=" + campaignId, e);
+        }
+        return list;
+    }
+
+    /**
+     * Lấy danh sách Cơ hội đã chốt thắng (Closed Won) đóng góp vào doanh thu chiến dịch.
+     */
+    public List<Opportunity> getClosedWonOpportunitiesByCampaignId(int campaignId) {
+        List<Opportunity> list = new ArrayList<>();
+        String sql = "SELECT o.*, c.customer_name, u.full_name AS owner_name, ps.stage_name " +
+                     "FROM opportunities o " +
+                     "LEFT JOIN customers c ON o.customer_id = c.customer_id " +
+                     "LEFT JOIN users u ON o.owner_id = u.user_id " +
+                     "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                     "WHERE o.campaign_id = ? " +
+                     "AND (UPPER(o.stage) LIKE '%WON%' OR UPPER(o.status) LIKE '%WON%') " +
+                     "AND UPPER(o.stage) NOT LIKE '%LOST%' AND UPPER(o.status) NOT LIKE '%LOST%' " +
+                     "ORDER BY o.opportunity_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, campaignId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Opportunity opp = new Opportunity();
+                    opp.setOpportunityId(rs.getInt("opportunity_id"));
+                    opp.setTitle(rs.getString("title"));
+                    opp.setAmount(rs.getDouble("amount"));
+                    opp.setStage(rs.getString("stage"));
+                    opp.setStatus(rs.getString("status"));
+                    opp.setCustomerId(rs.getInt("customer_id"));
+                    opp.setCustomerName(rs.getString("customer_name"));
+                    opp.setOwnerId(rs.getInt("owner_id"));
+                    opp.setOwnerName(rs.getString("owner_name"));
+                    opp.setPipelineStageId(rs.getObject("pipeline_stage_id") != null ? rs.getInt("pipeline_stage_id") : null);
+                    opp.setStageName(rs.getString("stage_name"));
+                    opp.setCampaignId(rs.getInt("campaign_id"));
+                    opp.setCloseDate(rs.getTimestamp("close_date"));
+                    opp.setCreatedAt(rs.getTimestamp("created_at"));
+                    list.add(opp);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi khi lấy danh sách Closed Won Opportunity theo Campaign id=" + campaignId, e);
+        }
+        return list;
     }
 }

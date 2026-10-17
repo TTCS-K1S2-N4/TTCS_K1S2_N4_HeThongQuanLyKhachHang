@@ -50,6 +50,7 @@ public class LeadDuplicateService {
         private String campaignName;
         private Integer customerId;
         private String source;
+        private String notes;
         private Timestamp createdAt;
         private Timestamp updatedAt;
 
@@ -88,10 +89,17 @@ public class LeadDuplicateService {
         public void setCustomerId(Integer customerId) { this.customerId = customerId; }
         public String getSource() { return source; }
         public void setSource(String source) { this.source = source; }
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
         public Timestamp getCreatedAt() { return createdAt; }
         public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
         public Timestamp getUpdatedAt() { return updatedAt; }
         public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+        // Alias getters for JSP EL compatibility (id, name, company)
+        public int getId() { return leadId; }
+        public String getName() { return fullName; }
+        public String getCompany() { return companyName; }
     }
 
     public static class LeadDuplicateCandidate {
@@ -207,7 +215,7 @@ public class LeadDuplicateService {
 
         // 3. Kiểm tra Tên công ty
         if (isSameCompany(a.getCompanyName(), b.getCompanyName())) {
-            reasons.add("Trùng Tên công ty");
+            reasons.add("Cùng Tên công ty");
         }
 
         return reasons;
@@ -319,6 +327,12 @@ public class LeadDuplicateService {
                 throw new IllegalStateException("Một trong hai Lead đã được gộp trước đó.");
             }
 
+            if ("CONVERTED".equalsIgnoreCase(duplicateLead.getStatus())) {
+                LOGGER.warning("Lead phụ đã ở trạng thái CONVERTED, không thể gộp.");
+                conn.rollback();
+                throw new IllegalStateException("Lead #" + duplicateId + " đã được chuyển đổi thành Khách hàng, không thể gộp vào Lead khác.");
+            }
+
             // 1. Chuyển giao các hoạt động (activities) từ Lead trùng sang Lead chính để bảo toàn lịch sử
             reassignActivities(primaryId, duplicateId, conn);
 
@@ -334,16 +348,37 @@ public class LeadDuplicateService {
             Integer finalCampaign = primaryLead.getCampaignId() != null ? primaryLead.getCampaignId() : duplicateLead.getCampaignId();
             Integer finalCustomer = primaryLead.getCustomerId() != null ? primaryLead.getCustomerId() : duplicateLead.getCustomerId();
 
-            String updatePrimarySql = "UPDATE leads SET full_name = ?, company_name = ?, email = ?, phone = ?, " +
-                    "campaign_id = ?, customer_id = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            // Kết hợp ghi chú (notes) của Lead phụ vào Lead chính để bảo toàn toàn bộ nội dung
+            String primaryNotes = primaryLead.getNotes();
+            String dupNotes = duplicateLead.getNotes();
+            String combinedNotes = primaryNotes != null ? primaryNotes.trim() : "";
+            if (dupNotes != null && !dupNotes.trim().isEmpty()) {
+                if (combinedNotes.isEmpty()) {
+                    combinedNotes = "[Nội dung từ Lead #" + duplicateId + "]: " + dupNotes.trim();
+                } else {
+                    combinedNotes += "\n\n[Nội dung từ Lead #" + duplicateId + "]: " + dupNotes.trim();
+                }
+            }
+            if (req.getNote() != null && !req.getNote().trim().isEmpty()) {
+                if (combinedNotes.isEmpty()) {
+                    combinedNotes = "[Ghi chú gộp]: " + req.getNote().trim();
+                } else {
+                    combinedNotes += "\n[Ghi chú gộp]: " + req.getNote().trim();
+                }
+            }
+
+            String updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, company_name = ?, email = ?, phone = ?, " +
+                    "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(updatePrimarySql)) {
                 ps.setString(1, finalName);
                 ps.setString(2, finalCompany);
-                ps.setString(3, finalEmail);
-                ps.setString(4, finalPhone);
-                if (finalCampaign != null) ps.setInt(5, finalCampaign); else ps.setNull(5, Types.INTEGER);
-                if (finalCustomer != null) ps.setInt(6, finalCustomer); else ps.setNull(6, Types.INTEGER);
-                ps.setInt(7, primaryId);
+                ps.setString(3, finalCompany);
+                ps.setString(4, finalEmail);
+                ps.setString(5, finalPhone);
+                if (finalCampaign != null) ps.setInt(6, finalCampaign); else ps.setNull(6, Types.INTEGER);
+                if (finalCustomer != null) ps.setInt(7, finalCustomer); else ps.setNull(7, Types.INTEGER);
+                ps.setString(8, combinedNotes.isEmpty() ? null : combinedNotes);
+                ps.setInt(9, primaryId);
                 ps.executeUpdate();
             }
 
@@ -399,22 +434,14 @@ public class LeadDuplicateService {
         }
     }
 
-    private void reassignActivities(int primaryId, int duplicateId, Connection conn) {
-        String updateActivitiesSql = "UPDATE activities SET owner_id = owner_id WHERE 1=0"; // fallback
-        try {
-            // Kiểm tra xem bảng activities có cột lead_id không
-            DatabaseMetaData meta = conn.getMetaData();
-            try (ResultSet rs = meta.getColumns(null, null, "activities", "lead_id")) {
-                if (rs.next()) {
-                    updateActivitiesSql = "UPDATE activities SET lead_id = ? WHERE lead_id = ?";
-                    try (PreparedStatement ps = conn.prepareStatement(updateActivitiesSql)) {
-                        ps.setInt(1, primaryId);
-                        ps.setInt(2, duplicateId);
-                        ps.executeUpdate();
-                    }
-                }
-            }
-        } catch (SQLException ignored) {}
+    private void reassignActivities(int primaryId, int duplicateId, Connection conn) throws SQLException {
+        String updateActivitiesSql = "UPDATE activities SET lead_id = ? WHERE lead_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(updateActivitiesSql)) {
+            ps.setInt(1, primaryId);
+            ps.setInt(2, duplicateId);
+            int affected = ps.executeUpdate();
+            LOGGER.info("Đã chuyển " + affected + " activities từ Lead #" + duplicateId + " sang Lead #" + primaryId);
+        }
     }
 
     // =========================================================================
@@ -496,7 +523,11 @@ public class LeadDuplicateService {
         LeadRecord l = new LeadRecord();
         l.setLeadId(rs.getInt("lead_id"));
         l.setFullName(rs.getString("full_name"));
-        l.setCompanyName(rs.getString("company_name"));
+        String company = rs.getString("company_name");
+        if (company == null || company.trim().isEmpty()) {
+            try { company = rs.getString("company"); } catch (SQLException ignored) {}
+        }
+        l.setCompanyName(company);
         l.setEmail(rs.getString("email"));
         l.setPhone(rs.getString("phone"));
         l.setStatus(rs.getString("status"));
@@ -506,6 +537,7 @@ public class LeadDuplicateService {
         try { l.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignored) {}
         l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null);
         try { l.setSource(rs.getString("source")); } catch (SQLException ignored) {}
+        try { l.setNotes(rs.getString("notes")); } catch (SQLException ignored) {}
         l.setCreatedAt(rs.getTimestamp("created_at"));
         l.setUpdatedAt(rs.getTimestamp("updated_at"));
         return l;
@@ -548,12 +580,7 @@ public class LeadDuplicateService {
         String norm1 = normalizeCompanyName(raw1);
         String norm2 = normalizeCompanyName(raw2);
         if (norm1.isEmpty() || norm2.isEmpty()) return false;
-        if (norm1.equals(norm2)) return true;
-
-        if (norm1.length() >= 4 && norm2.length() >= 4) {
-            if (norm1.contains(norm2) || norm2.contains(norm1)) return true;
-        }
-        return false;
+        return norm1.equals(norm2);
     }
 
     public String normalizeCompanyName(String name) {

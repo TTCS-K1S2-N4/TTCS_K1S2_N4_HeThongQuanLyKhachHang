@@ -17,14 +17,32 @@ public class Opportunity {
     private String reasonName;
     private Integer competitorId;
     private String competitorName;
+    private Integer campaignId;
+    private String campaignName;
+    private String customerName;
+    private String ownerName;
     private Timestamp closeDate;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+
+    public Integer getCampaignId() { return campaignId; }
+    public void setCampaignId(Integer campaignId) { this.campaignId = campaignId; }
+
+    public String getCampaignName() { return campaignName; }
+    public void setCampaignName(String campaignName) { this.campaignName = campaignName; }
 
     public int getOpportunityid() { return opportunityId; }
     public void setOpportunityid(int opportunityId) { this.opportunityId = opportunityId; }
     public int getOpportunityId() { return opportunityId; }
     public void setOpportunityId(int opportunityId) { this.opportunityId = opportunityId; }
+    public int getId() { return opportunityId; }
+    public void setId(int opportunityId) { this.opportunityId = opportunityId; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

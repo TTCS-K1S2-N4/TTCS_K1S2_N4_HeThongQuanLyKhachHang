@@ -31,10 +31,16 @@ public class Lead {
     private String sourceName;
     private String webFormName;
     private String ownerName;
+    private Integer campaignId;
+    private String campaignName;
 
     public Lead() {}
 
     public int getLeadId() {
+        return leadId;
+    }
+
+    public int getId() {
         return leadId;
     }
 
@@ -240,5 +246,21 @@ public class Lead {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
+    }
+
+    public Integer getCampaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(Integer campaignId) {
+        this.campaignId = campaignId;
+    }
+
+    public String getCampaignName() {
+        return campaignName;
+    }
+
+    public void setCampaignName(String campaignName) {
+        this.campaignName = campaignName;
     }
 }

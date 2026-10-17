@@ -26,9 +26,14 @@
 
             // 2. Leads count
             try (java.sql.Statement st = conn.createStatement();
-                 java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM customers WHERE status = 'Tiềm năng' OR status = 'Lead'")) {
+                 java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM leads")) {
                 if (rs.next()) totalLeads = rs.getInt(1);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                try (java.sql.Statement st = conn.createStatement();
+                     java.sql.ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM customers WHERE status = 'Tiềm năng' OR status = 'Lead'")) {
+                    if (rs.next()) totalLeads = rs.getInt(1);
+                } catch (Exception ignored2) {}
+            }
 
             // 3. Opportunities
             try (java.sql.Statement st = conn.createStatement();
@@ -597,12 +602,12 @@
                 </a>
 
                 <!-- CARD 2: LEAD MỚI / TIỀM NĂNG -->
-                <a class="frost-kpi-card" href="${pageContext.request.contextPath}/customers?status=Tiềm+năng">
+                <a class="frost-kpi-card" href="${pageContext.request.contextPath}/leads">
                     <div>
                         <div class="kpi-card-header">
                             <span class="kpi-label">Lead & Tiềm năng</span>
                             <div class="kpi-icon-box kpi-icon-amber">
-                                <i class="fa-solid fa-bolt"></i>
+                                <i class="fa-solid fa-bullseye"></i>
                             </div>
                         </div>
                         <div class="kpi-value-row">
@@ -610,8 +615,8 @@
                         </div>
                     </div>
                     <div class="kpi-footer-row">
-                        <span>Cần tiếp cận & chuyển đổi</span>
-                        <span class="kpi-action-arrow">Lọc khách hàng <i class="fa-solid fa-arrow-right"></i></span>
+                        <span>Thu thập & chuyển đổi lead</span>
+                        <span class="kpi-action-arrow">Xem danh sách lead <i class="fa-solid fa-arrow-right"></i></span>
                     </div>
                 </a>
 
@@ -672,6 +677,17 @@
                         <p class="module-desc">Tra cứu thông tin liên hệ, mã số thuế, quy mô công ty và lịch sử giao dịch.</p>
                     </div>
                     <div class="module-link-text">Truy cập danh mục <i class="fa-solid fa-arrow-right"></i></div>
+                </a>
+
+                <a class="frost-module-card" href="${pageContext.request.contextPath}/leads">
+                    <div class="module-icon" style="color: #f59e0b; background: #fffbeb; border-color: #fde68a;">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <h3 class="module-title">Quản lý Lead & Web Forms</h3>
+                        <p class="module-desc">Thu thập lead đa kênh từ Website Form, nhập Excel, chống trùng lặp và chấm điểm tự động.</p>
+                    </div>
+                    <div class="module-link-text" style="color: #d97706;">Quản lý Lead <i class="fa-solid fa-arrow-right"></i></div>
                 </a>
 
                 <a class="frost-module-card" href="${pageContext.request.contextPath}/customers/care">

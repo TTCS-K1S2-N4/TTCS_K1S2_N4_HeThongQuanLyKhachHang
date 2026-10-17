@@ -29,6 +29,8 @@ public class LeadResponse {
     private Integer ownerId;
     private String ownerName;
     private String notes;
+    private Integer campaignId;
+    private String campaignName;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -61,6 +63,8 @@ public class LeadResponse {
         res.setOwnerId(lead.getOwnerId());
         res.setOwnerName(lead.getOwnerName());
         res.setNotes(lead.getNotes());
+        res.setCampaignId(lead.getCampaignId());
+        res.setCampaignName(lead.getCampaignName());
         res.setCreatedAt(lead.getCreatedAt());
         res.setUpdatedAt(lead.getUpdatedAt());
         return res;
@@ -68,6 +72,18 @@ public class LeadResponse {
 
     public int getLeadId() {
         return leadId;
+    }
+
+    public int getId() {
+        return leadId;
+    }
+
+    public String getInterest() {
+        return notes;
+    }
+
+    public String getSource() {
+        return sourceName;
     }
 
     public void setLeadId(int leadId) {
@@ -301,5 +317,21 @@ public class LeadResponse {
 
     public String getCompanyName() {
         return company;
+    }
+
+    public Integer getCampaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(Integer campaignId) {
+        this.campaignId = campaignId;
+    }
+
+    public String getCampaignName() {
+        return campaignName;
+    }
+
+    public void setCampaignName(String campaignName) {
+        this.campaignName = campaignName;
     }
 }

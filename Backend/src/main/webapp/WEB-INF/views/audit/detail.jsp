@@ -293,7 +293,7 @@
                     </div>
                     <div>
                         <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;">
-                            Chi tiết bản ghi kiểm toán #<%= auditLog != null ? auditLog.getLogId() : "" %>
+                            Chi tiết nhật ký thay đổi #<%= auditLog != null ? auditLog.getLogId() : "" %>
                         </h1>
                         <div style="font-size: 13px; color: #64748b;">
                             Thời điểm ghi nhận: <strong><%= timeStr %></strong> (Múi giờ Asia/Ho_Chi_Minh)
@@ -374,13 +374,13 @@
                                 <div class="diff-compare-container">
                                     <div class="diff-panel old">
                                         <div class="diff-header">
-                                            <i class="fa-solid fa-circle-minus"></i> Giá trị trước khi thay đổi (Old Value)
+                                            <i class="fa-solid fa-circle-minus"></i> Giá trị trước thay đổi (Old Value)
                                         </div>
                                         <pre class="diff-content"><%= oldValueStr %></pre>
                                     </div>
                                     <div class="diff-panel new">
                                         <div class="diff-header">
-                                            <i class="fa-solid fa-circle-plus"></i> Giá trị sau khi thay đổi (New Value)
+                                            <i class="fa-solid fa-circle-plus"></i> Giá trị sau thay đổi (New Value)
                                         </div>
                                         <pre class="diff-content"><%= newValueStr %></pre>
                                     </div>

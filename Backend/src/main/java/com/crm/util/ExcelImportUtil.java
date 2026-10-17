@@ -217,7 +217,7 @@ public final class ExcelImportUtil {
         List<com.crm.dto.LeadImportRequest> rows = new ArrayList<>();
         DataFormatter formatter = new DataFormatter();
 
-        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+        try (Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(inputStream)) {
 
             if (workbook.getNumberOfSheets() == 0) {
                 throw new IOException("File Excel không có sheet dữ liệu.");

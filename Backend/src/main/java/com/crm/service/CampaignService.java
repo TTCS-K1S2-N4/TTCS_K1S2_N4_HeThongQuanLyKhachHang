@@ -5,6 +5,8 @@ import com.crm.dto.CampaignRequest;
 import com.crm.exception.AuthorizationException;
 import com.crm.model.Campaign;
 import com.crm.model.DataScope;
+import com.crm.model.Lead;
+import com.crm.model.Opportunity;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -119,6 +121,39 @@ public class CampaignService {
 
         validateCampaignAccess(campaign, userId, roleId, roleIds);
         return campaign;
+    }
+
+    /**
+     * Lấy danh sách Lead sinh ra từ chiến dịch (drill-down).
+     */
+    public List<Lead> getCampaignLeads(int campaignId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
+        Campaign campaign = getCampaignDetail(campaignId, userId, roleId, roleIds);
+        if (campaign == null) {
+            return Collections.emptyList();
+        }
+        return campaignDAO.getLeadsByCampaignId(campaignId);
+    }
+
+    /**
+     * Lấy danh sách Opportunity liên kết với chiến dịch (drill-down).
+     */
+    public List<Opportunity> getCampaignOpportunities(int campaignId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
+        Campaign campaign = getCampaignDetail(campaignId, userId, roleId, roleIds);
+        if (campaign == null) {
+            return Collections.emptyList();
+        }
+        return campaignDAO.getOpportunitiesByCampaignId(campaignId);
+    }
+
+    /**
+     * Lấy danh sách Opportunity chốt thắng (Closed Won) mang lại doanh thu của chiến dịch (drill-down).
+     */
+    public List<Opportunity> getCampaignClosedWonOpportunities(int campaignId, int userId, int roleId, List<Integer> roleIds) throws AuthorizationException {
+        Campaign campaign = getCampaignDetail(campaignId, userId, roleId, roleIds);
+        if (campaign == null) {
+            return Collections.emptyList();
+        }
+        return campaignDAO.getClosedWonOpportunitiesByCampaignId(campaignId);
     }
 
     /**

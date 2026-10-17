@@ -7,6 +7,12 @@ import com.crm.model.Lead;
 import com.crm.model.LeadSource;
 import com.crm.util.ExcelImportUtil;
 
+import com.crm.model.Customer;
+import com.crm.util.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,15 +47,21 @@ public class LeadImportService {
     }
 
     public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId) throws Exception {
+        return parseAndValidateExcel(inputStream, ownerId, null);
+    }
+
+    public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId, Integer defaultSourceId) throws Exception {
         List<LeadImportRequest> requests = ExcelImportUtil.parseLeadImport(inputStream);
         ImportResult result = new ImportResult();
         result.setTotalRows(requests.size());
 
         List<LeadSource> activeSources = sourceDAO.getActiveSources();
         Map<String, Integer> sourceMap = new HashMap<>();
+        Map<Integer, String> sourceNameMap = new HashMap<>();
         for (LeadSource src : activeSources) {
             sourceMap.put(src.getSourceName().trim().toLowerCase(), src.getSourceId());
             sourceMap.put(src.getSourceCode().trim().toLowerCase(), src.getSourceId());
+            sourceNameMap.put(src.getSourceId(), src.getSourceName());
         }
 
         int valid = 0;
@@ -64,13 +76,19 @@ public class LeadImportService {
                 Integer srcId = sourceMap.get(req.getSourceName().trim().toLowerCase());
                 if (srcId != null) {
                     req.setLeadSourceId(srcId);
+                    req.setSourceName(sourceNameMap.get(srcId));
                 } else {
                     req.addFieldError("Nguồn Lead '" + req.getSourceName() + "' không tồn tại trong hệ thống");
                 }
+            } else if (defaultSourceId != null && defaultSourceId > 0 && sourceNameMap.containsKey(defaultSourceId)) {
+                req.setLeadSourceId(defaultSourceId);
+                req.setSourceName(sourceNameMap.get(defaultSourceId));
             } else {
-                Integer defaultSrc = sourceMap.get("import_excel");
+                Integer defaultSrc = sourceMap.get("excel");
+                if (defaultSrc == null) defaultSrc = sourceMap.get("import_excel");
                 if (defaultSrc != null) {
                     req.setLeadSourceId(defaultSrc);
+                    req.setSourceName(sourceNameMap.get(defaultSrc));
                 } else {
                     req.addFieldError("Nguồn Lead là bắt buộc và không được để trống");
                 }
@@ -85,6 +103,8 @@ public class LeadImportService {
             Lead existingByEmail = req.getEmail() != null ? leadDAO.getByEmail(req.getEmail()) : null;
             Lead existingByPhone = req.getPhone() != null ? leadDAO.getByPhone(req.getPhone()) : null;
 
+
+
             if (existingByEmail != null) {
                 req.setDuplicate(true);
                 req.setExistingLeadId(existingByEmail.getLeadId());
@@ -96,7 +116,14 @@ public class LeadImportService {
                 req.setDuplicateReason("Trùng SĐT với Lead #" + existingByPhone.getLeadId());
                 dup++;
             } else {
-                valid++;
+                Customer matchingCust = findCustomerByEmailOrPhone(req.getEmail(), req.getPhone());
+                if (matchingCust != null) {
+                    req.setDuplicate(true);
+                    req.setDuplicateReason("Trùng thông tin với Khách hàng #" + matchingCust.getCustomerId() + " (" + matchingCust.getCustomerName() + ")");
+                    dup++;
+                } else {
+                    valid++;
+                }
             }
         }
 
@@ -136,10 +163,41 @@ public class LeadImportService {
             lead.setZipCode(req.getZipCode());
             lead.setOwnerId(req.getOwnerId());
             lead.setNotes(req.getNotes());
+            lead.setCampaignId(req.getCampaignId());
 
             leadsToInsert.add(lead);
         }
 
         return leadDAO.batchCreateLeads(leadsToInsert);
+    }
+
+    private Customer findCustomerByEmailOrPhone(String email, String phone) {
+        if ((email == null || email.trim().isEmpty()) && (phone == null || phone.trim().isEmpty())) {
+            return null;
+        }
+        String sql = "SELECT customer_id, customer_name, email, phone FROM customers " +
+                     "WHERE (? IS NOT NULL AND email = ?) OR (? IS NOT NULL AND phone = ?) LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            String cleanEmail = email != null && !email.trim().isEmpty() ? email.trim() : null;
+            String cleanPhone = phone != null && !phone.trim().isEmpty() ? phone.trim() : null;
+            ps.setString(1, cleanEmail);
+            ps.setString(2, cleanEmail);
+            ps.setString(3, cleanPhone);
+            ps.setString(4, cleanPhone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Customer c = new Customer();
+                    c.setCustomerId(rs.getInt("customer_id"));
+                    c.setCustomerName(rs.getString("customer_name"));
+                    c.setEmail(rs.getString("email"));
+                    c.setPhone(rs.getString("phone"));
+                    return c;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

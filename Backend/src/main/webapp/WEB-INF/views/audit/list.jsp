@@ -682,7 +682,7 @@
                         <h1>Nhật ký kiểm toán &amp; Giám sát dữ liệu nhạy cảm</h1>
                         <div class="audit-hero-meta">
                             <span class="audit-badge-gov">
-                                <i class="fa-solid fa-fingerprint"></i> Kiểm soát an toàn (Audit Trail)
+                                <i class="fa-solid fa-fingerprint"></i> Kiểm soát an toàn (Nhật ký thay đổi dữ liệu - Audit Trail)
                             </span>
                             <span>Truy vết ai đã sửa đổi chiết khấu, chỉ tiêu, chuyển giao dữ liệu &amp; vai trò tài khoản</span>
                         </div>

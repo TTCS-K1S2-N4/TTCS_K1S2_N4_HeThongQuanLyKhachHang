@@ -60,7 +60,7 @@ public class LeadEmbedCodeServlet extends HttpServlet {
             } else {
                 req.setAttribute("webForm", form);
                 req.setAttribute("embedCode", embedCode);
-                req.getRequestDispatcher("/WEB-INF/views/leads/web_form_embed.jsp").forward(req, resp);
+                req.getRequestDispatcher("/WEB-INF/views/leads/embed-code.jsp").forward(req, resp);
             }
         } catch (NumberFormatException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Biểu mẫu không hợp lệ.");
