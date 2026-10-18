@@ -15,6 +15,9 @@ public class LeadAssignmentRule {
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
+    private String assigneeName;
+    private String teamName;
+
     public int getRuleId() { return ruleId; }
     public void setRuleId(int ruleId) { this.ruleId = ruleId; }
 
@@ -47,4 +50,10 @@ public class LeadAssignmentRule {
 
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getAssigneeName() { return assigneeName; }
+    public void setAssigneeName(String assigneeName) { this.assigneeName = assigneeName; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
 }

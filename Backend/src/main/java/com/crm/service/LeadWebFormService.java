@@ -193,7 +193,23 @@ public class LeadWebFormService {
         }
 
         boolean created = leadDAO.createLead(lead);
-        return created ? lead : null;
+        if (created) {
+            // Tự động tính điểm Lead theo tiêu chí cấu hình (S4-05-AC-02)
+            try {
+                new LeadScoringService().recalculateLeadScore(lead.getLeadId());
+            } catch (Exception e) {
+                System.err.println("[LeadWebFormService] Lỗi tính điểm Lead #" + lead.getLeadId() + ": " + e.getMessage());
+            }
+
+            // Tự động phân bổ Lead (S4-06)
+            try {
+                new LeadAssignmentService().assignLead(lead.getLeadId(), null, null, null);
+            } catch (Exception e) {
+                System.err.println("[LeadWebFormService] Lỗi phân bổ Lead #" + lead.getLeadId() + ": " + e.getMessage());
+            }
+            return lead;
+        }
+        return null;
     }
 }
 

@@ -84,7 +84,7 @@
             : currentUri;
 
     boolean isDashboardActive = relativePath.equals("/") || relativePath.equals("") || relativePath.equals("/dashboard") || relativePath.startsWith("/dashboard/");
-    boolean isLeadActive = !isDashboardActive && (relativePath.startsWith("/leads") || relativePath.startsWith("/lead-scoring") || relativePath.startsWith("/campaigns"));
+    boolean isLeadActive = !isDashboardActive && (relativePath.startsWith("/leads") || relativePath.startsWith("/lead-scoring") || relativePath.startsWith("/lead-assignment") || relativePath.startsWith("/campaigns"));
 %>
 
 <!-- SIDEBAR NAVIGATION DRAWER (LIGHT ELEGANT THEME) -->
@@ -196,6 +196,12 @@
                             <span class="nav-sub-text">Danh sách Lead</span>
                         </a>
 
+                        <a class="nav-sub-item <%= (!isDashboardActive && (relativePath.startsWith("/leads/assigned") || relativePath.startsWith("/leads/my-assigned"))) ? "active" : "" %>"
+                           href="${pageContext.request.contextPath}/leads/assigned">
+                            <span class="nav-sub-dot"></span>
+                            <span class="nav-sub-text">Lead được phân cho tôi</span>
+                        </a>
+
                         <% if (canCreateLead) { %>
                             <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/leads/create")) ? "active" : "" %>" 
                                href="${pageContext.request.contextPath}/leads/create">
@@ -233,6 +239,20 @@
                                href="${pageContext.request.contextPath}/lead-scoring/rules">
                                 <span class="nav-sub-dot"></span>
                                 <span class="nav-sub-text">Cấu hình chấm điểm</span>
+                            </a>
+
+                            <a class="nav-sub-item <%= (!isDashboardActive && relativePath.startsWith("/lead-assignment")) ? "active" : "" %>"
+                               href="${pageContext.request.contextPath}/lead-assignment/rules">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Quy tắc phân bổ</span>
+                            </a>
+                        <% } %>
+
+                        <% if (isTeamLead || isDirector || isAdmin) { %>
+                            <a class="nav-sub-item <%= (!isDashboardActive && (relativePath.startsWith("/leads/assignment-queue") || relativePath.startsWith("/leads/queue"))) ? "active" : "" %>"
+                               href="${pageContext.request.contextPath}/leads/assignment-queue">
+                                <span class="nav-sub-dot"></span>
+                                <span class="nav-sub-text">Hàng chờ phân bổ</span>
                             </a>
                         <% } %>
 

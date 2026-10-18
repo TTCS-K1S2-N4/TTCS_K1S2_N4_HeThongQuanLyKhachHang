@@ -15,10 +15,15 @@
   Phản hồi: JSON khi thành công; lỗi là HTTP 4xx/5xx. Sau khi thành công trang tải lại để hiển thị dữ liệu thật của Backend.
 --%>
 <c:set var="dash" value="—"/>
-<c:set var="canAssign" value="false"/>
-<c:forEach var="rc" items="${sessionScope.currentUser.roleCodes}">
-    <c:if test="${rc == 'TEAM_LEAD'}"><c:set var="canAssign" value="true"/></c:if>
-</c:forEach>
+<c:if test="${empty canAssign}">
+    <c:set var="canAssign" value="false"/>
+    <c:forEach var="rc" items="${sessionScope.currentUser.roleCodes}">
+        <c:if test="${rc == 'TEAM_LEAD' or rc == 'ADMIN' or rc == 'DIRECTOR'}"><c:set var="canAssign" value="true"/></c:if>
+    </c:forEach>
+    <c:if test="${sessionScope.roleId == 1 or sessionScope.roleId == 4 or sessionScope.roleId == 3}">
+        <c:set var="canAssign" value="true"/>
+    </c:if>
+</c:if>
 <c:url var="assignUrl" value="/leads/assign"/>
 <!DOCTYPE html>
 <html lang="vi">
@@ -47,15 +52,23 @@
             <nav class="breadcrumb" aria-label="Breadcrumb">
                 <a href="${pageContext.request.contextPath}/dashboard">Trang chủ</a>
                 <span>/</span>
-                <a href="${pageContext.request.contextPath}/leads/list">Lead</a>
+                <a href="${pageContext.request.contextPath}/leads">Lead</a>
                 <span>/</span>
                 <span class="breadcrumb-current">Hàng chờ phân bổ</span>
             </nav>
 
-            <div class="page-header">
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
                 <div>
                     <h1 class="page-title">Hàng chờ phân bổ Lead</h1>
                     <p class="page-description">Lead không khớp quy tắc phân bổ nào hoặc bị từ chối, chờ trưởng nhóm phân tay.</p>
+                </div>
+                <div class="page-actions" style="display: flex; gap: 10px; align-items: center;">
+                    <a href="${pageContext.request.contextPath}/lead-assignment/rules" class="btn btn-secondary" title="Cấu hình quy tắc phân bổ">
+                        <i class="fas fa-sliders-h"></i> Quy tắc phân bổ
+                    </a>
+                    <a href="${pageContext.request.contextPath}/leads" class="btn btn-secondary" title="Quay lại" onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
                 </div>
             </div>
 

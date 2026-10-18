@@ -23,6 +23,20 @@ public class DBConnection {
     private static String dbDriver;
 
     static {
+        resetDefaultCredentials();
+        try {
+            Class.forName(dbDriver);
+        } catch (ClassNotFoundException e) {
+            LOGGER.log(Level.FINE, "Thông báo: Không tìm thấy JDBC Driver {0} (có thể dùng H2 cho Unit Test)", dbDriver);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Lỗi khởi tạo DBConnection", e);
+        }
+    }
+
+    /**
+     * Khôi phục thông tin kết nối cơ sở dữ liệu về mặc định (crm_db)
+     */
+    public static void resetDefaultCredentials() {
         Properties prop = new Properties();
         try (InputStream is = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
             if (is != null) {
@@ -30,14 +44,12 @@ public class DBConnection {
             }
         } catch (Exception ignored) {}
 
-        // 1. Tự động kiểm tra file cấu hình cục bộ không lưu vào Git (db.local.properties)
         try (InputStream localIs = DBConnection.class.getClassLoader().getResourceAsStream("db.local.properties")) {
             if (localIs != null) {
                 prop.load(localIs);
             }
         } catch (Exception ignored) {}
 
-        // 2. Thứ tự ưu tiên: System Property -> Environment Variable -> Properties file -> Default fallback
         String defaultUrl = "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8";
         String envUrl = System.getenv("DB_URL");
         dbUrl = System.getProperty("db.url", (envUrl != null && !envUrl.trim().isEmpty()) ? envUrl : prop.getProperty("db.url", defaultUrl));
@@ -50,14 +62,6 @@ public class DBConnection {
 
         String envDriver = System.getenv("DB_DRIVER");
         dbDriver = System.getProperty("db.driver", (envDriver != null && !envDriver.trim().isEmpty()) ? envDriver : prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
-
-        try {
-            Class.forName(dbDriver);
-        } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.FINE, "Thông báo: Không tìm thấy JDBC Driver {0} (có thể dùng H2 cho Unit Test)", dbDriver);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Lỗi khởi tạo DBConnection", e);
-        }
     }
 
     /**

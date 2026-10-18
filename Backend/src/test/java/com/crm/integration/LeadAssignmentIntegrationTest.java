@@ -44,7 +44,7 @@ public class LeadAssignmentIntegrationTest {
         String testPass = System.getProperty("db.test.password", System.getenv("MYSQL_TEST_PWD"));
 
         if (testPass == null || testPass.trim().isEmpty() || testUser == null || testUser.trim().isEmpty()) {
-            try (java.io.InputStream is = LeadAssignmentIntegrationTest.class.getClassLoader().getResourceAsStream("db.properties")) {
+            try (java.io.InputStream is = LeadAssignmentIntegrationTest.class.getClassLoader().getResourceAsStream("db.local.properties")) {
                 if (is != null) {
                     java.util.Properties props = new java.util.Properties();
                     props.load(is);
@@ -53,6 +53,20 @@ public class LeadAssignmentIntegrationTest {
                     }
                     if (testUser == null || testUser.trim().isEmpty()) {
                         testUser = props.getProperty("db.username", "root");
+                    }
+                }
+            }
+            if (testPass == null || testPass.trim().isEmpty() || testUser == null || testUser.trim().isEmpty()) {
+                try (java.io.InputStream is = LeadAssignmentIntegrationTest.class.getClassLoader().getResourceAsStream("db.properties")) {
+                    if (is != null) {
+                        java.util.Properties props = new java.util.Properties();
+                        props.load(is);
+                        if (testPass == null || testPass.trim().isEmpty()) {
+                            testPass = props.getProperty("db.password");
+                        }
+                        if (testUser == null || testUser.trim().isEmpty()) {
+                            testUser = props.getProperty("db.username", "root");
+                        }
                     }
                 }
             }
@@ -74,6 +88,11 @@ public class LeadAssignmentIntegrationTest {
                 throw new IllegalStateException("CRITICAL SAFETY ABORT: Database catalog is '" + catalog + "', NOT 'crm_s4_06_test'!");
             }
         }
+    }
+
+    @AfterAll
+    static void tearDownClass() {
+        DBConnection.resetDefaultCredentials();
     }
 
     @BeforeEach

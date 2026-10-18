@@ -42,6 +42,31 @@ public class LeadAssignmentService {
         this.historyDAO = historyDAO;
     }
 
+    public List<LeadAssignmentRule> getAllRules() {
+        return ruleDAO.getAllRules();
+    }
+
+    public List<LeadAssignmentRule> getActiveRules() {
+        return ruleDAO.getActiveRules();
+    }
+
+    public LeadAssignmentRule getRuleById(int ruleId) {
+        return ruleDAO.getRuleById(ruleId);
+    }
+
+    public boolean saveOrUpdateRule(LeadAssignmentRule rule) {
+        if (rule == null) return false;
+        if (rule.getRuleId() > 0) {
+            return ruleDAO.updateRule(rule);
+        } else {
+            return ruleDAO.saveRule(rule);
+        }
+    }
+
+    public boolean deleteRule(int ruleId) {
+        return ruleDAO.deleteRule(ruleId);
+    }
+
     /**
      * Khởi động background worker chạy nền mỗi 5 phút.
      */

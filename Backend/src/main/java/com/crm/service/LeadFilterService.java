@@ -124,7 +124,11 @@ public class LeadFilterService {
                     resp.setSlaOverdue(overdue);
 
                     // Đảm bảo phân loại Nóng/Ấm/Lạnh đúng theo điểm hiện tại
-                    resp.setClassification(lead.getRating());
+                    if (lead.getRating() != null && !lead.getRating().trim().isEmpty()) {
+                        resp.setClassification(lead.getRating().trim());
+                    } else {
+                        resp.setClassification(scoringService.determineClassification(lead.getScore(), scoringService.getHotThreshold(), scoringService.getWarmThreshold()));
+                    }
 
                     results.add(resp);
                 }
@@ -204,7 +208,8 @@ public class LeadFilterService {
                 params.add(srcId);
                 params.add(src);
             } else {
-                sql.append("AND s.source_name = ? ");
+                sql.append("AND (s.source_name = ? OR l.source = ?) ");
+                params.add(src);
                 params.add(src);
             }
         }
@@ -253,25 +258,60 @@ public class LeadFilterService {
         }
 
         // 6. Lọc khoảng thời gian tạo (From Date - To Date)
-        if (request.getFromDate() != null && request.getFromDate().trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
-            sql.append("AND l.created_at >= ? ");
-            params.add(request.getFromDate().trim() + " 00:00:00");
-        }
-        if (request.getToDate() != null && request.getToDate().trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
-            sql.append("AND l.created_at <= ? ");
-            params.add(request.getToDate().trim() + " 23:59:59");
+        String fromDate = request.getFromDate();
+        String toDate = request.getToDate();
+        if (fromDate != null && toDate != null && fromDate.trim().matches("^\\d{4}-\\d{2}-\\d{2}$") && toDate.trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+            String f = fromDate.trim();
+            String t = toDate.trim();
+            if (f.compareTo(t) > 0) {
+                // Đảo ngược ngày an toàn nếu người dùng nhập fromDate > toDate
+                String temp = f; f = t; t = temp;
+            }
+            sql.append("AND l.created_at >= ? AND l.created_at <= ? ");
+            params.add(f + " 00:00:00");
+            params.add(t + " 23:59:59");
+        } else {
+            if (fromDate != null && fromDate.trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                sql.append("AND l.created_at >= ? ");
+                params.add(fromDate.trim() + " 00:00:00");
+            }
+            if (toDate != null && toDate.trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+                sql.append("AND l.created_at <= ? ");
+                params.add(toDate.trim() + " 23:59:59");
+            }
         }
 
-        // 7. Lọc Lead quá SLA (S4-09-AC-02)
+        // 7. Lọc Lead quá SLA (S4-09-AC-02 & S4-07)
         if (request.isOverdue()) {
-            sql.append("AND (l.status IN ('NEW', 'ASSIGNED', 'Mới tạo') AND l.created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)) ");
+            sql.append("AND (l.is_overdue = 1 OR l.status = 'OVERDUE' OR l.sla_status = 'OVERDUE' " +
+                       "OR (l.sla_due_date IS NOT NULL AND l.sla_due_date < NOW() AND (l.sla_status IS NULL OR l.sla_status != 'RESPONDED')) " +
+                       "OR (l.status IN ('NEW', 'ASSIGNED', 'Mới tạo', 'QUEUED') AND (l.sla_status IS NULL OR l.sla_status != 'RESPONDED') AND l.created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR))) ");
+            sql.append("AND (l.sla_status IS NULL OR l.sla_status != 'RESPONDED') ");
+            sql.append("AND (l.status IS NULL OR l.status NOT IN ('CONTACTED', 'CONVERTED')) ");
         }
     }
 
-    private boolean isLeadOverdue(Lead lead, long now) {
-        if (lead == null || lead.getCreatedAt() == null) return false;
+    public boolean isLeadOverdue(Lead lead, long now) {
+        if (lead == null) return false;
+
+        // 1. Lead đã phản hồi hoặc đã chuyển đổi: không bao giờ quá hạn
+        if ("RESPONDED".equalsIgnoreCase(lead.getSlaStatus()) || "CONTACTED".equalsIgnoreCase(lead.getStatus()) || "CONVERTED".equalsIgnoreCase(lead.getStatus())) {
+            return false;
+        }
+
+        // 2. Lead đã được gắn cờ quá hạn trong DB
+        if (lead.isOverdue() || "OVERDUE".equalsIgnoreCase(lead.getStatus()) || "OVERDUE".equalsIgnoreCase(lead.getSlaStatus())) {
+            return true;
+        }
+
+        // 3. Lead có hạn chót sla_due_date và đã quá hạn
+        if (lead.getSlaDueDate() != null && lead.getSlaDueDate().getTime() < now) {
+            return true;
+        }
+
+        // 4. Fallback 24h đối với lead mới tạo chưa tiếp nhận
+        if (lead.getCreatedAt() == null) return false;
         String status = lead.getStatus();
-        // Chỉ cảnh báo quá hạn cho lead mới / chưa liên hệ
         boolean isPending = status == null || "NEW".equalsIgnoreCase(status) || "ASSIGNED".equalsIgnoreCase(status)
                 || "Mới tạo".equalsIgnoreCase(status) || "QUEUED".equalsIgnoreCase(status);
         if (!isPending) return false;
@@ -306,6 +346,11 @@ public class LeadFilterService {
         lead.setCreatedAt(rs.getTimestamp("created_at"));
         lead.setUpdatedAt(rs.getTimestamp("updated_at"));
 
+        try { lead.setAssignedAt(rs.getTimestamp("assigned_at")); } catch (SQLException ignore) {}
+        try { lead.setSlaDueDate(rs.getTimestamp("sla_due_date")); } catch (SQLException ignore) {}
+        try { lead.setSlaStatus(rs.getString("sla_status")); } catch (SQLException ignore) {}
+        try { lead.setOverdue(rs.getBoolean("is_overdue")); } catch (SQLException ignore) {}
+
         try { lead.setSourceName(rs.getString("source_name")); } catch (SQLException ignore) {}
         try { lead.setWebFormName(rs.getString("web_form_name")); } catch (SQLException ignore) {}
         try { lead.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignore) {}
@@ -322,6 +367,10 @@ public class LeadFilterService {
         filter.setUserId(userId);
         filter.setModule("LEAD");
         return savedFilterDAO.createSavedFilter(filter);
+    }
+
+    public boolean existsSavedFilterName(int userId, String filterName) {
+        return savedFilterDAO.existsByName(userId, filterName);
     }
 
     public List<LeadSavedFilter> getSavedFilters(int userId) {

@@ -170,12 +170,12 @@
                         </label>
                         <select name="source" class="form-control">
                             <option value="">Tất cả nguồn</option>
-                            <option value="Website" ${param.source == 'Website' ? 'selected' : ''}>Website</option>
-                            <option value="Facebook" ${param.source == 'Facebook' ? 'selected' : ''}>Facebook</option>
-                            <option value="Google Ads" ${param.source == 'Google Ads' ? 'selected' : ''}>Google Ads</option>
-                            <option value="Giới thiệu" ${param.source == 'Giới thiệu' ? 'selected' : ''}>Giới thiệu</option>
-                            <option value="Sự kiện" ${param.source == 'Sự kiện' ? 'selected' : ''}>Sự kiện</option>
-                            <option value="Khác" ${param.source == 'Khác' ? 'selected' : ''}>Khác</option>
+                            <option value="Website" ${param.source == 'Website' || source == 'Website' ? 'selected' : ''}>Website</option>
+                            <option value="Facebook" ${param.source == 'Facebook' || source == 'Facebook' ? 'selected' : ''}>Facebook</option>
+                            <option value="Google Ads" ${param.source == 'Google Ads' || source == 'Google Ads' ? 'selected' : ''}>Google Ads</option>
+                            <option value="Giới thiệu" ${param.source == 'Giới thiệu' || source == 'Giới thiệu' ? 'selected' : ''}>Giới thiệu</option>
+                            <option value="Sự kiện" ${param.source == 'Sự kiện' || source == 'Sự kiện' ? 'selected' : ''}>Sự kiện</option>
+                            <option value="Khác" ${param.source == 'Khác' || source == 'Khác' ? 'selected' : ''}>Khác</option>
                         </select>
                     </div>
 
@@ -186,9 +186,9 @@
                         </label>
                         <select name="classification" class="form-control">
                             <option value="">Tất cả mức độ</option>
-                            <option value="HOT" ${param.classification == 'HOT' || param.rating == 'HOT' || rating == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Ưu tiên gọi)</option>
-                            <option value="WARM" ${param.classification == 'WARM' || param.rating == 'WARM' || rating == 'WARM' ? 'selected' : ''}>☀️ ẤM</option>
-                            <option value="COLD" ${param.classification == 'COLD' || param.rating == 'COLD' || rating == 'COLD' ? 'selected' : ''}>❄️ LẠNH</option>
+                            <option value="HOT" ${param.classification == 'HOT' || param.rating == 'HOT' || classification == 'HOT' || rating == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Ưu tiên gọi)</option>
+                            <option value="WARM" ${param.classification == 'WARM' || param.rating == 'WARM' || classification == 'WARM' || rating == 'WARM' ? 'selected' : ''}>☀️ ẤM</option>
+                            <option value="COLD" ${param.classification == 'COLD' || param.rating == 'COLD' || classification == 'COLD' || rating == 'COLD' ? 'selected' : ''}>❄️ LẠNH</option>
                         </select>
                     </div>
 
@@ -199,9 +199,9 @@
                         </label>
                         <select name="ownerId" class="form-control">
                             <option value="">Tất cả phụ trách</option>
-                            <option value="MY" ${param.ownerId == 'MY' ? 'selected' : ''}>Lead của tôi</option>
+                            <option value="MY" ${param.ownerId == 'MY' || ownerScope == 'MY' || ownerId == -1 ? 'selected' : ''}>Lead của tôi</option>
                             <c:forEach var="owner" items="${owners}">
-                                <option value="${owner.accountId}" ${param.ownerId == owner.accountId ? 'selected' : ''}>
+                                <option value="${owner.accountId}" ${param.ownerId == owner.accountId || ownerId == owner.accountId ? 'selected' : ''}>
                                     <c:out value="${owner.fullName}"/>
                                 </option>
                             </c:forEach>
@@ -213,14 +213,14 @@
                 <div class="filter-grid-row-2">
                     <div class="filter-date-group">
                         <span class="filter-label"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
-                        <input type="date" name="fromDate" value="<c:out value='${param.fromDate}'/>" class="form-control filter-date-input" title="Từ ngày">
+                        <input type="date" name="fromDate" value="<c:out value='${param.fromDate != null ? param.fromDate : fromDate}'/>" class="form-control filter-date-input" title="Từ ngày">
                         <span style="font-size: 13px; color: #94a3b8;">→</span>
-                        <input type="date" name="toDate" value="<c:out value='${param.toDate}'/>" class="form-control filter-date-input" title="Đến ngày">
+                        <input type="date" name="toDate" value="<c:out value='${param.toDate != null ? param.toDate : toDate}'/>" class="form-control filter-date-input" title="Đến ngày">
                     </div>
 
                     <!-- Toggle Lọc Lead Quá SLA (S4-09-AC-02) -->
                     <div class="filter-sla-toggle" title="Lọc các Lead chưa được xử lý quá thời hạn phản hồi quy định">
-                        <input type="checkbox" id="overdueCheckbox" name="overdue" value="true" ${param.overdue == 'true' ? 'checked' : ''}>
+                        <input type="checkbox" id="overdueCheckbox" name="overdue" value="true" ${param.overdue == 'true' || overdue == 'true' ? 'checked' : ''}>
                         <label for="overdueCheckbox">
                             <i class="fa-solid fa-triangle-exclamation"></i> Chỉ hiển thị Lead quá SLA
                         </label>
@@ -454,12 +454,12 @@
                         </div>
                         <div class="lead-page-nav">
                             <c:if test="${currentPage > 1}">
-                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage - 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}&classification=${param.classification}&ownerId=${param.ownerId}&source=${param.source}&fromDate=${param.fromDate}&toDate=${param.toDate}&overdue=${param.overdue}" class="btn-page-step">
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage - 1}&keyword=${not empty param.keyword ? param.keyword : (not empty param.search ? param.search : keyword)}&status=${not empty param.status ? param.status : status}&rating=${not empty param.rating ? param.rating : rating}&classification=${not empty param.classification ? param.classification : classification}&ownerId=${not empty param.ownerId ? param.ownerId : ownerId}&source=${not empty param.source ? param.source : source}&fromDate=${not empty param.fromDate ? param.fromDate : fromDate}&toDate=${not empty param.toDate ? param.toDate : toDate}&overdue=${not empty param.overdue ? param.overdue : overdue}" class="btn-page-step">
                                     <i class="fa-solid fa-chevron-left"></i> Trang trước
                                 </a>
                             </c:if>
                             <c:if test="${currentPage < totalPages}">
-                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage + 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}&classification=${param.classification}&ownerId=${param.ownerId}&source=${param.source}&fromDate=${param.fromDate}&toDate=${param.toDate}&overdue=${param.overdue}" class="btn-page-step">
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage + 1}&keyword=${not empty param.keyword ? param.keyword : (not empty param.search ? param.search : keyword)}&status=${not empty param.status ? param.status : status}&rating=${not empty param.rating ? param.rating : rating}&classification=${not empty param.classification ? param.classification : classification}&ownerId=${not empty param.ownerId ? param.ownerId : ownerId}&source=${not empty param.source ? param.source : source}&fromDate=${not empty param.fromDate ? param.fromDate : fromDate}&toDate=${not empty param.toDate ? param.toDate : toDate}&overdue=${not empty param.overdue ? param.overdue : overdue}" class="btn-page-step">
                                     Trang sau <i class="fa-solid fa-chevron-right"></i>
                                 </a>
                             </c:if>

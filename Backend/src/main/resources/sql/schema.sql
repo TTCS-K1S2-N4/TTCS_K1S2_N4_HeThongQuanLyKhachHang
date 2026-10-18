@@ -688,3 +688,29 @@ PREPARE stmt_opp_camp FROM @sql_opp_camp;
 EXECUTE stmt_opp_camp;
 DEALLOCATE PREPARE stmt_opp_camp;
 
+-- -----------------------------------------------------------------------------
+-- 39. BẢNG THÔNG BÁO QUÁ HẠN LEAD SLA CHO TRƯỞNG NHÓM (lead_sla_notifications)
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_sla_notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    lead_id INT NOT NULL,
+    sales_rep_id INT NOT NULL,
+    team_id INT NULL,
+    leader_id INT NOT NULL,
+    message TEXT NOT NULL,
+    sla_due_date TIMESTAMP NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_lead_overdue (lead_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Khởi tạo cấu hình phản hồi SLA chuẩn: 3 ngày (4320 phút) mặc định, 24h cho Hot, 48h cho Warm
+INSERT INTO lead_sla_configs (priority_level, response_time_minutes, is_active)
+SELECT 'DEFAULT', 4320, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM lead_sla_configs WHERE priority_level = 'DEFAULT');
+INSERT INTO lead_sla_configs (priority_level, response_time_minutes, is_active)
+SELECT 'HOT', 1440, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM lead_sla_configs WHERE priority_level = 'HOT');
+INSERT INTO lead_sla_configs (priority_level, response_time_minutes, is_active)
+SELECT 'WARM', 2880, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM lead_sla_configs WHERE priority_level = 'WARM');
+INSERT INTO lead_sla_configs (priority_level, response_time_minutes, is_active)
+SELECT 'COLD', 4320, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM lead_sla_configs WHERE priority_level = 'COLD');
+

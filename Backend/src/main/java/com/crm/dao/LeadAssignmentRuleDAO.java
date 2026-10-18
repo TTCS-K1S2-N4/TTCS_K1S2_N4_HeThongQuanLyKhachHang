@@ -62,11 +62,14 @@ public class LeadAssignmentRuleDAO {
      */
     public List<LeadAssignmentRule> getActiveRules(Connection conn) throws SQLException {
         List<LeadAssignmentRule> list = new ArrayList<>();
-        String sql = "SELECT rule_id, rule_name, priority, criterion, criterion_value, " +
-                     "team_id, assignee_id, last_assigned_user_id, is_active, created_at, updated_at " +
-                     "FROM lead_assignment_rules " +
-                     "WHERE is_active = 1 " +
-                     "ORDER BY priority ASC, rule_id ASC";
+        String sql = "SELECT r.rule_id, r.rule_name, r.priority, r.criterion, r.criterion_value, " +
+                     "r.team_id, r.assignee_id, r.last_assigned_user_id, r.is_active, r.created_at, r.updated_at, " +
+                     "u.full_name AS assignee_name, t.team_name " +
+                     "FROM lead_assignment_rules r " +
+                     "LEFT JOIN users u ON r.assignee_id = u.user_id " +
+                     "LEFT JOIN teams t ON r.team_id = t.team_id " +
+                     "WHERE r.is_active = 1 " +
+                     "ORDER BY r.priority ASC, r.rule_id ASC";
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -196,25 +199,125 @@ public class LeadAssignmentRuleDAO {
 
     /**
      * Cập nhật chủ sở hữu và trạng thái Lead trong transaction phân bổ.
+     * Tự động tính hạn chót SLA (sla_due_date) dựa trên cấu hình bảng lead_sla_configs (mặc định 4320 phút = 3 ngày).
      */
     public boolean updateLeadOwnerAndStatus(Connection conn, int leadId, Integer ownerId, String status) throws SQLException {
-        String sql;
         if (ownerId != null) {
-            sql = "UPDATE leads SET owner_id = ?, status = ?, assigned_at = CURRENT_TIMESTAMP, is_overdue = 0, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            int slaMinutes = 4320;
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT response_time_minutes FROM lead_sla_configs WHERE is_active = 1 ORDER BY sla_id ASC LIMIT 1")) {
+                if (rs.next()) {
+                    slaMinutes = rs.getInt(1);
+                }
+            } catch (Exception ignore) {}
+
+            String sql = "UPDATE leads SET owner_id = ?, status = ?, assigned_at = CURRENT_TIMESTAMP, " +
+                         "sla_due_date = DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE), " +
+                         "is_overdue = 0, sla_status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setInt(1, ownerId);
                 ps.setString(2, status);
-                ps.setInt(3, leadId);
+                ps.setInt(3, slaMinutes);
+                ps.setInt(4, leadId);
                 return ps.executeUpdate() > 0;
             }
         } else {
-            sql = "UPDATE leads SET owner_id = NULL, status = ?, assigned_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            String sql = "UPDATE leads SET owner_id = NULL, status = ?, assigned_at = NULL, sla_due_date = NULL, " +
+                         "is_overdue = 0, sla_status = 'REJECTED', updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, status);
                 ps.setInt(2, leadId);
                 return ps.executeUpdate() > 0;
             }
         }
+    }
+
+    /**
+     * Lấy toàn bộ danh sách quy tắc phân bổ (bao gồm cả trạng thái kích hoạt và tạm ngưng).
+     */
+    public List<LeadAssignmentRule> getAllRules() {
+        List<LeadAssignmentRule> list = new ArrayList<>();
+        String sql = "SELECT r.rule_id, r.rule_name, r.priority, r.criterion, r.criterion_value, " +
+                     "r.team_id, r.assignee_id, r.last_assigned_user_id, r.is_active, r.created_at, r.updated_at, " +
+                     "u.full_name AS assignee_name, t.team_name " +
+                     "FROM lead_assignment_rules r " +
+                     "LEFT JOIN users u ON r.assignee_id = u.user_id " +
+                     "LEFT JOIN teams t ON r.team_id = t.team_id " +
+                     "ORDER BY r.priority ASC, r.rule_id ASC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi lấy toàn bộ danh sách LeadAssignmentRule", e);
+        }
+        return list;
+    }
+
+    /**
+     * Lấy chi tiết quy tắc theo ID.
+     */
+    public LeadAssignmentRule getRuleById(int ruleId) {
+        String sql = "SELECT r.rule_id, r.rule_name, r.priority, r.criterion, r.criterion_value, " +
+                     "r.team_id, r.assignee_id, r.last_assigned_user_id, r.is_active, r.created_at, r.updated_at, " +
+                     "u.full_name AS assignee_name, t.team_name " +
+                     "FROM lead_assignment_rules r " +
+                     "LEFT JOIN users u ON r.assignee_id = u.user_id " +
+                     "LEFT JOIN teams t ON r.team_id = t.team_id " +
+                     "WHERE r.rule_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, ruleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi tìm LeadAssignmentRule theo id=" + ruleId, e);
+        }
+        return null;
+    }
+
+    /**
+     * Cập nhật quy tắc phân bổ đã có.
+     */
+    public boolean updateRule(LeadAssignmentRule rule) {
+        String sql = "UPDATE lead_assignment_rules SET rule_name = ?, priority = ?, criterion = ?, " +
+                     "criterion_value = ?, team_id = ?, assignee_id = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP " +
+                     "WHERE rule_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, rule.getRuleName());
+            ps.setInt(2, rule.getPriority());
+            ps.setString(3, rule.getCriterion());
+            ps.setString(4, rule.getCriterionValue());
+            if (rule.getTeamId() != null) ps.setInt(5, rule.getTeamId()); else ps.setNull(5, Types.INTEGER);
+            if (rule.getAssigneeId() != null) ps.setInt(6, rule.getAssigneeId()); else ps.setNull(6, Types.INTEGER);
+            ps.setBoolean(7, rule.isActive());
+            ps.setInt(8, rule.getRuleId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi cập nhật LeadAssignmentRule id=" + rule.getRuleId(), e);
+        }
+        return false;
+    }
+
+    /**
+     * Xóa một quy tắc phân bổ.
+     */
+    public boolean deleteRule(int ruleId) {
+        String sql = "DELETE FROM lead_assignment_rules WHERE rule_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, ruleId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi xóa LeadAssignmentRule id=" + ruleId, e);
+        }
+        return false;
     }
 
     /**
@@ -269,6 +372,14 @@ public class LeadAssignmentRuleDAO {
         rule.setActive(rs.getBoolean("is_active"));
         rule.setCreatedAt(rs.getTimestamp("created_at"));
         rule.setUpdatedAt(rs.getTimestamp("updated_at"));
+
+        try {
+            rule.setAssigneeName(rs.getString("assignee_name"));
+        } catch (SQLException ignored) {}
+        try {
+            rule.setTeamName(rs.getString("team_name"));
+        } catch (SQLException ignored) {}
+
         return rule;
     }
 }
