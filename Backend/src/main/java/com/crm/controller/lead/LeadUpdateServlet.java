@@ -23,8 +23,12 @@ public class LeadUpdateServlet extends HttpServlet {
     private com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
     private com.crm.dao.AccountDAO accountDAO = new com.crm.dao.AccountDAO();
 
+    public void setLeadService(LeadService leadService) {
+        this.leadService = leadService;
+    }
+
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
         Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
@@ -55,6 +59,17 @@ public class LeadUpdateServlet extends HttpServlet {
                 return;
             }
 
+            if ("CONVERTED".equalsIgnoreCase(lead.getStatus()) || "Đã chuyển đổi".equalsIgnoreCase(lead.getStatus())) {
+                if (isJson) {
+                    resp.setStatus(HttpServletResponse.SC_CONFLICT);
+                    resp.setContentType("application/json; charset=UTF-8");
+                    resp.getWriter().write("{\"status\":\"error\",\"message\":\"Lead #" + leadId + " đã được chuyển đổi (CONVERTED), không thể chỉnh sửa.\"}");
+                } else {
+                    resp.sendRedirect(req.getContextPath() + "/leads/detail?id=" + leadId + "&error=converted_locked");
+                }
+                return;
+            }
+
             List<LeadSource> sources = sourceDAO.getActiveSources();
             List<com.crm.model.Campaign> campaigns = campaignDAO.getAllCampaigns();
             List<com.crm.model.Account> accounts = accountDAO.getAllActiveAccounts();
@@ -75,7 +90,7 @@ public class LeadUpdateServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
         Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
@@ -155,6 +170,14 @@ public class LeadUpdateServlet extends HttpServlet {
                 }
             } else {
                 resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể cập nhật Lead.");
+            }
+        } catch (IllegalStateException e) {
+            resp.setStatus(HttpServletResponse.SC_CONFLICT);
+            if (isJson) {
+                resp.setContentType("application/json; charset=UTF-8");
+                resp.getWriter().write("{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/leads/detail?id=" + leadIdStr + "&error=converted_locked");
             }
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);

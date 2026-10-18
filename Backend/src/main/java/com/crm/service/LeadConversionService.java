@@ -93,12 +93,19 @@ public class LeadConversionService {
         final String phone;
         final String status;
         final Integer ownerId;
+        final String industry;
+        final String address;
+        final String city;
+        final String region;
+        final String title;
+        final Integer campaignId;
         final Integer convertedCustomerId;
         final Integer convertedContactId;
         final Integer convertedOpportunityId;
 
         LeadRecord(int leadId, String companyName, String contactName, String email, String phone,
-                   String status, Integer ownerId, Integer convertedCustomerId,
+                   String status, Integer ownerId, String industry, String address, String city,
+                   String region, String title, Integer campaignId, Integer convertedCustomerId,
                    Integer convertedContactId, Integer convertedOpportunityId) {
             this.leadId = leadId;
             this.companyName = companyName;
@@ -107,6 +114,12 @@ public class LeadConversionService {
             this.phone = phone;
             this.status = status;
             this.ownerId = ownerId;
+            this.industry = industry;
+            this.address = address;
+            this.city = city;
+            this.region = region;
+            this.title = title;
+            this.campaignId = campaignId;
             this.convertedCustomerId = convertedCustomerId;
             this.convertedContactId = convertedContactId;
             this.convertedOpportunityId = convertedOpportunityId;
@@ -148,7 +161,7 @@ public class LeadConversionService {
             }
 
             // BƯỚC 2: Kiểm tra trạng thái và Idempotency
-            if ("CONVERTED".equalsIgnoreCase(lead.status)) {
+            if ("CONVERTED".equalsIgnoreCase(lead.status) || "Đã chuyển đổi".equalsIgnoreCase(lead.status)) {
                 LOGGER.info("Lead #" + leadId + " đã được chuyển đổi trước đó.");
                 throw new IllegalStateException("Lead #" + leadId + " đã được chuyển đổi trước đó. Không thể chuyển đổi lại.");
             }
@@ -165,7 +178,7 @@ public class LeadConversionService {
 
             int effectiveOwnerId = (lead.ownerId != null && lead.ownerId > 0) ? lead.ownerId : currentUserId;
 
-            // BƯỚC 5: TẠO HOẶC LIÊN KẾT CUSTOMER
+            // BƯỚC 5: TẠO HOẶC LIÊN KẾT CUSTOMER (Ánh xạ đầy đủ tên, điện thoại, email, ngành nghề, địa chỉ)
             int customerId;
             if (request.getAccountId() != null && request.getAccountId() > 0) {
                 customerId = verifyExistingCustomer(conn, request.getAccountId());
@@ -174,24 +187,29 @@ public class LeadConversionService {
                 String customerName = (lead.companyName != null && !lead.companyName.trim().isEmpty())
                         ? lead.companyName.trim()
                         : lead.contactName.trim();
-                customerId = createCustomer(conn, customerName, lead.phone, lead.email, effectiveOwnerId);
+                String effectiveAddress = (lead.address != null && !lead.address.trim().isEmpty())
+                        ? lead.address.trim()
+                        : lead.city;
+                String effectiveRegion = (lead.region != null && !lead.region.trim().isEmpty())
+                        ? lead.region.trim()
+                        : lead.city;
+                customerId = createCustomer(conn, customerName, lead.phone, lead.email, lead.industry, effectiveAddress, effectiveRegion, effectiveOwnerId);
                 LOGGER.info("Đã tạo mới Customer #" + customerId + " ('" + customerName + "') từ Lead #" + leadId);
             }
 
-            // BƯỚC 6: TẠO HOẶC TÁI SỬ DỤNG CONTACT
-            int contactId = findOrCreateContact(conn, customerId, lead.contactName.trim(), lead.email, lead.phone);
+            // BƯỚC 6: TẠO HOẶC TÁI SỬ DỤNG CONTACT (Ánh xạ họ tên, email, điện thoại, chức danh)
+            int contactId = findOrCreateContact(conn, customerId, lead.contactName.trim(), lead.email, lead.phone, lead.title);
             LOGGER.info("Đã liên kết Contact #" + contactId + " cho Customer #" + customerId);
 
-            // BƯỚC 7: TẠO OPPORTUNITY (NẾU ĐƯỢC YÊU CẦU)
-            Integer opportunityId = null;
-            if (request.getOpportunityName() != null && !request.getOpportunityName().trim().isEmpty()) {
-                String oppTitle = request.getOpportunityName().trim();
-                double amount = (request.getExpectedRevenue() != null && request.getExpectedRevenue() >= 0)
-                        ? request.getExpectedRevenue()
-                        : 0.0;
-                opportunityId = createOpportunity(conn, oppTitle, amount, effectiveOwnerId, customerId);
-                LOGGER.info("Đã tạo Opportunity #" + opportunityId + " ('" + oppTitle + "') cho Customer #" + customerId);
-            }
+            // BƯỚC 7: TẠO OPPORTUNITY (LUÔN TẠO ĐỒNG THỜI THEO AC1)
+            String oppTitle = (request.getOpportunityName() != null && !request.getOpportunityName().trim().isEmpty())
+                    ? request.getOpportunityName().trim()
+                    : ("Cơ hội từ " + (lead.companyName != null && !lead.companyName.trim().isEmpty() ? lead.companyName.trim() : lead.contactName.trim()));
+            double amount = (request.getExpectedRevenue() != null && request.getExpectedRevenue() >= 0)
+                    ? request.getExpectedRevenue()
+                    : 0.0;
+            Integer opportunityId = createOpportunity(conn, oppTitle, amount, effectiveOwnerId, customerId, lead.campaignId);
+            LOGGER.info("Đã tạo Opportunity #" + opportunityId + " ('" + oppTitle + "') cho Customer #" + customerId);
 
             // BƯỚC 8: BẢO TOÀN VÀ LIÊN KẾT ACTIVITIES VỚI CUSTOMER
             int activityCount = linkActivitiesToCustomer(conn, leadId, customerId);
@@ -226,8 +244,9 @@ public class LeadConversionService {
                 MockOpportunity mo = new MockOpportunity();
                 mo.id = opportunityId;
                 mo.customerId = customerId;
-                mo.title = request.getOpportunityName();
-                mo.amount = request.getExpectedRevenue() != null ? request.getExpectedRevenue() : 0.0;
+                mo.title = oppTitle;
+                mo.amount = amount;
+                mo.campaignId = lead.campaignId;
                 opportunitiesDB.put(opportunityId, mo);
             }
 
@@ -339,7 +358,7 @@ public class LeadConversionService {
         String sql = "SELECT lead_id, " +
                      "COALESCE(company, company_name) AS company_name, " +
                      "COALESCE(contact_name, full_name) AS contact_name, " +
-                     "email, phone, status, owner_id, " +
+                     "email, phone, status, owner_id, industry, address, city, region, title, campaign_id, " +
                      "converted_customer_id, converted_contact_id, converted_opportunity_id " +
                      "FROM leads WHERE lead_id = ? FOR UPDATE";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -347,6 +366,7 @@ public class LeadConversionService {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Integer ownerId = rs.getObject("owner_id") != null ? rs.getInt("owner_id") : null;
+                    Integer campId = rs.getObject("campaign_id") != null ? rs.getInt("campaign_id") : null;
                     Integer convCustId = rs.getObject("converted_customer_id") != null ? rs.getInt("converted_customer_id") : null;
                     Integer convContId = rs.getObject("converted_contact_id") != null ? rs.getInt("converted_contact_id") : null;
                     Integer convOppId = rs.getObject("converted_opportunity_id") != null ? rs.getInt("converted_opportunity_id") : null;
@@ -358,6 +378,12 @@ public class LeadConversionService {
                             rs.getString("phone"),
                             rs.getString("status"),
                             ownerId,
+                            rs.getString("industry"),
+                            rs.getString("address"),
+                            rs.getString("city"),
+                            rs.getString("region"),
+                            rs.getString("title"),
+                            campId,
                             convCustId,
                             convContId,
                             convOppId
@@ -381,13 +407,18 @@ public class LeadConversionService {
         throw new IllegalArgumentException("Khách hàng #" + customerId + " không tồn tại trong hệ thống.");
     }
 
-    private int createCustomer(Connection conn, String customerName, String phone, String email, int ownerId) throws SQLException {
-        String sql = "INSERT INTO customers (customer_name, phone, email, status, owner_id) VALUES (?, ?, ?, 'POTENTIAL', ?)";
+    private int createCustomer(Connection conn, String customerName, String phone, String email,
+                               String industry, String address, String region, int ownerId) throws SQLException {
+        String sql = "INSERT INTO customers (customer_name, phone, email, industry, address, region, status, owner_id) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, 'POTENTIAL', ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, customerName);
             ps.setString(2, (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null);
             ps.setString(3, (email != null && !email.trim().isEmpty()) ? email.trim() : null);
-            ps.setInt(4, ownerId);
+            ps.setString(4, (industry != null && !industry.trim().isEmpty()) ? industry.trim() : null);
+            ps.setString(5, (address != null && !address.trim().isEmpty()) ? address.trim() : null);
+            ps.setString(6, (region != null && !region.trim().isEmpty()) ? region.trim() : null);
+            ps.setInt(7, ownerId);
 
             int affected = ps.executeUpdate();
             if (affected <= 0) {
@@ -402,7 +433,7 @@ public class LeadConversionService {
         throw new SQLException("Tạo Customer thất bại, không thể lấy customer_id tự sinh.");
     }
 
-    private int findOrCreateContact(Connection conn, int customerId, String fullName, String email, String phone) throws SQLException {
+    private int findOrCreateContact(Connection conn, int customerId, String fullName, String email, String phone, String title) throws SQLException {
         if ((email != null && !email.trim().isEmpty()) || (phone != null && !phone.trim().isEmpty())) {
             String checkSql = "SELECT contact_id FROM contacts WHERE customer_id = ? AND " +
                               "((email IS NOT NULL AND email = ?) OR (phone IS NOT NULL AND phone = ?)) LIMIT 1";
@@ -418,14 +449,16 @@ public class LeadConversionService {
             }
         }
 
-        String insertSql = "INSERT INTO contacts (customer_id, contact_name, full_name, email, phone, buying_role, is_primary) " +
-                           "VALUES (?, ?, ?, ?, ?, 'DECIDER', 1)";
+        String insertSql = "INSERT INTO contacts (customer_id, contact_name, full_name, email, phone, title, position, buying_role, is_primary) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, 'DECIDER', 1)";
         try (PreparedStatement ps = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, customerId);
             ps.setString(2, fullName);
             ps.setString(3, fullName);
             ps.setString(4, (email != null && !email.trim().isEmpty()) ? email.trim() : null);
             ps.setString(5, (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null);
+            ps.setString(6, (title != null && !title.trim().isEmpty()) ? title.trim() : null);
+            ps.setString(7, (title != null && !title.trim().isEmpty()) ? title.trim() : null);
 
             int affected = ps.executeUpdate();
             if (affected <= 0) {
@@ -440,14 +473,19 @@ public class LeadConversionService {
         throw new SQLException("Tạo Contact thất bại, không thể lấy contact_id tự sinh.");
     }
 
-    private int createOpportunity(Connection conn, String title, double amount, int ownerId, int customerId) throws SQLException {
-        String sql = "INSERT INTO opportunities (title, amount, owner_id, customer_id, stage, status) " +
-                     "VALUES (?, ?, ?, ?, 'Prospecting', 'ACTIVE')";
+    private int createOpportunity(Connection conn, String title, double amount, int ownerId, int customerId, Integer campaignId) throws SQLException {
+        String sql = "INSERT INTO opportunities (title, amount, owner_id, customer_id, campaign_id, stage, status) " +
+                     "VALUES (?, ?, ?, ?, ?, 'Prospecting', 'ACTIVE')";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, title);
             ps.setDouble(2, amount);
             ps.setInt(3, ownerId);
             ps.setInt(4, customerId);
+            if (campaignId != null && campaignId > 0) {
+                ps.setInt(5, campaignId);
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
 
             int affected = ps.executeUpdate();
             if (affected <= 0) {

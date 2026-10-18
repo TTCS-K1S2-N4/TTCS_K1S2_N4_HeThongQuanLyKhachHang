@@ -125,20 +125,54 @@ public class LeadSavedFilterDAO {
         return false;
     }
 
+    public boolean existsByName(int userId, String filterName) {
+        if (filterName == null || filterName.trim().isEmpty()) return false;
+        String sql = "SELECT 1 FROM saved_filters WHERE user_id = ? AND filter_name = ? AND module = 'LEAD' LIMIT 1";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, filterName.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi kiểm tra trùng tên saved filter: " + e.getMessage(), e);
+        }
+        return false;
+    }
+
     private LeadSavedFilter mapResultSet(ResultSet rs) throws SQLException {
         LeadSavedFilter filter = new LeadSavedFilter();
         filter.setFilterId(rs.getInt("filter_id"));
         filter.setUserId(rs.getInt("user_id"));
         filter.setFilterName(rs.getString("filter_name"));
         filter.setModule(rs.getString("module"));
-        filter.setKeyword(rs.getString("keyword"));
-        filter.setStatus(rs.getString("status"));
+        String fq = rs.getString("filter_query");
+        filter.setFilterQuery(fq);
+
+        String kw = rs.getString("keyword");
+        if ((kw == null || kw.isEmpty()) && fq != null) {
+            kw = extractQueryParam(fq, "keyword");
+            if (kw == null) kw = extractQueryParam(fq, "search");
+        }
+        filter.setKeyword(kw);
+
+        String st = rs.getString("status");
+        if ((st == null || st.isEmpty()) && fq != null) {
+            st = extractQueryParam(fq, "status");
+        }
+        filter.setStatus(st);
+
         int oid = rs.getInt("owner_id");
         if (!rs.wasNull()) {
             filter.setOwnerId(oid);
+        } else if (fq != null) {
+            String oidStr = extractQueryParam(fq, "ownerId");
+            if (oidStr != null && !"MY".equalsIgnoreCase(oidStr)) {
+                try { filter.setOwnerId(Integer.parseInt(oidStr)); } catch (NumberFormatException ignore) {}
+            }
         }
-        String fq = rs.getString("filter_query");
-        filter.setFilterQuery(fq);
+
         if (fq != null && !fq.isEmpty()) {
             filter.setSource(extractQueryParam(fq, "source"));
             String cls = extractQueryParam(fq, "classification");
@@ -146,6 +180,12 @@ public class LeadSavedFilterDAO {
                 cls = extractQueryParam(fq, "rating");
             }
             filter.setClassification(cls);
+            filter.setFromDate(extractQueryParam(fq, "fromDate"));
+            filter.setToDate(extractQueryParam(fq, "toDate"));
+            String ov = extractQueryParam(fq, "overdue");
+            if (ov != null) {
+                filter.setOverdue("true".equalsIgnoreCase(ov) || "1".equals(ov));
+            }
         }
         filter.setDefault(rs.getBoolean("is_default"));
         filter.setCreatedAt(rs.getTimestamp("created_at"));

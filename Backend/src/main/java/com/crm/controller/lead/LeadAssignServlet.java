@@ -11,7 +11,11 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,7 +23,7 @@ import java.util.logging.Logger;
  * LeadAssignServlet - API phân bổ Lead thủ công hoặc tự động (S4-06).
  * Endpoint: POST /leads/assign
  */
-@WebServlet("/leads/assign")
+@WebServlet(urlPatterns = {"/leads/assign", "/leads/assignment-queue", "/leads/queue"}, loadOnStartup = 1)
 public class LeadAssignServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(LeadAssignServlet.class.getName());
     
@@ -42,6 +46,119 @@ public class LeadAssignServlet extends HttpServlet {
             this.assignmentService.stopBackgroundWorker();
         }
         super.destroy();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
+        HttpSession session = req.getSession(false);
+        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
+        boolean isJson = isJsonRequest(req);
+
+        if (userId == null) {
+            if (isJson) {
+                resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                resp.setContentType("application/json; charset=UTF-8");
+                resp.getWriter().write("{\"success\":false,\"message\":\"Vui lòng đăng nhập.\"}");
+            } else {
+                resp.sendRedirect(req.getContextPath() + "/auth/login");
+            }
+            return;
+        }
+
+        Account currentUser = (session.getAttribute("currentUser") instanceof Account)
+                ? (Account) session.getAttribute("currentUser")
+                : null;
+        Integer roleId = (session.getAttribute("roleId") instanceof Integer)
+                ? (Integer) session.getAttribute("roleId")
+                : (currentUser != null ? currentUser.getRoleId() : null);
+
+        boolean isAdminOrDirector = false;
+        boolean isTeamLead = false;
+        if (currentUser != null && currentUser.getRoleCodes() != null) {
+            for (String code : currentUser.getRoleCodes()) {
+                if ("ADMIN".equalsIgnoreCase(code) || "DIRECTOR".equalsIgnoreCase(code)) isAdminOrDirector = true;
+                if ("TEAM_LEAD".equalsIgnoreCase(code) || "TEAM_LEADER".equalsIgnoreCase(code) || "LEADER".equalsIgnoreCase(code)) isTeamLead = true;
+            }
+        }
+        if (!isAdminOrDirector && !isTeamLead && roleId != null) {
+            if (roleId == 1 || roleId == 4) isAdminOrDirector = true;
+            else if (roleId == 3) isTeamLead = true;
+        }
+
+        boolean canAssign = isAdminOrDirector || isTeamLead;
+
+        List<com.crm.dto.LeadResponse> queue = new java.util.ArrayList<>();
+        String sql = "SELECT l.lead_id, l.full_name, l.company, l.email, l.phone, l.industry, l.status, " +
+                     "l.score, l.rating, l.created_at, u.full_name AS owner_name " +
+                     "FROM leads l " +
+                     "LEFT JOIN users u ON l.owner_id = u.user_id " +
+                     "WHERE l.owner_id IS NULL AND l.status IN ('QUEUED', 'NEW') " +
+                     "ORDER BY l.score DESC, l.created_at DESC";
+        try (Connection conn = com.crm.util.DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                com.crm.dto.LeadResponse r = new com.crm.dto.LeadResponse();
+                r.setLeadId(rs.getInt("lead_id"));
+                r.setFullName(rs.getString("full_name"));
+                r.setCompany(rs.getString("company"));
+                r.setEmail(rs.getString("email"));
+                r.setPhone(rs.getString("phone"));
+                r.setIndustry(rs.getString("industry"));
+                r.setStatus(rs.getString("status"));
+                r.setScore(rs.getInt("score"));
+                r.setClassification(rs.getString("rating"));
+                r.setOwnerName(rs.getString("owner_name"));
+                r.setCreatedAt(rs.getTimestamp("created_at"));
+                queue.add(r);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Lỗi lấy danh sách hàng chờ phân bổ", e);
+        }
+
+        com.crm.dao.AccountDAO accountDAO = new com.crm.dao.AccountDAO();
+        List<Account> assignees = accountDAO.getAllActiveAccounts();
+        if (isTeamLead && !isAdminOrDirector && currentUser != null && currentUser.getTeamId() != null) {
+            int callerTeamId = currentUser.getTeamId();
+            assignees.removeIf(a -> a.getTeamId() == null || a.getTeamId() != callerTeamId);
+        }
+
+        if (isJson) {
+            resp.setContentType("application/json; charset=UTF-8");
+            resp.getWriter().write(buildQueueJson(queue));
+        } else {
+            req.setAttribute("queue", queue);
+            req.setAttribute("assignees", assignees);
+            req.setAttribute("canAssign", canAssign);
+            req.getRequestDispatcher("/WEB-INF/views/leads/assignment-queue.jsp").forward(req, resp);
+        }
+    }
+
+    private boolean isJsonRequest(HttpServletRequest req) {
+        String accept = req.getHeader("Accept");
+        String requestedWith = req.getHeader("X-Requested-With");
+        return (accept != null && accept.contains("application/json")) || "XMLHttpRequest".equals(requestedWith);
+    }
+
+    private String buildQueueJson(List<com.crm.dto.LeadResponse> queue) {
+        StringBuilder sb = new StringBuilder("{\"success\":true,\"total\":").append(queue.size()).append(",\"data\":[");
+        for (int i = 0; i < queue.size(); i++) {
+            com.crm.dto.LeadResponse r = queue.get(i);
+            sb.append("{\"leadId\":").append(r.getLeadId())
+              .append(",\"fullName\":\"").append(escapeJson(r.getFullName())).append("\"")
+              .append(",\"company\":\"").append(escapeJson(r.getCompany())).append("\"")
+              .append(",\"email\":\"").append(escapeJson(r.getEmail())).append("\"")
+              .append(",\"phone\":\"").append(escapeJson(r.getPhone())).append("\"")
+              .append(",\"industry\":\"").append(escapeJson(r.getIndustry())).append("\"")
+              .append(",\"status\":\"").append(escapeJson(r.getStatus())).append("\"")
+              .append(",\"score\":").append(r.getScore())
+              .append(",\"classification\":\"").append(escapeJson(r.getClassification())).append("\"")
+              .append("}");
+            if (i < queue.size() - 1) sb.append(",");
+        }
+        sb.append("]}");
+        return sb.toString();
     }
 
     @Override

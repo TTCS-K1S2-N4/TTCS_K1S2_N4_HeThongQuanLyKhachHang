@@ -34,7 +34,7 @@ public class LeadSavedFilterServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
         Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
@@ -65,7 +65,7 @@ public class LeadSavedFilterServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
         Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
@@ -99,6 +99,17 @@ public class LeadSavedFilterServlet extends HttpServlet {
         String filterName = req.getParameter("filterName");
         if (filterName == null || filterName.trim().isEmpty()) {
             sendError(resp, isJson, HttpServletResponse.SC_BAD_REQUEST, "Tên bộ lọc không được để trống.");
+            return;
+        }
+
+        String trimmedName = filterName.trim();
+        if (trimmedName.length() > 100) {
+            sendError(resp, isJson, HttpServletResponse.SC_BAD_REQUEST, "Tên bộ lọc không được vượt quá 100 ký tự.");
+            return;
+        }
+
+        if (filterService.existsSavedFilterName(userId, trimmedName)) {
+            sendError(resp, isJson, HttpServletResponse.SC_BAD_REQUEST, "Tên bộ lọc '" + trimmedName + "' đã tồn tại. Vui lòng chọn tên khác.");
             return;
         }
 

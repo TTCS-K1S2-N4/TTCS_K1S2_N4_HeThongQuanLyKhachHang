@@ -80,12 +80,28 @@ public class LeadService {
         lead.setState(request.getState());
         lead.setCountry(request.getCountry());
         lead.setZipCode(request.getZipCode());
-        lead.setOwnerId(request.getOwnerId() != null ? request.getOwnerId() : ownerId);
+        lead.setOwnerId(request.getOwnerId() != null ? request.getOwnerId() : null);
         lead.setNotes(request.getNotes());
         lead.setCampaignId(request.getCampaignId() != null && request.getCampaignId() > 0 ? request.getCampaignId() : null);
 
         boolean created = leadDAO.createLead(lead);
         if (created) {
+            // Tự động tính điểm Lead theo tiêu chí cấu hình (S4-05-AC-02)
+            try {
+                new LeadScoringService().recalculateLeadScore(lead.getLeadId());
+            } catch (Exception e) {
+                System.err.println("[LeadService] Lỗi tính điểm Lead #" + lead.getLeadId() + ": " + e.getMessage());
+            }
+
+            // Tự động phân bổ Lead nếu chưa chỉ định người phụ trách (S4-06)
+            if (lead.getOwnerId() == null) {
+                try {
+                    new LeadAssignmentService().assignLead(lead.getLeadId(), lead.getCity(), lead.getIndustry(), ownerId);
+                } catch (Exception e) {
+                    System.err.println("[LeadService] Lỗi phân bổ Lead #" + lead.getLeadId() + ": " + e.getMessage());
+                }
+            }
+
             return getLeadById(lead.getLeadId());
         }
         return null;
@@ -95,6 +111,10 @@ public class LeadService {
         Lead existing = leadDAO.getById(leadId);
         if (existing == null) {
             return false;
+        }
+
+        if ("CONVERTED".equalsIgnoreCase(existing.getStatus()) || "Đã chuyển đổi".equalsIgnoreCase(existing.getStatus())) {
+            throw new IllegalStateException("Lead #" + leadId + " đã được chuyển đổi (CONVERTED), không thể chỉnh sửa.");
         }
 
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
@@ -110,7 +130,9 @@ public class LeadService {
         if (request.getWebFormId() != null) existing.setWebFormId(request.getWebFormId());
         if (request.getStatus() != null) existing.setStatus(request.getStatus());
         if (request.getRating() != null) existing.setRating(request.getRating());
-        existing.setScore(request.getScore());
+        if (request.getScore() > 0) {
+            existing.setScore(request.getScore());
+        }
         existing.setIndustry(request.getIndustry());
         existing.setAddress(request.getAddress());
         existing.setCity(request.getCity());
@@ -132,10 +154,32 @@ public class LeadService {
             }
         }
 
-        return leadDAO.updateLead(existing);
+        boolean updated = leadDAO.updateLead(existing);
+        if (updated) {
+            // Tự động tính lại điểm Lead khi thông tin thay đổi (S4-05-AC-02)
+            try {
+                new LeadScoringService().recalculateLeadScore(leadId);
+            } catch (Exception e) {
+                System.err.println("[LeadService] Lỗi tính lại điểm Lead #" + leadId + ": " + e.getMessage());
+            }
+
+            // Nếu Lead chưa có người phụ trách, thử phân bổ tự động
+            if (existing.getOwnerId() == null) {
+                try {
+                    new LeadAssignmentService().assignLead(leadId, existing.getCity(), existing.getIndustry(), null);
+                } catch (Exception e) {
+                    System.err.println("[LeadService] Lỗi phân bổ Lead #" + leadId + ": " + e.getMessage());
+                }
+            }
+        }
+        return updated;
     }
 
     public boolean deleteLead(int leadId) {
+        Lead existing = leadDAO.getById(leadId);
+        if (existing != null && ("CONVERTED".equalsIgnoreCase(existing.getStatus()) || "Đã chuyển đổi".equalsIgnoreCase(existing.getStatus()))) {
+            throw new IllegalStateException("Lead #" + leadId + " đã được chuyển đổi (CONVERTED), không thể xóa.");
+        }
         return leadDAO.deleteLead(leadId);
     }
 }

@@ -340,10 +340,19 @@ public class LeadDAO {
         lead.setCreatedAt(rs.getTimestamp("created_at"));
         lead.setUpdatedAt(rs.getTimestamp("updated_at"));
 
+        try { lead.setAssignedAt(rs.getTimestamp("assigned_at")); } catch (SQLException ignore) {}
+        try { lead.setSlaDueDate(rs.getTimestamp("sla_due_date")); } catch (SQLException ignore) {}
+        try { lead.setOverdue(rs.getBoolean("is_overdue")); } catch (SQLException ignore) {}
+        try { lead.setSlaStatus(rs.getString("sla_status")); } catch (SQLException ignore) {}
+
         try { lead.setSourceName(rs.getString("source_name")); } catch (SQLException ignore) {}
         try { lead.setWebFormName(rs.getString("web_form_name")); } catch (SQLException ignore) {}
         try { lead.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignore) {}
         try { lead.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignore) {}
+
+        try { lead.setConvertedCustomerId((Integer) rs.getObject("converted_customer_id")); } catch (SQLException ignore) {}
+        try { lead.setConvertedContactId((Integer) rs.getObject("converted_contact_id")); } catch (SQLException ignore) {}
+        try { lead.setConvertedOpportunityId((Integer) rs.getObject("converted_opportunity_id")); } catch (SQLException ignore) {}
 
         return lead;
     }

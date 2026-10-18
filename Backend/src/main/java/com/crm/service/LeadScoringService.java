@@ -322,7 +322,7 @@ public class LeadScoringService {
         return s.equalsIgnoreCase(t) || s.toLowerCase().contains(t.toLowerCase());
     }
 
-    private String determineClassification(int score, int hotThreshold, int warmThreshold) {
+    public String determineClassification(int score, int hotThreshold, int warmThreshold) {
         if (score >= hotThreshold) return "HOT";
         if (score >= warmThreshold) return "WARM";
         return "COLD";

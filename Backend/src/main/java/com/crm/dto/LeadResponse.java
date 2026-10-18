@@ -31,8 +31,14 @@ public class LeadResponse {
     private String notes;
     private Integer campaignId;
     private String campaignName;
+    private Timestamp assignedAt;
+    private Timestamp slaDueDate;
+    private String slaStatus;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private Integer convertedCustomerId;
+    private Integer convertedContactId;
+    private Integer convertedOpportunityId;
 
     public LeadResponse() {}
 
@@ -65,8 +71,15 @@ public class LeadResponse {
         res.setNotes(lead.getNotes());
         res.setCampaignId(lead.getCampaignId());
         res.setCampaignName(lead.getCampaignName());
+        res.setAssignedAt(lead.getAssignedAt());
+        res.setSlaDueDate(lead.getSlaDueDate());
+        res.setSlaStatus(lead.getSlaStatus());
+        res.setSlaOverdue(lead.isOverdue() || "OVERDUE".equalsIgnoreCase(lead.getStatus()) || "OVERDUE".equalsIgnoreCase(lead.getSlaStatus()));
         res.setCreatedAt(lead.getCreatedAt());
         res.setUpdatedAt(lead.getUpdatedAt());
+        res.setConvertedCustomerId(lead.getConvertedCustomerId());
+        res.setConvertedContactId(lead.getConvertedContactId());
+        res.setConvertedOpportunityId(lead.getConvertedOpportunityId());
         return res;
     }
 
@@ -392,6 +405,54 @@ public class LeadResponse {
 
     public void setCampaignName(String campaignName) {
         this.campaignName = campaignName;
+    }
+
+    public Timestamp getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Timestamp assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public Timestamp getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(Timestamp slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
+    public String getSlaStatus() {
+        return slaStatus;
+    }
+
+    public void setSlaStatus(String slaStatus) {
+        this.slaStatus = slaStatus;
+    }
+
+    public Integer getConvertedCustomerId() {
+        return convertedCustomerId;
+    }
+
+    public void setConvertedCustomerId(Integer convertedCustomerId) {
+        this.convertedCustomerId = convertedCustomerId;
+    }
+
+    public Integer getConvertedContactId() {
+        return convertedContactId;
+    }
+
+    public void setConvertedContactId(Integer convertedContactId) {
+        this.convertedContactId = convertedContactId;
+    }
+
+    public Integer getConvertedOpportunityId() {
+        return convertedOpportunityId;
+    }
+
+    public void setConvertedOpportunityId(Integer convertedOpportunityId) {
+        this.convertedOpportunityId = convertedOpportunityId;
     }
 }
 

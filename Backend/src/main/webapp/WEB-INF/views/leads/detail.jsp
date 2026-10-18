@@ -449,18 +449,110 @@
                                 </div>
                             </div>
 
+                            <c:set var="isLeadOwner" value="${not empty sessionScope.userId and lead.ownerId == sessionScope.userId}"/>
+                            <c:set var="isAdminOrDirector" value="${sessionScope.roleId == 1 or sessionScope.roleId == 4}"/>
+                            <c:set var="canActOnLead" value="${isLeadOwner or isAdminOrDirector}"/>
+                            <c:set var="canAccept" value="${canActOnLead and (lead.status == 'ASSIGNED' or lead.status == 'OVERDUE')}"/>
+                            <c:set var="canReject" value="${canActOnLead and (lead.status == 'ASSIGNED' or lead.status == 'OVERDUE')}"/>
+                            <c:set var="canMarkContacted" value="${canActOnLead and lead.status == 'IN_PROGRESS'}"/>
+
                             <div class="hero-action-buttons">
-                                <a href="${pageContext.request.contextPath}/leads/edit?id=${lead.leadId}" class="btn-hero-primary" id="btn-edit-lead">
-                                    <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Lead
-                                </a>
-                                <a href="${pageContext.request.contextPath}/leads/convert?leadId=${lead.leadId}" class="btn-hero-secondary">
-                                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Chuyển đổi Cơ hội
-                                </a>
+                                <c:if test="${canAccept}">
+                                    <button type="button" class="btn-hero-primary" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border: none; cursor: pointer;" onclick="handleAcceptLead(${lead.leadId})">
+                                        <i class="fa-solid fa-check"></i> Nhận Lead
+                                    </button>
+                                </c:if>
+                                <c:if test="${canReject}">
+                                    <button type="button" class="btn-hero-secondary" style="background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.5); color: #fee2e2 !important; cursor: pointer;" onclick="openRejectModal(${lead.leadId})">
+                                        <i class="fa-solid fa-xmark"></i> Từ chối Lead
+                                    </button>
+                                </c:if>
+                                <c:if test="${canMarkContacted}">
+                                    <button type="button" class="btn-hero-primary" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border: none; cursor: pointer;" onclick="handleRecordContact(${lead.leadId})">
+                                        <i class="fa-solid fa-phone"></i> Ghi nhận liên hệ
+                                    </button>
+                                </c:if>
+                                <c:choose>
+                                    <c:when test="${lead.status == 'CONVERTED' or lead.status == 'Đã chuyển đổi'}">
+                                        <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-check-double"></i> Đã chuyển đổi (Khóa)
+                                        </span>
+                                        <c:if test="${lead.convertedCustomerId != null && lead.convertedCustomerId > 0}">
+                                            <a href="${pageContext.request.contextPath}/customers/detail?id=${lead.convertedCustomerId}" class="btn-hero-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                                <i class="fa-solid fa-building"></i> Xem Khách hàng
+                                            </a>
+                                        </c:if>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <a href="${pageContext.request.contextPath}/leads/edit?id=${lead.leadId}" class="btn-hero-primary" id="btn-edit-lead">
+                                            <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Lead
+                                        </a>
+                                        <a href="${pageContext.request.contextPath}/leads/convert?leadId=${lead.leadId}" class="btn-hero-secondary">
+                                            <i class="fa-solid fa-arrow-right-arrow-left"></i> Chuyển đổi Cơ hội
+                                        </a>
+                                    </c:otherwise>
+                                </c:choose>
                                 <a href="${pageContext.request.contextPath}/leads" class="btn-hero-secondary">
                                     <i class="fa-solid fa-arrow-left"></i> Danh sách
                                 </a>
                             </div>
                         </div>
+
+                        <!-- Converted Status Banner Notice -->
+                        <c:if test="${lead.status == 'CONVERTED' or lead.status == 'Đã chuyển đổi'}">
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);">
+                                <div style="display: flex; align-items: center; gap: 12px; color: #166534;">
+                                    <i class="fa-solid fa-circle-check" style="font-size: 24px; color: #16a34a;"></i>
+                                    <div>
+                                        <strong style="font-size: 14.5px; color: #14532d;">Bản ghi Lead này đã được CHUYỂN ĐỔI (CONVERTED)</strong>
+                                        <div style="font-size: 13px; color: #15803d; margin-top: 3px;">
+                                            Lead đã hoàn tất chuyển đổi thành Khách hàng, Người liên hệ và Cơ hội kinh doanh. Để đảm bảo tính toàn vẹn dữ liệu, bản ghi Lead được bảo toàn và khóa chỉnh sửa.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <c:if test="${lead.convertedCustomerId != null && lead.convertedCustomerId > 0}">
+                                        <a href="${pageContext.request.contextPath}/customers/detail?id=${lead.convertedCustomerId}" style="background: #16a34a; border: none; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-building"></i> Xem Khách hàng
+                                        </a>
+                                    </c:if>
+                                </div>
+                            </div>
+                        </c:if>
+
+                        <c:if test="${param.error == 'converted_locked'}">
+                            <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #ef4444; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; color: #991b1b; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-lock" style="font-size: 18px;"></i>
+                                <span>Lead đã được chuyển đổi (CONVERTED) nên không thể chỉnh sửa thông tin.</span>
+                            </div>
+                        </c:if>
+
+                        <!-- SLA Overdue Warning Notice -->
+                        <c:if test="${lead.slaOverdue}">
+                            <div style="background: #fef2f2; border: 1px solid #fecaca; border-left: 5px solid #ef4444; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);">
+                                <div style="display: flex; align-items: center; gap: 12px; color: #b91c1c;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 24px; color: #dc2626;"></i>
+                                    <div>
+                                        <strong style="font-size: 14.5px; color: #991b1b;">CẢNH BÁO: Lead đã quá hạn phản hồi theo SLA (Response SLA Breach)</strong>
+                                        <div style="font-size: 13px; color: #7f1d1d; margin-top: 3px;">
+                                            Lead này đã vượt quá thời hạn SLA quy định mà chưa có hoạt động liên hệ khách hàng thực tế. Hệ thống đã tự động gửi thông báo tới Trưởng nhóm phụ trách.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <c:if test="${canAccept}">
+                                        <button type="button" style="background: #16a34a; border: none; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="handleAcceptLead(${lead.leadId})">
+                                            <i class="fa-solid fa-check"></i> Nhận Lead ngay
+                                        </button>
+                                    </c:if>
+                                    <c:if test="${canMarkContacted}">
+                                        <button type="button" style="background: #0284c7; border: none; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="handleRecordContact(${lead.leadId})">
+                                            <i class="fa-solid fa-phone"></i> Ghi nhận liên hệ ngay
+                                        </button>
+                                    </c:if>
+                                </div>
+                            </div>
+                        </c:if>
 
                         <!-- Merged Audit Banner Notice -->
                         <c:if test="${lead.status == 'MERGED'}">
@@ -704,6 +796,21 @@
                             </a>
 
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <c:if test="${canAccept}">
+                                    <button type="button" class="btn-hero-primary" style="background: #16a34a; border: none; padding: 10px 18px; font-size: 13.5px; cursor: pointer;" onclick="handleAcceptLead(${lead.leadId})">
+                                        <i class="fa-solid fa-check"></i> Nhận Lead
+                                    </button>
+                                </c:if>
+                                <c:if test="${canReject}">
+                                    <button type="button" class="btn-lead-action" style="color: #dc2626; border-color: #fca5a5; background: #fff5f5; padding: 10px 18px; font-size: 13.5px; cursor: pointer;" onclick="openRejectModal(${lead.leadId})">
+                                        <i class="fa-solid fa-xmark"></i> Từ chối Lead
+                                    </button>
+                                </c:if>
+                                <c:if test="${canMarkContacted}">
+                                    <button type="button" class="btn-hero-primary" style="background: #0284c7; border: none; padding: 10px 18px; font-size: 13.5px; cursor: pointer;" onclick="handleRecordContact(${lead.leadId})">
+                                        <i class="fa-solid fa-phone"></i> Ghi nhận liên hệ
+                                    </button>
+                                </c:if>
                                 <a href="${pageContext.request.contextPath}/leads/edit?id=${lead.leadId}" class="btn-hero-primary" style="padding: 10px 20px; font-size: 13.5px;">
                                     <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa hồ sơ Lead
                                 </a>
@@ -717,5 +824,137 @@
             </div>
         </main>
     </div>
+
+    <!-- Modal Từ Chối Lead (S4-07) -->
+    <div id="rejectLeadModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center;" onclick="if(event.target === this) closeRejectModal();">
+        <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Xác nhận từ chối Lead #<span id="rejectModalLeadIdText"></span>
+                </h3>
+                <button type="button" onclick="closeRejectModal()" style="border: none; background: transparent; font-size: 22px; color: #64748b; cursor: pointer;">&times;</button>
+            </div>
+            <form id="rejectLeadForm" onsubmit="submitRejectLead(event)">
+                <input type="hidden" id="rejectModalLeadId" name="leadId">
+                <div style="margin-bottom: 16px;">
+                    <label for="rejectReasonInput" style="display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                        Lý do từ chối Lead <span style="color: #ef4444;">*</span>
+                    </label>
+                    <textarea id="rejectReasonInput" name="rejectReason" class="form-control" rows="4" required placeholder="Nhập lý do cụ thể (VD: Khách sai số điện thoại, ngoài khu vực phục vụ, không có nhu cầu...)" style="width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; padding: 10px; font-size: 13.5px;"></textarea>
+                    <p style="font-size: 12px; color: #64748b; margin-top: 6px; line-height: 1.4;">
+                        <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Bắt buộc nhập lý do. Lead sẽ quay lại hàng chờ phân bổ và không còn thuộc quyền của bạn.
+                    </p>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="closeRejectModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 600; cursor: pointer;">Hủy</button>
+                    <button type="submit" id="btnSubmitReject" style="padding: 8px 18px; border-radius: 8px; border: none; background: #dc2626; color: #ffffff; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-xmark"></i> Xác nhận từ chối
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleAcceptLead(leadId) {
+            if (!confirm('Bạn có chắc chắn muốn tiếp nhận Lead #' + leadId + ' để bắt đầu chăm sóc?')) return;
+            fetch('${pageContext.request.contextPath}/leads/accept', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'Accept': 'application/json'
+                },
+                body: 'leadId=' + encodeURIComponent(leadId)
+            })
+            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+            .then(result => {
+                if (result.ok) {
+                    alert(result.data.message || 'Đã tiếp nhận Lead thành công!');
+                    window.location.reload();
+                } else {
+                    alert(result.data.message || ('Tiếp nhận Lead thất bại (Mã lỗi ' + result.status + ').'));
+                }
+            })
+            .catch(err => {
+                alert('Lỗi kết nối máy chủ: ' + err.message);
+            });
+        }
+
+        function openRejectModal(leadId) {
+            document.getElementById('rejectModalLeadId').value = leadId;
+            document.getElementById('rejectModalLeadIdText').textContent = leadId;
+            document.getElementById('rejectReasonInput').value = '';
+            document.getElementById('rejectLeadModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('rejectReasonInput').focus(), 100);
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectLeadModal').style.display = 'none';
+        }
+
+        function submitRejectLead(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('rejectModalLeadId').value;
+            const reason = document.getElementById('rejectReasonInput').value.trim();
+            if (!reason) {
+                alert('Vui lòng nhập lý do từ chối Lead.');
+                return;
+            }
+            const btn = document.getElementById('btnSubmitReject');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+            fetch('${pageContext.request.contextPath}/leads/reject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'Accept': 'application/json'
+                },
+                body: 'leadId=' + encodeURIComponent(leadId) + '&rejectReason=' + encodeURIComponent(reason)
+            })
+            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+            .then(result => {
+                if (result.ok) {
+                    alert(result.data.message || 'Đã từ chối Lead. Lead quay lại hàng chờ phân bổ.');
+                    closeRejectModal();
+                    window.location.reload();
+                } else {
+                    alert(result.data.message || ('Từ chối Lead thất bại (Mã lỗi ' + result.status + ').'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Xác nhận từ chối';
+                }
+            })
+            .catch(err => {
+                alert('Lỗi kết nối máy chủ: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Xác nhận từ chối';
+            });
+        }
+
+        function handleRecordContact(leadId) {
+            const note = prompt('Nhập ghi chú liên hệ khách hàng:', 'Đã gọi điện tư vấn nhu cầu khách hàng');
+            if (note === null) return;
+            fetch('${pageContext.request.contextPath}/leads/contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'Accept': 'application/json'
+                },
+                body: 'leadId=' + encodeURIComponent(leadId) + '&note=' + encodeURIComponent(note)
+            })
+            .then(res => res.json().then(data => ({ status: res.status, ok: res.ok, data })))
+            .then(result => {
+                if (result.ok) {
+                    alert(result.data.message || 'Đã ghi nhận liên hệ khách hàng thành công!');
+                    window.location.reload();
+                } else {
+                    alert(result.data.message || 'Ghi nhận liên hệ thất bại.');
+                }
+            })
+            .catch(err => {
+                alert('Lỗi kết nối máy chủ: ' + err.message);
+            });
+        }
+    </script>
 </body>
 </html>

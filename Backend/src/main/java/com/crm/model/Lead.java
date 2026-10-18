@@ -24,6 +24,10 @@ public class Lead {
     private String zipCode;
     private Integer ownerId;
     private String notes;
+    private Timestamp assignedAt;
+    private Timestamp slaDueDate;
+    private boolean overdue;
+    private String slaStatus;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -33,6 +37,9 @@ public class Lead {
     private String ownerName;
     private Integer campaignId;
     private String campaignName;
+    private Integer convertedCustomerId;
+    private Integer convertedContactId;
+    private Integer convertedOpportunityId;
 
     public Lead() {}
 
@@ -272,5 +279,60 @@ public class Lead {
     public String getSource() {
         return sourceName;
     }
-}
 
+    public Timestamp getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Timestamp assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public Timestamp getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(Timestamp slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
+    }
+
+    public String getSlaStatus() {
+        return slaStatus;
+    }
+
+    public void setSlaStatus(String slaStatus) {
+        this.slaStatus = slaStatus;
+    }
+
+    public Integer getConvertedCustomerId() {
+        return convertedCustomerId;
+    }
+
+    public void setConvertedCustomerId(Integer convertedCustomerId) {
+        this.convertedCustomerId = convertedCustomerId;
+    }
+
+    public Integer getConvertedContactId() {
+        return convertedContactId;
+    }
+
+    public void setConvertedContactId(Integer convertedContactId) {
+        this.convertedContactId = convertedContactId;
+    }
+
+    public Integer getConvertedOpportunityId() {
+        return convertedOpportunityId;
+    }
+
+    public void setConvertedOpportunityId(Integer convertedOpportunityId) {
+        this.convertedOpportunityId = convertedOpportunityId;
+    }
+}
