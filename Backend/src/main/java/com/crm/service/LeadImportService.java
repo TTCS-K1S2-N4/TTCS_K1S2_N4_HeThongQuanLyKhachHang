@@ -50,7 +50,7 @@ public class LeadImportService {
         return parseAndValidateExcel(inputStream, ownerId, null);
     }
 
-    public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId, Integer defaultSourceId) throws Exception {
+    public ImportResult parseAndValidateExcel(InputStream inputStream, Integer ownerId, Integer defaultLeadSourceId) throws Exception {
         List<LeadImportRequest> requests = ExcelImportUtil.parseLeadImport(inputStream);
         ImportResult result = new ImportResult();
         result.setTotalRows(requests.size());
@@ -80,15 +80,21 @@ public class LeadImportService {
                 } else {
                     req.addFieldError("Nguồn Lead '" + req.getSourceName() + "' không tồn tại trong hệ thống");
                 }
-            } else if (defaultSourceId != null && defaultSourceId > 0 && sourceNameMap.containsKey(defaultSourceId)) {
-                req.setLeadSourceId(defaultSourceId);
-                req.setSourceName(sourceNameMap.get(defaultSourceId));
+            } else if (defaultLeadSourceId != null && defaultLeadSourceId > 0) {
+                req.setLeadSourceId(defaultLeadSourceId);
+                if (sourceNameMap.containsKey(defaultLeadSourceId)) {
+                    req.setSourceName(sourceNameMap.get(defaultLeadSourceId));
+                }
             } else {
                 Integer defaultSrc = sourceMap.get("excel");
                 if (defaultSrc == null) defaultSrc = sourceMap.get("import_excel");
+                if (defaultSrc == null) defaultSrc = sourceMap.get("nhập từ excel");
                 if (defaultSrc != null) {
                     req.setLeadSourceId(defaultSrc);
                     req.setSourceName(sourceNameMap.get(defaultSrc));
+                } else if (!activeSources.isEmpty()) {
+                    req.setLeadSourceId(activeSources.get(0).getSourceId());
+                    req.setSourceName(activeSources.get(0).getSourceName());
                 } else {
                     req.addFieldError("Nguồn Lead là bắt buộc và không được để trống");
                 }

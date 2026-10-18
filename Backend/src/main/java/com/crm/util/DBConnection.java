@@ -23,21 +23,35 @@ public class DBConnection {
     private static String dbDriver;
 
     static {
+        Properties prop = new Properties();
         try (InputStream is = DBConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
-            Properties prop = new Properties();
             if (is != null) {
                 prop.load(is);
-                dbUrl = System.getProperty("db.url", prop.getProperty("db.url",
-                    "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8"));
-                dbUser = System.getProperty("db.user", prop.getProperty("db.username", prop.getProperty("db.user", "root")));
-                dbPassword = System.getProperty("db.password", prop.getProperty("db.password", "root"));
-                dbDriver = System.getProperty("db.driver", prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
-            } else {
-                dbUrl = System.getProperty("db.url", "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8");
-                dbUser = System.getProperty("db.user", "root");
-                dbPassword = System.getProperty("db.password", "root");
-                dbDriver = System.getProperty("db.driver", "com.mysql.cj.jdbc.Driver");
             }
+        } catch (Exception ignored) {}
+
+        // 1. Tự động kiểm tra file cấu hình cục bộ không lưu vào Git (db.local.properties)
+        try (InputStream localIs = DBConnection.class.getClassLoader().getResourceAsStream("db.local.properties")) {
+            if (localIs != null) {
+                prop.load(localIs);
+            }
+        } catch (Exception ignored) {}
+
+        // 2. Thứ tự ưu tiên: System Property -> Environment Variable -> Properties file -> Default fallback
+        String defaultUrl = "jdbc:mysql://localhost:3306/crm_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8";
+        String envUrl = System.getenv("DB_URL");
+        dbUrl = System.getProperty("db.url", (envUrl != null && !envUrl.trim().isEmpty()) ? envUrl : prop.getProperty("db.url", defaultUrl));
+
+        String envUser = System.getenv("DB_USERNAME") != null ? System.getenv("DB_USERNAME") : System.getenv("DB_USER");
+        dbUser = System.getProperty("db.user", (envUser != null && !envUser.trim().isEmpty()) ? envUser : prop.getProperty("db.username", prop.getProperty("db.user", "root")));
+
+        String envPassword = System.getenv("DB_PASSWORD");
+        dbPassword = System.getProperty("db.password", (envPassword != null) ? envPassword : prop.getProperty("db.password", "root"));
+
+        String envDriver = System.getenv("DB_DRIVER");
+        dbDriver = System.getProperty("db.driver", (envDriver != null && !envDriver.trim().isEmpty()) ? envDriver : prop.getProperty("db.driver", "com.mysql.cj.jdbc.Driver"));
+
+        try {
             Class.forName(dbDriver);
         } catch (ClassNotFoundException e) {
             LOGGER.log(Level.FINE, "Thông báo: Không tìm thấy JDBC Driver {0} (có thể dùng H2 cho Unit Test)", dbDriver);

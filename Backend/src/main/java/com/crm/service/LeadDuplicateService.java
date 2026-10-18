@@ -67,6 +67,15 @@ public class LeadDuplicateService {
 
         public int getLeadId() { return leadId; }
         public void setLeadId(int leadId) { this.leadId = leadId; }
+
+        // Alias methods để tương thích JSP (${primaryLead.id}, ${primaryLead.name}, ${primaryLead.company})
+        public int getId() { return leadId; }
+        public void setId(int id) { this.leadId = id; }
+        public String getName() { return fullName; }
+        public void setName(String name) { this.fullName = name; }
+        public String getCompany() { return companyName; }
+        public void setCompany(String company) { this.companyName = company; }
+
         public String getFullName() { return fullName; }
         public void setFullName(String fullName) { this.fullName = fullName; }
         public String getCompanyName() { return companyName; }
@@ -95,11 +104,6 @@ public class LeadDuplicateService {
         public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
         public Timestamp getUpdatedAt() { return updatedAt; }
         public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
-
-        // Alias getters for JSP EL compatibility (id, name, company)
-        public int getId() { return leadId; }
-        public String getName() { return fullName; }
-        public String getCompany() { return companyName; }
     }
 
     public static class LeadDuplicateCandidate {
@@ -126,6 +130,37 @@ public class LeadDuplicateService {
         public String getReasonString() {
             return reasons != null ? String.join(", ", reasons) : "";
         }
+
+        // Getter ủy quyền từ right để tương thích trực tiếp với duplicates.jsp
+        public int getId() { return right != null ? right.getLeadId() : 0; }
+        public String getName() { return right != null ? right.getFullName() : ""; }
+        public String getEmail() { return right != null ? right.getEmail() : ""; }
+        public String getPhone() { return right != null ? right.getPhone() : ""; }
+        public String getCompany() { return right != null ? right.getCompanyName() : ""; }
+
+        public boolean isMatchEmail() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && r.toLowerCase().contains("email")) return true;
+            }
+            return false;
+        }
+
+        public boolean isMatchPhone() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && (r.toLowerCase().contains("thoại") || r.toLowerCase().contains("phone"))) return true;
+            }
+            return false;
+        }
+
+        public boolean isMatchCompany() {
+            if (reasons == null) return false;
+            for (String r : reasons) {
+                if (r != null && (r.toLowerCase().contains("công ty") || r.toLowerCase().contains("company"))) return true;
+            }
+            return false;
+        }
     }
 
     public static class CustomerCandidate {
@@ -148,6 +183,12 @@ public class LeadDuplicateService {
         public String getReasonString() {
             return reasons != null ? String.join(", ", reasons) : "";
         }
+
+        // Getter ủy quyền từ customer để tương thích trực tiếp với duplicates.jsp
+        public int getId() { return customer != null ? customer.getCustomerId() : 0; }
+        public String getName() { return customer != null ? customer.getCustomerName() : ""; }
+        public String getEmail() { return customer != null ? customer.getEmail() : ""; }
+        public String getPhone() { return customer != null ? customer.getPhone() : ""; }
     }
 
     // =========================================================================
@@ -215,7 +256,7 @@ public class LeadDuplicateService {
 
         // 3. Kiểm tra Tên công ty
         if (isSameCompany(a.getCompanyName(), b.getCompanyName())) {
-            reasons.add("Cùng Tên công ty");
+            reasons.add("Trùng Tên công ty");
         }
 
         return reasons;
@@ -367,18 +408,43 @@ public class LeadDuplicateService {
                 }
             }
 
-            String updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, company_name = ?, email = ?, phone = ?, " +
-                    "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            // Đối chiếu schema thực tế: bảng leads hỗ trợ cả 'company' và 'company_name'
+            boolean hasCompany = false;
+            boolean hasCompanyName = false;
+            try {
+                DatabaseMetaData meta = conn.getMetaData();
+                try (ResultSet rs = meta.getColumns(null, null, "leads", "company")) {
+                    if (rs.next()) hasCompany = true;
+                }
+                try (ResultSet rs = meta.getColumns(null, null, "leads", "company_name")) {
+                    if (rs.next()) hasCompanyName = true;
+                }
+            } catch (SQLException ignored) {}
+
+            String updatePrimarySql;
+            if (hasCompany && hasCompanyName) {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, company_name = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            } else if (hasCompanyName) {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company_name = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            } else {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            }
             try (PreparedStatement ps = conn.prepareStatement(updatePrimarySql)) {
-                ps.setString(1, finalName);
-                ps.setString(2, finalCompany);
-                ps.setString(3, finalCompany);
-                ps.setString(4, finalEmail);
-                ps.setString(5, finalPhone);
-                if (finalCampaign != null) ps.setInt(6, finalCampaign); else ps.setNull(6, Types.INTEGER);
-                if (finalCustomer != null) ps.setInt(7, finalCustomer); else ps.setNull(7, Types.INTEGER);
-                ps.setString(8, combinedNotes.isEmpty() ? null : combinedNotes);
-                ps.setInt(9, primaryId);
+                int p = 1;
+                ps.setString(p++, finalName);
+                ps.setString(p++, finalCompany);
+                if (hasCompany && hasCompanyName) {
+                    ps.setString(p++, finalCompany);
+                }
+                ps.setString(p++, finalEmail);
+                ps.setString(p++, finalPhone);
+                if (finalCampaign != null) ps.setInt(p++, finalCampaign); else ps.setNull(p++, Types.INTEGER);
+                if (finalCustomer != null) ps.setInt(p++, finalCustomer); else ps.setNull(p++, Types.INTEGER);
+                ps.setString(p++, combinedNotes.isEmpty() ? null : combinedNotes);
+                ps.setInt(p++, primaryId);
                 ps.executeUpdate();
             }
 
@@ -522,24 +588,32 @@ public class LeadDuplicateService {
     private LeadRecord mapLeadRow(ResultSet rs) throws SQLException {
         LeadRecord l = new LeadRecord();
         l.setLeadId(rs.getInt("lead_id"));
-        l.setFullName(rs.getString("full_name"));
-        String company = rs.getString("company_name");
-        if (company == null || company.trim().isEmpty()) {
-            try { company = rs.getString("company"); } catch (SQLException ignored) {}
+        String fullName = null;
+        try { fullName = rs.getString("full_name"); } catch (SQLException ignored) {}
+        if (fullName == null) {
+            try { fullName = rs.getString("contact_name"); } catch (SQLException ignored) {}
         }
-        l.setCompanyName(company);
-        l.setEmail(rs.getString("email"));
-        l.setPhone(rs.getString("phone"));
-        l.setStatus(rs.getString("status"));
+        l.setFullName(fullName != null ? fullName : "");
+
+        String comp = null;
+        try { comp = rs.getString("company"); } catch (SQLException ignored) {}
+        if (comp == null || comp.trim().isEmpty()) {
+            try { comp = rs.getString("company_name"); } catch (SQLException ignored) {}
+        }
+        l.setCompanyName(comp);
+
+        try { l.setEmail(rs.getString("email")); } catch (SQLException ignored) {}
+        try { l.setPhone(rs.getString("phone")); } catch (SQLException ignored) {}
+        try { l.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
         l.setOwnerId(rs.getObject("owner_id") != null ? rs.getInt("owner_id") : null);
         try { l.setOwnerName(rs.getString("owner_name")); } catch (SQLException ignored) {}
-        l.setCampaignId(rs.getObject("campaign_id") != null ? rs.getInt("campaign_id") : null);
+        try { l.setCampaignId(rs.getObject("campaign_id") != null ? rs.getInt("campaign_id") : null); } catch (SQLException ignored) {}
         try { l.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignored) {}
-        l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null);
+        try { l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null); } catch (SQLException ignored) {}
         try { l.setSource(rs.getString("source")); } catch (SQLException ignored) {}
         try { l.setNotes(rs.getString("notes")); } catch (SQLException ignored) {}
-        l.setCreatedAt(rs.getTimestamp("created_at"));
-        l.setUpdatedAt(rs.getTimestamp("updated_at"));
+        try { l.setCreatedAt(rs.getTimestamp("created_at")); } catch (SQLException ignored) {}
+        try { l.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
         return l;
     }
 
@@ -580,21 +654,27 @@ public class LeadDuplicateService {
         String norm1 = normalizeCompanyName(raw1);
         String norm2 = normalizeCompanyName(raw2);
         if (norm1.isEmpty() || norm2.isEmpty()) return false;
-        return norm1.equals(norm2);
+        if (norm1.equals(norm2)) return true;
+
+        if (norm1.length() >= 4 && norm2.length() >= 4) {
+            if (norm1.contains(norm2) || norm2.contains(norm1)) return true;
+        }
+        return false;
     }
 
     public String normalizeCompanyName(String name) {
         if (name == null) return "";
         String s = name.trim().toLowerCase();
         s = s.replaceAll("[.,\\-()\\[\\]\\\"\\']", " ");
+        s = s.replaceAll("\\s+", " ").trim();
 
         String[] stopWords = {
                 "công ty tnhh tm dv", "công ty tnhh tm", "công ty tnhh", "công ty cổ phần", "công ty cp", "công ty", "cty tnhh", "cty cp", "cty",
                 "tnhh tm dv", "tnhh tm", "tnhh", "cổ phần", "cp",
-                "co., ltd", "co. ltd", "co ltd", "ltd", "inc", "corp", "corporation", "gmbh", "pvt ltd"
+                "co ltd", "pvt ltd", "ltd", "inc", "corp", "corporation", "gmbh", "co"
         };
         for (String sw : stopWords) {
-            s = s.replace(sw, " ");
+            s = s.replaceAll("\\b" + sw + "\\b", " ");
         }
         return s.replaceAll("\\s+", " ").trim();
     }
@@ -602,5 +682,21 @@ public class LeadDuplicateService {
     private String escapeJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    // =========================================================================
+    // 7. TRA CỨU LỊCH SỬ GỘP LEAD (S4-04-AC-03)
+    // =========================================================================
+
+    public List<LeadMergeHistory> getMergeHistoryByLeadId(int leadId) {
+        return historyDAO.findByLeadId(leadId);
+    }
+
+    public LeadMergeHistory getMergeHistoryById(int mergeId) {
+        return historyDAO.findById(mergeId);
+    }
+
+    public List<LeadMergeHistory> getAllMergeHistories(int limit) {
+        return historyDAO.findAll(limit);
     }
 }

@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/update", "/leads/edit"})
+@WebServlet(urlPatterns = {"/leads/edit", "/leads/update"})
 public class LeadUpdateServlet extends HttpServlet {
 
     private LeadService leadService = new LeadService();
@@ -105,7 +105,7 @@ public class LeadUpdateServlet extends HttpServlet {
             String company = req.getParameter("company");
             String email = req.getParameter("email");
             String phone = req.getParameter("phone");
-            String sourceIdStr = req.getParameter("leadSourceId");
+            String sourceIdStr = req.getParameter("source") != null ? req.getParameter("source") : req.getParameter("leadSourceId");
             String status = req.getParameter("status");
             String rating = req.getParameter("rating");
             String industry = req.getParameter("industry");
@@ -115,7 +115,7 @@ public class LeadUpdateServlet extends HttpServlet {
             String country = req.getParameter("country");
             String zipCode = req.getParameter("zipCode");
             String ownerIdStr = req.getParameter("ownerId");
-            String notes = req.getParameter("notes");
+            String notes = req.getParameter("interest") != null ? req.getParameter("interest") : req.getParameter("notes");
             String campaignIdStr = req.getParameter("campaignId");
 
             LeadRequest request = new LeadRequest();

@@ -6,6 +6,7 @@ import com.crm.dto.LeadResponse;
 import com.crm.model.Account;
 import com.crm.model.LeadSavedFilter;
 import com.crm.service.LeadFilterService;
+import com.crm.util.JsonUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -49,7 +50,7 @@ public class LeadListServlet extends HttpServlet {
             if (isJson) {
                 resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 resp.setContentType("application/json; charset=UTF-8");
-                resp.getWriter().write("{\"status\":\"error\",\"message\":\"Vui lòng đăng nhập.\"}");
+                resp.getWriter().write(JsonUtil.errorResponse("Vui lòng đăng nhập."));
             } else {
                 resp.sendRedirect(req.getContextPath() + "/auth/login");
             }
@@ -162,7 +163,8 @@ public class LeadListServlet extends HttpServlet {
 
     private String buildLeadListJsonResponse(List<LeadResponse> leads, int total, int page, int pageSize, int totalPages) {
         StringBuilder sb = new StringBuilder("{");
-        sb.append("\"total\":").append(total)
+        sb.append("\"success\":true,")
+          .append("\"total\":").append(total)
           .append(",\"page\":").append(page)
           .append(",\"pageSize\":").append(pageSize)
           .append(",\"totalPages\":").append(totalPages)
@@ -171,26 +173,21 @@ public class LeadListServlet extends HttpServlet {
         for (int i = 0; i < leads.size(); i++) {
             LeadResponse l = leads.get(i);
             sb.append("{\"leadId\":").append(l.getLeadId())
-              .append(",\"fullName\":\"").append(escapeJson(l.getFullName())).append("\"")
-              .append(",\"company\":\"").append(escapeJson(l.getCompany())).append("\"")
-              .append(",\"email\":\"").append(escapeJson(l.getEmail())).append("\"")
-              .append(",\"phone\":\"").append(escapeJson(l.getPhone())).append("\"")
-              .append(",\"status\":\"").append(escapeJson(l.getStatus())).append("\"")
-              .append(",\"rating\":\"").append(escapeJson(l.getRating())).append("\"")
+              .append(",\"fullName\":\"").append(JsonUtil.escape(l.getFullName())).append("\"")
+              .append(",\"company\":\"").append(JsonUtil.escape(l.getCompany())).append("\"")
+              .append(",\"email\":\"").append(JsonUtil.escape(l.getEmail())).append("\"")
+              .append(",\"phone\":\"").append(JsonUtil.escape(l.getPhone())).append("\"")
+              .append(",\"status\":\"").append(JsonUtil.escape(l.getStatus())).append("\"")
+              .append(",\"rating\":\"").append(JsonUtil.escape(l.getRating())).append("\"")
               .append(",\"score\":").append(l.getScore())
-              .append(",\"classification\":\"").append(escapeJson(l.getClassification())).append("\"")
-              .append(",\"sourceName\":\"").append(escapeJson(l.getSourceName())).append("\"")
-              .append(",\"ownerName\":\"").append(escapeJson(l.getOwnerName())).append("\"")
+              .append(",\"classification\":\"").append(JsonUtil.escape(l.getClassification())).append("\"")
+              .append(",\"sourceName\":\"").append(JsonUtil.escape(l.getSourceName())).append("\"")
+              .append(",\"ownerName\":\"").append(JsonUtil.escape(l.getOwnerName())).append("\"")
               .append(",\"slaOverdue\":").append(l.isSlaOverdue())
               .append("}");
             if (i < leads.size() - 1) sb.append(",");
         }
         sb.append("]}");
         return sb.toString();
-    }
-
-    private String escapeJson(String input) {
-        if (input == null) return "";
-        return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }

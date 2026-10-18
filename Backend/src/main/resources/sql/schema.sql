@@ -169,23 +169,47 @@ CREATE TABLE IF NOT EXISTS competitors (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 12. BẢNG CƠ HỘI BÁN HÀNG (opportunities)
+-- 12. BẢNG CHIẾN DỊCH TIẾP THỊ (campaigns) - S4-03
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS campaigns (
+    campaign_id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_name VARCHAR(200) NOT NULL,
+    budget DECIMAL(15, 2) DEFAULT 0.00,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    channel VARCHAR(100) NULL,
+    description TEXT NULL,
+    status VARCHAR(50) DEFAULT 'PLANNING',
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_campaigns_status (status),
+    INDEX idx_campaigns_created_by (created_by),
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 13. BẢNG CƠ HỘI BÁN HÀNG (opportunities)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS opportunities (
     opportunity_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NULL,
+    campaign_id INT NULL,
     title VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) DEFAULT 0.00,
     owner_id INT NOT NULL,
     pipeline_stage_id INT NULL,
     probability DECIMAL(5, 2) DEFAULT 0.00,
     stage VARCHAR(50) NULL,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
     win_loss_reason_id INT NULL,
     competitor_id INT NULL,
     close_date TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_opportunities_campaign (campaign_id),
     FOREIGN KEY (owner_id) REFERENCES users(user_id),
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -456,9 +480,10 @@ CREATE TABLE IF NOT EXISTS lead_sources (
     source_id INT AUTO_INCREMENT PRIMARY KEY,
     source_code VARCHAR(50) NOT NULL UNIQUE,
     source_name VARCHAR(100) NOT NULL,
-    description VARCHAR(255) NULL,
+    description TEXT NULL,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_lead_sources_code (source_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -475,12 +500,15 @@ CREATE TABLE IF NOT EXISTS lead_web_forms (
     is_active TINYINT(1) DEFAULT 1,
     spam_protection_enabled TINYINT(1) DEFAULT 1,
     fields_json TEXT NULL,
+    lead_source_id INT NULL,
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_lead_web_forms_active (is_active),
+    INDEX idx_lead_web_forms_source (lead_source_id),
     INDEX idx_lead_web_forms_created_by (created_by),
-    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+    CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
+    CONSTRAINT fk_lead_web_forms_creator FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -494,17 +522,22 @@ CREATE TABLE IF NOT EXISTS leads (
     title VARCHAR(100) NULL,
     company VARCHAR(200) NULL,
     company_name VARCHAR(200) NULL,
+    contact_name VARCHAR(150) NULL,
     email VARCHAR(150) NULL,
     phone VARCHAR(50) NULL,
     lead_source_id INT NULL,
     web_form_id INT NULL,
     campaign_id INT NULL,
     customer_id INT NULL,
+    converted_customer_id INT NULL,
+    converted_contact_id INT NULL,
+    converted_opportunity_id INT NULL,
     source VARCHAR(100) NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'NEW',
     rating VARCHAR(20) DEFAULT 'WARM',
     score INT DEFAULT 0,
     industry VARCHAR(100) NULL,
+    region VARCHAR(100) NULL,
     address VARCHAR(255) NULL,
     city VARCHAR(100) NULL,
     state VARCHAR(100) NULL,
@@ -515,6 +548,8 @@ CREATE TABLE IF NOT EXISTS leads (
     assigned_at TIMESTAMP NULL,
     rejection_reason VARCHAR(255) NULL,
     sla_due_at TIMESTAMP NULL,
+    sla_due_date TIMESTAMP NULL,
+    sla_status VARCHAR(50) NULL,
     is_overdue TINYINT(1) DEFAULT 0,
     sla_breached TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -525,13 +560,15 @@ CREATE TABLE IF NOT EXISTS leads (
     INDEX idx_leads_web_form (web_form_id),
     INDEX idx_leads_campaign (campaign_id),
     INDEX idx_leads_customer (customer_id),
+    INDEX idx_leads_conv_customer (converted_customer_id),
     INDEX idx_leads_email (email),
     INDEX idx_leads_phone (phone),
-    FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
-    FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
-    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
-    FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
+    CONSTRAINT fk_leads_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_web_form FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_conv_customer FOREIGN KEY (converted_customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -547,10 +584,11 @@ CREATE TABLE IF NOT EXISTS lead_assignment_rules (
     team_id INT NULL,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_assign_rules_priority (priority),
     INDEX idx_assign_rules_active (is_active),
-    FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
+    CONSTRAINT fk_assign_rules_user FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_rules_team FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -561,13 +599,17 @@ CREATE TABLE IF NOT EXISTS lead_assignment_history (
     lead_id INT NOT NULL,
     rule_id INT NULL,
     assigned_to INT NULL,
-    status VARCHAR(50) NOT NULL,
+    performed_by INT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ASSIGNED',
+    reject_reason VARCHAR(255) NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_assign_hist_lead (lead_id),
     INDEX idx_assign_hist_user (assigned_to),
-    FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
-    FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
-    FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL
+    INDEX idx_assign_hist_performer (performed_by),
+    CONSTRAINT fk_assign_hist_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
+    CONSTRAINT fk_assign_hist_rule FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_hist_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_hist_performer FOREIGN KEY (performed_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -607,11 +649,26 @@ CREATE TABLE IF NOT EXISTS lead_merge_history (
     note TEXT NULL,
     INDEX idx_merge_primary (primary_lead_id),
     INDEX idx_merge_duplicate (duplicate_lead_id),
-    FOREIGN KEY (merged_by) REFERENCES users(user_id) ON DELETE SET NULL
+    CONSTRAINT fk_lead_merge_primary FOREIGN KEY (primary_lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
+    CONSTRAINT fk_lead_merge_user FOREIGN KEY (merged_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 37. BỔ SUNG CỘT VÀ KHÓA LIÊN BẢNG CHO MODULE LEAD & CHIẾN DỊCH (S4-03, S4-08)
+-- 37. BẢNG CẤU HÌNH THỜI HẠN PHẢN HỒI LEAD SLA (lead_sla_configs) - S4-07
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_sla_configs (
+    sla_id INT AUTO_INCREMENT PRIMARY KEY,
+    priority_level VARCHAR(50) NOT NULL,
+    response_time_minutes INT NOT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_sla_priority (priority_level),
+    INDEX idx_sla_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 38. BỔ SUNG CỘT VÀ KHÓA LIÊN BẢNG CHO MODULE LEAD & CHIẾN DỊCH (S4-03, S4-08)
 -- -----------------------------------------------------------------------------
 SET @exist_act_lead := (
     SELECT COUNT(*) FROM information_schema.COLUMNS 

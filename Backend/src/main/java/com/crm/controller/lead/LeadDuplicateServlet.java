@@ -64,6 +64,9 @@ public class LeadDuplicateServlet extends HttpServlet {
 
     private void handleDuplicates(HttpServletRequest req, HttpServletResponse resp, boolean isJson) throws ServletException, IOException {
         String leadIdStr = req.getParameter("leadId");
+        if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+            leadIdStr = req.getParameter("primaryId");
+        }
 
         if (leadIdStr != null && !leadIdStr.trim().isEmpty()) {
             try {
@@ -79,8 +82,11 @@ public class LeadDuplicateServlet extends HttpServlet {
                     out.flush();
                 } else {
                     req.setAttribute("lead", lead);
+                    req.setAttribute("currentLead", lead); // Cho duplicates.jsp
                     req.setAttribute("leadCandidates", leadCandidates);
+                    req.setAttribute("duplicateLeads", leadCandidates); // Cho duplicates.jsp
                     req.setAttribute("customerCandidates", customerCandidates);
+                    req.setAttribute("suggestedCustomers", customerCandidates); // Cho duplicates.jsp
                     req.getRequestDispatcher("/WEB-INF/views/leads/duplicates.jsp").forward(req, resp);
                 }
             } catch (NumberFormatException e) {

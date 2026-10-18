@@ -573,14 +573,20 @@ ON DUPLICATE KEY UPDATE
 -- 29. BẢNG NGUỒN GỐC LEAD (lead_sources) - S4-01, S4-02
 -- =============================================================================
 INSERT INTO lead_sources (source_id, source_code, source_name, description, is_active) VALUES
-(1, 'WEB_FORM',   'Biểu mẫu Website',     'Lead thu thập tự động từ biểu mẫu nhúng trên website', 1),
-(2, 'MANUAL',     'Tạo thủ công',         'Lead do nhân viên kinh doanh tự nhập tay vào CRM', 1),
-(3, 'EXCEL',      'Nhập từ file Excel',   'Lead import hàng loạt từ danh sách file bảng tính', 1),
-(4, 'FACEBOOK',   'Facebook Lead Ads',    'Chiến dịch quảng cáo thu thập lead từ mạng xã hội Facebook', 1),
-(5, 'GOOGLE_ADS', 'Google Ads Search',    'Khách hàng tìm kiếm từ khóa và click quảng cáo Google', 1),
-(6, 'HOTLINE',    'Tổng đài Hotline',     'Khách hàng gọi trực tiếp vào số hotline tư vấn', 1),
-(7, 'EVENT',      'Hội thảo / Sự kiện',   'Thu thập danh thiếp tại các sự kiện triển lãm xúc tiến thương mại', 1),
-(8, 'PARTNER',    'Đối tác giới thiệu',   'Nguồn giới thiệu từ mạng lưới đối tác chiến lược', 1)
+(1, 'WEB_FORM',       'Biểu mẫu Website',            'Lead thu thập tự động từ biểu mẫu nhúng trên website', 1),
+(2, 'MANUAL',         'Tạo thủ công',                'Lead do nhân viên kinh doanh tự nhập tay vào CRM', 1),
+(3, 'EXCEL',          'Nhập từ file Excel',          'Lead import hàng loạt từ danh sách file bảng tính', 1),
+(4, 'FACEBOOK',       'Facebook Lead Ads',           'Chiến dịch quảng cáo thu thập lead từ mạng xã hội Facebook', 1),
+(5, 'GOOGLE_ADS',     'Google Ads Search',           'Khách hàng tìm kiếm từ khóa và click quảng cáo Google', 1),
+(6, 'HOTLINE',        'Tổng đài Hotline',            'Khách hàng gọi trực tiếp vào số hotline tư vấn', 1),
+(7, 'EVENT',          'Hội thảo / Sự kiện',          'Thu thập danh thiếp tại các sự kiện triển lãm xúc tiến thương mại', 1),
+(8, 'PARTNER',        'Đối tác giới thiệu',          'Nguồn giới thiệu từ mạng lưới đối tác chiến lược', 1),
+(9, 'IMPORT_EXCEL',   'Nhập từ Excel (Hệ thống)',    'Lead được import định kỳ từ file Excel dữ liệu', 1),
+(10, 'DIRECT',        'Trực tiếp / Khách đến',      'Khách hàng tự tìm đến văn phòng hoặc liên hệ trực tiếp', 1),
+(11, 'REFERRAL',      'Giới thiệu',                 'Khách hàng được đối tác hoặc khách hàng cũ giới thiệu', 1),
+(12, 'COLD_CALL',     'Gọi điện thoại (Telesales)', 'Nguồn tiếp cận qua chiến dịch gọi điện', 1),
+(13, 'EMAIL_CAMPAIGN','Chiến dịch Email',           'Lead phản hồi qua các chiến dịch tiếp thị qua email', 1),
+(14, 'SOCIAL_MEDIA',  'Mạng xã hội',                'Lead từ Facebook, LinkedIn, Zalo...', 1)
 ON DUPLICATE KEY UPDATE 
     source_name = VALUES(source_name), 
     description = VALUES(description), 
@@ -589,18 +595,19 @@ ON DUPLICATE KEY UPDATE
 -- =============================================================================
 -- 30. BẢNG BIỂU MẪU WEB FORM (lead_web_forms) - S4-01
 -- =============================================================================
-INSERT INTO lead_web_forms (form_id, form_name, description, embed_code, allowed_domains, success_redirect_url, is_active, spam_protection_enabled, fields_json, created_by) VALUES
+INSERT INTO lead_web_forms (form_id, form_name, description, embed_code, allowed_domains, success_redirect_url, is_active, spam_protection_enabled, fields_json, lead_source_id, created_by) VALUES
 (1, 'Form Liên hệ tư vấn Website', 'Biểu mẫu tư vấn đặt tại trang chủ frostlinecrm.com', 
  '<!-- Frostline CRM Web Form ID: 1 -->\n<iframe src=\"http://localhost:8080/crm-backend-1.0.0/leads/public-form?formId=1\" width=\"100%\" height=\"480\" frameborder=\"0\"></iframe>', 
- 'frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/thank-you.html', 1, 1, 
- '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"phone\",\"label\":\"Số điện thoại\",\"required\":true}]', 6),
+ '*, frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/thank-you.html', 1, 1, 
+ '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"phone\",\"label\":\"Số điện thoại\",\"required\":true}]', 1, 6),
 (2, 'Form Đăng ký Dùng thử 30 ngày', 'Biểu mẫu đăng ký trial trên landing page giải pháp CRM', 
  '<!-- Frostline CRM Web Form ID: 2 -->\n<iframe src=\"http://localhost:8080/crm-backend-1.0.0/leads/public-form?formId=2\" width=\"100%\" height=\"520\" frameborder=\"0\"></iframe>', 
- 'landing.frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/welcome.html', 1, 1, 
- '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"company\",\"label\":\"Tên công ty\",\"required\":true}]', 6)
+ '*, landing.frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/welcome.html', 1, 1, 
+ '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"company\",\"label\":\"Tên công ty\",\"required\":true}]', 1, 6)
 ON DUPLICATE KEY UPDATE 
     form_name = VALUES(form_name), 
     description = VALUES(description), 
+    lead_source_id = VALUES(lead_source_id),
     is_active = VALUES(is_active);
 
 -- =============================================================================

@@ -13,6 +13,13 @@ public class LeadDAO {
         return getLeads(0, 1000, null, null, null, null);
     }
 
+    /**
+     * Lấy toàn bộ Lead không giới hạn số lượng (dùng cho tính toán lại điểm tự động).
+     */
+    public List<Lead> getAllLeadsUnlimited() {
+        return getLeads(0, 0, null, null, null, null);
+    }
+
     public List<Lead> getLeads(int offset, int limit, String search, String status, String rating, Integer ownerId) {
         List<Lead> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
@@ -188,9 +195,9 @@ public class LeadDAO {
     }
 
     public boolean createLead(Lead lead) {
-        String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, email, phone, " +
+        String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, company_name, contact_name, email, phone, " +
                      "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes, campaign_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setLeadStatementParameters(ps, lead);
@@ -210,13 +217,13 @@ public class LeadDAO {
     }
 
     public boolean updateLead(Lead lead) {
-        String sql = "UPDATE leads SET full_name = ?, first_name = ?, last_name = ?, title = ?, company = ?, email = ?, phone = ?, " +
+        String sql = "UPDATE leads SET full_name = ?, first_name = ?, last_name = ?, title = ?, company = ?, company_name = ?, contact_name = ?, email = ?, phone = ?, " +
                      "lead_source_id = ?, web_form_id = ?, status = ?, rating = ?, score = ?, industry = ?, address = ?, city = ?, state = ?, " +
                      "country = ?, zip_code = ?, owner_id = ?, notes = ?, campaign_id = ? WHERE lead_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             setLeadStatementParameters(ps, lead);
-            ps.setInt(22, lead.getLeadId());
+            ps.setInt(24, lead.getLeadId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -238,9 +245,9 @@ public class LeadDAO {
 
     public int batchCreateLeads(List<Lead> leads) {
         if (leads == null || leads.isEmpty()) return 0;
-        String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, email, phone, " +
+        String sql = "INSERT INTO leads (full_name, first_name, last_name, title, company, company_name, contact_name, email, phone, " +
                      "lead_source_id, web_form_id, status, rating, score, industry, address, city, state, country, zip_code, owner_id, notes, campaign_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         int count = 0;
         Connection conn = null;
         try {
@@ -276,32 +283,34 @@ public class LeadDAO {
         ps.setString(3, lead.getLastName());
         ps.setString(4, lead.getTitle());
         ps.setString(5, lead.getCompany());
-        ps.setString(6, lead.getEmail());
-        ps.setString(7, lead.getPhone());
+        ps.setString(6, lead.getCompany()); // company_name
+        ps.setString(7, lead.getFullName()); // contact_name
+        ps.setString(8, lead.getEmail());
+        ps.setString(9, lead.getPhone());
 
-        if (lead.getLeadSourceId() != null) ps.setInt(8, lead.getLeadSourceId());
-        else ps.setNull(8, Types.INTEGER);
+        if (lead.getLeadSourceId() != null) ps.setInt(10, lead.getLeadSourceId());
+        else ps.setNull(10, Types.INTEGER);
 
-        if (lead.getWebFormId() != null) ps.setInt(9, lead.getWebFormId());
-        else ps.setNull(9, Types.INTEGER);
+        if (lead.getWebFormId() != null) ps.setInt(11, lead.getWebFormId());
+        else ps.setNull(11, Types.INTEGER);
 
-        ps.setString(10, lead.getStatus() != null ? lead.getStatus() : "NEW");
-        ps.setString(11, lead.getRating() != null ? lead.getRating() : "WARM");
-        ps.setInt(12, lead.getScore());
-        ps.setString(13, lead.getIndustry());
-        ps.setString(14, lead.getAddress());
-        ps.setString(15, lead.getCity());
-        ps.setString(16, lead.getState());
-        ps.setString(17, lead.getCountry());
-        ps.setString(18, lead.getZipCode());
+        ps.setString(12, lead.getStatus() != null ? lead.getStatus() : "NEW");
+        ps.setString(13, lead.getRating() != null ? lead.getRating() : "WARM");
+        ps.setInt(14, lead.getScore());
+        ps.setString(15, lead.getIndustry());
+        ps.setString(16, lead.getAddress());
+        ps.setString(17, lead.getCity());
+        ps.setString(18, lead.getState());
+        ps.setString(19, lead.getCountry());
+        ps.setString(20, lead.getZipCode());
 
-        if (lead.getOwnerId() != null) ps.setInt(19, lead.getOwnerId());
-        else ps.setNull(19, Types.INTEGER);
-
-        ps.setString(20, lead.getNotes());
-
-        if (lead.getCampaignId() != null && lead.getCampaignId() > 0) ps.setInt(21, lead.getCampaignId());
+        if (lead.getOwnerId() != null) ps.setInt(21, lead.getOwnerId());
         else ps.setNull(21, Types.INTEGER);
+
+        ps.setString(22, lead.getNotes());
+
+        if (lead.getCampaignId() != null && lead.getCampaignId() > 0) ps.setInt(23, lead.getCampaignId());
+        else ps.setNull(23, Types.INTEGER);
     }
 
     private Lead mapResultSet(ResultSet rs) throws SQLException {

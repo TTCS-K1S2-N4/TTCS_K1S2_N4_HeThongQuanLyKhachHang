@@ -96,7 +96,7 @@ public class CampaignListServlet extends HttpServlet {
             }
 
             req.setAttribute("campaigns", campaigns);
-            req.setAttribute("list", campaigns);
+            req.setAttribute("list", campaigns); // Tương thích FE02 list.jsp
             req.setAttribute("total", total);
             req.setAttribute("totalCampaigns", total);
             req.setAttribute("activeCampaigns", activeCount);

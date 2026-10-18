@@ -52,7 +52,7 @@ public class Campaign {
         this.campaignId = campaignId;
     }
 
-    // Alias cho campaignId để tương thích JSP EL (${item.id}, ${campaign.id})
+    // Alias cho campaignId để tương thích JSP EL và FE (${item.id}, ${campaign.id})
     public int getId() {
         return campaignId;
     }

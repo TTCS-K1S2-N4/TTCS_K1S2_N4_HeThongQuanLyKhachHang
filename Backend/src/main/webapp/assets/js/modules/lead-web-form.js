@@ -54,25 +54,165 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 2. Chống double-submit cho Public Lead Form
+    // 2. Chống double-submit, Validate và Gửi Lead qua AJAX cho Public Lead Form
     const publicLeadForm = document.getElementById("publicLeadForm");
+    const clientAlertBox = document.getElementById("clientAlertBox");
+    const clientAlertMsg = document.getElementById("clientAlertMsg");
+    const serverAlertBox = document.getElementById("serverAlertBox");
+    const ajaxSuccessBox = document.getElementById("ajaxSuccessBox");
+    const ajaxSuccessMsg = document.getElementById("ajaxSuccessMsg");
+    const btnSubmitAnother = document.getElementById("btnSubmitAnother");
+
+    function showClientError(message, targetInput) {
+        if (serverAlertBox) serverAlertBox.style.display = "none";
+        if (clientAlertBox && clientAlertMsg) {
+            clientAlertMsg.textContent = message;
+            clientAlertBox.style.display = "flex";
+            clientAlertBox.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+            alert(message);
+        }
+        if (targetInput && typeof targetInput.focus === "function") {
+            targetInput.focus();
+        }
+    }
+
+    function hideClientError() {
+        if (clientAlertBox) clientAlertBox.style.display = "none";
+        if (serverAlertBox) serverAlertBox.style.display = "none";
+    }
+
     if (publicLeadForm) {
+        const btnSubmit = document.getElementById("btnSubmitLead") || publicLeadForm.querySelector('button[type="submit"]');
+        const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : "<span>Gửi thông tin tư vấn</span>";
+
+        function resetSubmitButton() {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.removeAttribute("aria-disabled");
+                btnSubmit.innerHTML = originalBtnHtml;
+            }
+        }
+
         publicLeadForm.addEventListener("submit", function(e) {
-            // Nếu form có native HTML validation không hợp lệ, không disable nút
-            if (typeof this.checkValidity === "function" && !this.checkValidity()) {
+            e.preventDefault(); // Kiểm soát toàn bộ quá trình qua AJAX để có trải nghiệm tối ưu
+
+            // Nếu đang trong quá trình gửi, ngăn chặn click đúp
+            if (btnSubmit && btnSubmit.disabled) {
                 return;
             }
 
-            const btnSubmit = this.querySelector('button[type="submit"]');
+            hideClientError();
+
+            // Client-side Validation cơ bản
+            const fullNameInput = document.getElementById("fullName");
+            const emailInput = document.getElementById("email");
+            const phoneInput = document.getElementById("phone");
+
+            const fullName = fullNameInput ? fullNameInput.value.trim() : "";
+            const email = emailInput ? emailInput.value.trim() : "";
+            const phone = phoneInput ? phoneInput.value.trim() : "";
+
+            if (!fullName) {
+                showClientError("Vui lòng nhập Họ và tên của bạn.", fullNameInput);
+                return;
+            }
+
+            if (!email) {
+                showClientError("Vui lòng nhập Email liên hệ.", emailInput);
+                return;
+            }
+
+            const emailRegex = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                showClientError("Địa chỉ email không đúng định dạng (VD: example@domain.com).", emailInput);
+                return;
+            }
+
+            if (!phone) {
+                showClientError("Vui lòng nhập Số điện thoại.", phoneInput);
+                return;
+            }
+
+            const cleanPhone = phone.replace(/[\s\-\.]/g, "");
+            const phoneRegex = /^(0|\+?84)[35789][0-9]{8}$/;
+            if (!phoneRegex.test(cleanPhone)) {
+                showClientError("Số điện thoại không hợp lệ. Vui lòng nhập 10 chữ số (VD: 0912345678).", phoneInput);
+                return;
+            }
+
+            // Chuyển nút sang trạng thái đang xử lý
             if (btnSubmit) {
-                if (btnSubmit.disabled) {
-                    e.preventDefault(); // Ngăn submit lặp nếu nút đã bị vô hiệu hóa
-                    return;
-                }
                 btnSubmit.disabled = true;
                 btnSubmit.setAttribute("aria-disabled", "true");
-                btnSubmit.textContent = "Đang gửi...";
+                btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Đang gửi thông tin...</span>';
             }
+
+            // Đóng gói dữ liệu form
+            const formData = new FormData(publicLeadForm);
+            const searchParams = new URLSearchParams();
+            for (const pair of formData.entries()) {
+                searchParams.append(pair[0], pair[1]);
+            }
+
+            // Gửi dữ liệu thật tới endpoint backend
+            fetch(publicLeadForm.action, {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: searchParams.toString()
+            })
+            .then(async function(response) {
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    // Phản hồi không phải JSON
+                }
+
+                if (response.ok && data && data.status === "success") {
+                    // Nếu biểu mẫu có cấu hình trang chuyển hướng thành công
+                    if (data.redirectUrl && data.redirectUrl.trim() !== "") {
+                        window.location.href = data.redirectUrl;
+                        return;
+                    }
+
+                    // Chuyển sang giao diện thông báo thành công
+                    publicLeadForm.style.display = "none";
+                    if (ajaxSuccessBox) {
+                        if (ajaxSuccessMsg && data.message) {
+                            ajaxSuccessMsg.textContent = data.message;
+                        }
+                        ajaxSuccessBox.style.display = "block";
+                        ajaxSuccessBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                } else {
+                    const message = (data && data.message)
+                        ? data.message
+                        : ("Lỗi (" + response.status + "): Không thể gửi thông tin. Vui lòng thử lại sau.");
+                    showClientError(message);
+                    resetSubmitButton();
+                }
+            })
+            .catch(function(err) {
+                showClientError("Không thể kết nối đến máy chủ CRM. Vui lòng kiểm tra kết nối mạng và thử lại.");
+                resetSubmitButton();
+            });
         });
+
+        // Xử lý nút "Gửi thêm phản hồi khác"
+        if (btnSubmitAnother) {
+            btnSubmitAnother.addEventListener("click", function() {
+                publicLeadForm.reset();
+                hideClientError();
+                resetSubmitButton();
+                if (ajaxSuccessBox) ajaxSuccessBox.style.display = "none";
+                publicLeadForm.style.display = "block";
+                publicLeadForm.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        }
     }
 });

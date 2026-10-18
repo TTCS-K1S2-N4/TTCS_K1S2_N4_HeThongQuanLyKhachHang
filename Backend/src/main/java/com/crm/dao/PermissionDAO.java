@@ -90,7 +90,7 @@ public class PermissionDAO {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi truy vấn DataScope cho roleId = " + roleId + ", module = " + module, e);
         }
-        return DataScope.MY; // Thu hẹp an toàn về MY nếu gặp sự cố
+        return null;
     }
 
     /**
@@ -302,7 +302,7 @@ public class PermissionDAO {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Lỗi khi truy vấn DataScope cho roleIds và module = " + module, e);
         }
-        return DataScope.MY;
+        return null;
     }
 
     public List<MenuItem> findMenuItemsByRoleIds(List<Integer> roleIds) {

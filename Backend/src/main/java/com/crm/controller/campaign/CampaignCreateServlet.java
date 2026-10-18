@@ -76,6 +76,7 @@ public class CampaignCreateServlet extends HttpServlet {
                 resp.getWriter().write("{\"status\":\"error\",\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
             } else {
                 req.setAttribute("errorMessage", e.getMessage());
+                req.setAttribute("error", e.getMessage());
                 req.setAttribute("requestDto", requestDto);
                 req.setAttribute("campaign", requestDto);
                 req.setAttribute("channels", campaignService.getAvailableChannels());
@@ -88,6 +89,7 @@ public class CampaignCreateServlet extends HttpServlet {
                 resp.getWriter().write("{\"status\":\"error\",\"message\":\"Đã xảy ra lỗi hệ thống khi tạo chiến dịch.\"}");
             } else {
                 req.setAttribute("errorMessage", "Đã xảy ra lỗi hệ thống khi tạo chiến dịch.");
+                req.setAttribute("error", "Đã xảy ra lỗi hệ thống khi tạo chiến dịch.");
                 req.setAttribute("requestDto", requestDto);
                 req.setAttribute("campaign", requestDto);
                 req.setAttribute("channels", campaignService.getAvailableChannels());

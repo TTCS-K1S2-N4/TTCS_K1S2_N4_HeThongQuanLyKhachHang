@@ -57,11 +57,14 @@ CREATE TABLE IF NOT EXISTS lead_web_forms (
     is_active TINYINT(1) DEFAULT 1,
     spam_protection_enabled TINYINT(1) DEFAULT 1,
     fields_json TEXT NULL,
+    lead_source_id INT NULL,
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_lead_web_forms_active (is_active),
+    INDEX idx_lead_web_forms_source (lead_source_id),
     INDEX idx_lead_web_forms_created_by (created_by),
+    CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
     CONSTRAINT fk_lead_web_forms_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -76,12 +79,16 @@ CREATE TABLE IF NOT EXISTS leads (
     title VARCHAR(100) NULL,
     company VARCHAR(200) NULL,
     company_name VARCHAR(200) NULL,
+    contact_name VARCHAR(150) NULL,
     email VARCHAR(150) NULL,
     phone VARCHAR(50) NULL,
     lead_source_id INT NULL,
     web_form_id INT NULL,
     campaign_id INT NULL,
     customer_id INT NULL,
+    converted_customer_id INT NULL,
+    converted_contact_id INT NULL,
+    converted_opportunity_id INT NULL,
     source VARCHAR(100) NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'NEW',
     rating VARCHAR(20) DEFAULT 'WARM',
@@ -97,6 +104,8 @@ CREATE TABLE IF NOT EXISTS leads (
     assigned_at TIMESTAMP NULL,
     rejection_reason VARCHAR(255) NULL,
     sla_due_at TIMESTAMP NULL,
+    sla_due_date TIMESTAMP NULL,
+    sla_status VARCHAR(50) NULL,
     is_overdue TINYINT(1) DEFAULT 0,
     sla_breached TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -107,12 +116,14 @@ CREATE TABLE IF NOT EXISTS leads (
     INDEX idx_leads_web_form (web_form_id),
     INDEX idx_leads_campaign (campaign_id),
     INDEX idx_leads_customer (customer_id),
+    INDEX idx_leads_conv_customer (converted_customer_id),
     INDEX idx_leads_email (email),
     INDEX idx_leads_phone (phone),
     CONSTRAINT fk_leads_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_web_form FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_conv_customer FOREIGN KEY (converted_customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -137,6 +148,18 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'company_name') THEN
         ALTER TABLE leads ADD COLUMN company_name VARCHAR(200) NULL AFTER company;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'contact_name') THEN
+        ALTER TABLE leads ADD COLUMN contact_name VARCHAR(150) NULL AFTER company_name;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'converted_customer_id') THEN
+        ALTER TABLE leads ADD COLUMN converted_customer_id INT NULL AFTER customer_id;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'converted_contact_id') THEN
+        ALTER TABLE leads ADD COLUMN converted_contact_id INT NULL AFTER converted_customer_id;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'converted_opportunity_id') THEN
+        ALTER TABLE leads ADD COLUMN converted_opportunity_id INT NULL AFTER converted_contact_id;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leads' AND COLUMN_NAME = 'lead_source_id') THEN
         ALTER TABLE leads ADD COLUMN lead_source_id INT NULL AFTER phone;
@@ -218,13 +241,17 @@ CREATE TABLE IF NOT EXISTS lead_assignment_history (
     lead_id INT NOT NULL,
     rule_id INT NULL,
     assigned_to INT NULL,
-    status VARCHAR(50) NOT NULL,
+    performed_by INT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ASSIGNED',
+    reject_reason VARCHAR(255) NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_assign_hist_lead (lead_id),
     INDEX idx_assign_hist_user (assigned_to),
+    INDEX idx_assign_hist_performer (performed_by),
     CONSTRAINT fk_assign_hist_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
     CONSTRAINT fk_assign_hist_rule FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
-    CONSTRAINT fk_assign_hist_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL
+    CONSTRAINT fk_assign_hist_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_hist_performer FOREIGN KEY (performed_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -268,7 +295,21 @@ CREATE TABLE IF NOT EXISTS lead_merge_history (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 10. LIÊN KẾT LIÊN BẢNG BỔ SUNG (ACTIVITIES & OPPORTUNITIES) - S4-03, S4-08
+-- 10. BẢNG CẤU HÌNH THỜI HẠN PHẢN HỒI LEAD SLA (lead_sla_configs) - S4-07
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_sla_configs (
+    sla_id INT AUTO_INCREMENT PRIMARY KEY,
+    priority_level VARCHAR(50) NOT NULL,
+    response_time_minutes INT NOT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_sla_priority (priority_level),
+    INDEX idx_sla_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 11. LIÊN KẾT LIÊN BẢNG BỔ SUNG (ACTIVITIES & OPPORTUNITIES) - S4-03, S4-08
 -- -----------------------------------------------------------------------------
 -- Bổ sung cột lead_id cho activities (nếu chưa có)
 SET @exist_act_lead := (

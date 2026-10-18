@@ -263,4 +263,14 @@ public class Lead {
     public void setCampaignName(String campaignName) {
         this.campaignName = campaignName;
     }
+
+    // JSP / DTO Compatibility Aliases
+    public String getInterest() {
+        return notes;
+    }
+
+    public String getSource() {
+        return sourceName;
+    }
 }
+

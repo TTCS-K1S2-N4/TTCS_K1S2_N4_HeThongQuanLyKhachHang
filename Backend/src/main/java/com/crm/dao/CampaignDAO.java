@@ -74,6 +74,8 @@ public class CampaignDAO {
             ensureColumnExists(conn, "opportunities", "status", "VARCHAR(50) DEFAULT 'ACTIVE'");
             ensureColumnExists(conn, "leads", "campaign_id", "INT NULL");
             ensureColumnExists(conn, "leads", "customer_id", "INT NULL");
+            ensureColumnExists(conn, "leads", "company", "VARCHAR(200) NULL");
+            ensureColumnExists(conn, "leads", "company_name", "VARCHAR(200) NULL");
 
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Không thể kết nối DB trong ensureSchema của CampaignDAO: " + e.getMessage());
@@ -294,8 +296,8 @@ public class CampaignDAO {
         if (c == null || c.getCampaignId() <= 0) return;
         int id = c.getCampaignId();
 
-        // 1. Số Lead thuộc chiến dịch
-        String leadCountSql = "SELECT COUNT(*) FROM leads WHERE campaign_id = ?";
+        // 1. Số Lead thuộc chiến dịch (chỉ tính Lead hợp lệ, không tính Lead đã gộp MERGED)
+        String leadCountSql = "SELECT COUNT(*) FROM leads WHERE campaign_id = ? AND (status IS NULL OR status != 'MERGED')";
         try (PreparedStatement ps = conn.prepareStatement(leadCountSql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -308,10 +310,19 @@ public class CampaignDAO {
         }
 
         // 2. Số Cơ hội và Doanh thu đã chốt (closedValue)
-        String oppMetricsSql = "SELECT COUNT(*) AS total_opp, " +
-                "COALESCE(SUM(CASE WHEN (UPPER(stage) LIKE '%WON%' OR UPPER(status) LIKE '%WON%') " +
-                "AND UPPER(stage) NOT LIKE '%LOST%' AND UPPER(status) NOT LIKE '%LOST%' THEN amount ELSE 0 END), 0) AS closed_val " +
-                "FROM opportunities WHERE campaign_id = ?";
+        // Kiểm tra cơ hội Won: liên kết với pipeline_stages (nếu có) hoặc kiểm tra stage_name, stage, status, hoặc pipeline_stage_id = 5
+        String oppMetricsSql = "SELECT COUNT(o.opportunity_id) AS total_opp, " +
+                "COALESCE(SUM(CASE WHEN (UPPER(COALESCE(ps.stage_name, '')) LIKE '%WON%' " +
+                "OR UPPER(COALESCE(o.stage, '')) LIKE '%WON%' " +
+                "OR UPPER(COALESCE(o.status, '')) LIKE '%WON%' " +
+                "OR o.pipeline_stage_id = 5) " +
+                "AND UPPER(COALESCE(ps.stage_name, '')) NOT LIKE '%LOST%' " +
+                "AND UPPER(COALESCE(o.stage, '')) NOT LIKE '%LOST%' " +
+                "AND UPPER(COALESCE(o.status, '')) NOT LIKE '%LOST%' " +
+                "THEN o.amount ELSE 0 END), 0) AS closed_val " +
+                "FROM opportunities o " +
+                "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
+                "WHERE o.campaign_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(oppMetricsSql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -322,8 +333,24 @@ public class CampaignDAO {
                 }
             }
         } catch (SQLException e) {
-            c.setOpportunityCount(0);
-            c.setClosedValue(BigDecimal.ZERO);
+            // Fallback nếu opportunities chưa có cột pipeline_stage_id hoặc bảng pipeline_stages không tồn tại
+            String fallbackSql = "SELECT COUNT(*) AS total_opp, " +
+                    "COALESCE(SUM(CASE WHEN (UPPER(COALESCE(stage, '')) LIKE '%WON%' OR UPPER(COALESCE(status, '')) LIKE '%WON%') " +
+                    "AND UPPER(COALESCE(stage, '')) NOT LIKE '%LOST%' AND UPPER(COALESCE(status, '')) NOT LIKE '%LOST%' THEN amount ELSE 0 END), 0) AS closed_val " +
+                    "FROM opportunities WHERE campaign_id = ?";
+            try (PreparedStatement psFallback = conn.prepareStatement(fallbackSql)) {
+                psFallback.setInt(1, id);
+                try (ResultSet rs = psFallback.executeQuery()) {
+                    if (rs.next()) {
+                        c.setOpportunityCount(rs.getInt("total_opp"));
+                        BigDecimal closedVal = rs.getBigDecimal("closed_val");
+                        c.setClosedValue(closedVal != null ? closedVal : BigDecimal.ZERO);
+                    }
+                }
+            } catch (SQLException ex) {
+                c.setOpportunityCount(0);
+                c.setClosedValue(BigDecimal.ZERO);
+            }
         }
     }
 

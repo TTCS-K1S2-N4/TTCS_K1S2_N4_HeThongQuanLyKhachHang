@@ -71,6 +71,30 @@ public final class LeadSpamProtectionUtil {
         if (text == null || text.trim().isEmpty()) return false;
         String lower = text.toLowerCase();
         return lower.contains("casino") || lower.contains("viagra") || lower.contains("crypto-loan")
-                || lower.contains("buy-followers") || lower.contains("http://bit.ly") || lower.contains("https://bit.ly");
+                || lower.contains("buy-followers") || lower.contains("http://bit.ly") || lower.contains("https://bit.ly")
+                || lower.contains("seo-backlink") || lower.contains("free-bitcoin") || lower.contains("dating-club")
+                || lower.contains("<script") || lower.contains("javascript:") || lower.contains("onload=");
+    }
+
+    /**
+     * Kiểm tra địa chỉ email có dấu hiệu spam bot hoặc tên miền rác tạm thời (disposable email).
+     */
+    public static boolean isSuspiciousEmail(String email) {
+        if (email == null || email.trim().isEmpty()) return false;
+        String trimmed = email.trim().toLowerCase();
+        if (!trimmed.matches("^[a-za0-9+_.-]+@[a-za0-9.-]+\\.[a-za0-9]{2,}$")) {
+            return true;
+        }
+        String[] suspiciousDomains = {
+            "mailinator.com", "tempmail.com", "10minutemail.com", "guerrillamail.com",
+            "throwawaymail.com", "yopmail.com", "sharklasers.com", "dispostable.com"
+        };
+        for (String domain : suspiciousDomains) {
+            if (trimmed.endsWith("@" + domain)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
+

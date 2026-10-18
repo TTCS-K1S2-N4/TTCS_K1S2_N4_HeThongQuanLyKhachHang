@@ -146,6 +146,21 @@
 
                             <div class="webform-form-grid">
                                 <div class="webform-input-group">
+                                    <label class="webform-label" for="leadSourceId">
+                                        Nguồn Lead liên kết
+                                    </label>
+                                    <select id="leadSourceId" name="leadSourceId" class="webform-input" style="height: 42px; background-color: #fff; cursor: pointer;">
+                                        <option value="">-- Mặc định (Biểu mẫu Website) --</option>
+                                        <c:forEach var="src" items="${sources}">
+                                            <option value="${src.sourceId}" <c:if test="${param.leadSourceId == src.sourceId}">selected</c:if>>
+                                                <c:out value="${src.sourceName}"/>
+                                            </option>
+                                        </c:forEach>
+                                    </select>
+                                    <span class="webform-hint">Nguồn Lead gán tự động khi khách gửi dữ liệu qua form này.</span>
+                                </div>
+
+                                <div class="webform-input-group">
                                     <label class="webform-label" for="successRedirectUrl">
                                         URL chuyển hướng sau khi gửi (Tùy chọn)
                                     </label>
@@ -154,7 +169,9 @@
                                            placeholder="VD: https://company.com/cam-on.html">
                                     <span class="webform-hint">Trang khách hàng sẽ được điều hướng đến sau khi gửi form thành công.</span>
                                 </div>
+                            </div>
 
+                            <div class="webform-form-grid">
                                 <div class="webform-input-group">
                                     <label class="webform-label">
                                         Cấu hình an toàn & Trạng thái
@@ -224,6 +241,7 @@
                                             <tr>
                                                 <th style="width: 70px; text-align: center;">ID</th>
                                                 <th>Tên biểu mẫu & Mô tả</th>
+                                                <th style="width: 160px;">Nguồn Lead</th>
                                                 <th>Tên miền cho phép nhúng</th>
                                                 <th style="width: 140px; text-align: center;">Trạng thái</th>
                                                 <th style="width: 220px; text-align: center;">Thao tác</th>
@@ -244,6 +262,21 @@
                                                                 <c:out value="${f.description}"/>
                                                             </div>
                                                         </c:if>
+                                                    </td>
+                                                    <td>
+                                                        <c:choose>
+                                                            <c:when test="${not empty f.sourceName}">
+                                                                <span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.76rem; font-weight: 600; padding: 4px 8px; display: inline-flex; align-items: center; gap: 5px;">
+                                                                    <i class="fa-solid fa-bullhorn" style="font-size: 0.72rem;"></i>
+                                                                    <c:out value="${f.sourceName}"/>
+                                                                </span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span style="color: #94a3b8; font-size: 0.78rem; font-style: italic;">
+                                                                    Mặc định
+                                                                </span>
+                                                            </c:otherwise>
+                                                        </c:choose>
                                                     </td>
                                                     <td>
                                                         <c:choose>

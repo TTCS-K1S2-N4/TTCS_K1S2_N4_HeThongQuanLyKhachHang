@@ -8,6 +8,7 @@ public class LeadWebFormRequest {
     private boolean active = true;
     private boolean spamProtectionEnabled = true;
     private String fieldsJson;
+    private Integer leadSourceId;
 
     public LeadWebFormRequest() {}
 
@@ -66,4 +67,13 @@ public class LeadWebFormRequest {
     public void setFieldsJson(String fieldsJson) {
         this.fieldsJson = fieldsJson;
     }
+
+    public Integer getLeadSourceId() {
+        return leadSourceId;
+    }
+
+    public void setLeadSourceId(Integer leadSourceId) {
+        this.leadSourceId = leadSourceId;
+    }
 }
+

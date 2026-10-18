@@ -52,8 +52,12 @@ public class LeadFilterService {
      */
     public List<Integer> getEffectiveOwnerIds(LeadFilterRequest request, int userId, List<Integer> roleIds) {
         List<Integer> roles = (roleIds != null && !roleIds.isEmpty()) ? roleIds : Collections.singletonList(0);
-        // Kiểm tra phân quyền truy cập phạm vi (ACCOUNT / LEAD)
-        List<Integer> accessibleOwnerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roles, "ACCOUNT");
+        // Kiểm tra phân quyền truy cập phạm vi (LEAD)
+        List<Integer> accessibleOwnerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roles, "LEAD");
+        if (accessibleOwnerIds == null || accessibleOwnerIds.isEmpty()) {
+            // Fallback sang ACCOUNT nếu cấu hình quyền dùng chung module ACCOUNT
+            accessibleOwnerIds = permissionService.getAccessibleAccountIdsForRoles(userId, roles, "ACCOUNT");
+        }
 
         // Nếu người dùng chọn xem Lead "Của tôi" (MY)
         if (request != null && ("MY".equalsIgnoreCase(request.getOwnerScope()) || (request.getOwnerId() != null && request.getOwnerId() == -1))) {
@@ -189,11 +193,20 @@ public class LeadFilterService {
 
         // 3. Lọc Nguồn Lead (Source)
         if (request.getSource() != null && !request.getSource().trim().isEmpty()) {
-            sql.append("AND (s.source_name = ? OR l.lead_source_id = ?) ");
-            params.add(request.getSource().trim());
-            int srcId = 0;
-            try { srcId = Integer.parseInt(request.getSource().trim()); } catch (NumberFormatException ignore) {}
-            params.add(srcId);
+            String src = request.getSource().trim();
+            Integer srcId = null;
+            try {
+                srcId = Integer.parseInt(src);
+            } catch (NumberFormatException ignore) {}
+
+            if (srcId != null && srcId > 0) {
+                sql.append("AND (l.lead_source_id = ? OR s.source_name = ?) ");
+                params.add(srcId);
+                params.add(src);
+            } else {
+                sql.append("AND s.source_name = ? ");
+                params.add(src);
+            }
         }
 
         // 4. Lọc Phân loại Nóng / Ấm / Lạnh (Classification / Rating)
@@ -205,25 +218,46 @@ public class LeadFilterService {
 
         // 5. Ràng buộc Người phụ trách theo Data Scope
         if (effectiveOwnerIds != null) {
-            if (effectiveOwnerIds.size() == 1) {
-                sql.append("AND l.owner_id = ? ");
-                params.add(effectiveOwnerIds.get(0));
-            } else if (!effectiveOwnerIds.isEmpty()) {
-                sql.append("AND l.owner_id IN (");
-                for (int i = 0; i < effectiveOwnerIds.size(); i++) {
-                    sql.append(i > 0 ? ",?" : "?");
-                    params.add(effectiveOwnerIds.get(i));
+            boolean isExplicit = (request.getOwnerId() != null && request.getOwnerId() > 0)
+                    || "MY".equalsIgnoreCase(request.getOwnerScope())
+                    || (request.getOwnerId() != null && request.getOwnerId() == -1);
+
+            if (isExplicit) {
+                if (effectiveOwnerIds.size() == 1) {
+                    sql.append("AND l.owner_id = ? ");
+                    params.add(effectiveOwnerIds.get(0));
+                } else if (!effectiveOwnerIds.isEmpty()) {
+                    sql.append("AND l.owner_id IN (");
+                    for (int i = 0; i < effectiveOwnerIds.size(); i++) {
+                        sql.append(i > 0 ? ",?" : "?");
+                        params.add(effectiveOwnerIds.get(i));
+                    }
+                    sql.append(") ");
                 }
-                sql.append(") ");
+            } else {
+                // Khi không lọc đích danh 1 người phụ trách cụ thể:
+                // - Vai trò có phạm vi TEAM (Trưởng nhóm, effectiveOwnerIds.size() > 1): Có quyền xem Lead của nhóm và Lead chưa phân công để phân công công việc
+                // - Vai trò có phạm vi MY (Nhân viên, effectiveOwnerIds.size() == 1): Chỉ có quyền xem Lead do chính mình phụ trách. Không nới lỏng xem Lead chưa phân công
+                if (effectiveOwnerIds.size() > 1) {
+                    sql.append("AND (l.owner_id IN (");
+                    for (int i = 0; i < effectiveOwnerIds.size(); i++) {
+                        sql.append(i > 0 ? ",?" : "?");
+                        params.add(effectiveOwnerIds.get(i));
+                    }
+                    sql.append(") OR l.owner_id IS NULL) ");
+                } else if (effectiveOwnerIds.size() == 1) {
+                    sql.append("AND l.owner_id = ? ");
+                    params.add(effectiveOwnerIds.get(0));
+                }
             }
         }
 
         // 6. Lọc khoảng thời gian tạo (From Date - To Date)
-        if (request.getFromDate() != null && !request.getFromDate().trim().isEmpty()) {
+        if (request.getFromDate() != null && request.getFromDate().trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
             sql.append("AND l.created_at >= ? ");
             params.add(request.getFromDate().trim() + " 00:00:00");
         }
-        if (request.getToDate() != null && !request.getToDate().trim().isEmpty()) {
+        if (request.getToDate() != null && request.getToDate().trim().matches("^\\d{4}-\\d{2}-\\d{2}$")) {
             sql.append("AND l.created_at <= ? ");
             params.add(request.getToDate().trim() + " 23:59:59");
         }

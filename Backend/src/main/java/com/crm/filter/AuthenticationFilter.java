@@ -87,9 +87,11 @@ public class AuthenticationFilter implements Filter {
         if (path.equals("/auth/login") || path.equals("/login") ||
             path.equals("/auth/logout") || path.equals("/logout") ||
             path.equals("/auth/forgot-password") || path.equals("/forgot-password") ||
-            path.equals("/auth/activate") || path.equals("/activate") ||
-            path.equals("/leads/public-form") ||
-            path.equals("/leads/import/template")) {
+            path.startsWith("/leads/public-form") ||
+            path.startsWith("/public/") ||
+            path.startsWith("/leads/public") ||
+            path.equals("/leads/import/template") ||
+            path.equals("/leads/import/sample")) {
             return true;
         }
 

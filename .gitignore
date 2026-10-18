@@ -8,10 +8,13 @@ target/
 .idea/
 *.iml
 .DS_Store
+
 # Local session and credential files
 Backend/cookies.txt
+*.local.properties
+db.local.properties
+Backend/src/main/resources/db.local.properties
 
 # Temporary audit artifacts
 Backend/scratch/
-# Temporary local test scripts
-Backend/scratch/
+scratch/

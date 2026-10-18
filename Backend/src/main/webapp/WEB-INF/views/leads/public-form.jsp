@@ -365,6 +365,41 @@
             transform: translateY(-1px);
         }
 
+        /* Alert Notifications */
+        .form-alert {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .form-alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        .form-alert-success {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+
+        .form-alert i {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @keyframes popIn {
             0% { transform: scale(0.6); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -391,7 +426,7 @@
                 </div>
             </c:when>
 
-            <%-- Trạng thái gửi thành công --%>
+            <%-- Trạng thái gửi thành công (Khi Redirect GET) --%>
             <c:when test="${not empty successMessage}">
                 <div class="form-card">
                     <div class="status-box">
@@ -425,6 +460,36 @@
                                 <c:out value="${webForm.description}"/>
                             </p>
                         </c:if>
+                    </div>
+
+                    <!-- Vùng hiển thị thông báo lỗi từ Server (nếu form submit POST thường) -->
+                    <c:if test="${not empty errorMessage}">
+                        <div class="form-alert form-alert-error" id="serverAlertBox" role="alert">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span><c:out value="${errorMessage}"/></span>
+                        </div>
+                    </c:if>
+
+                    <!-- Vùng hiển thị thông báo lỗi Realtime từ JavaScript / AJAX -->
+                    <div class="form-alert form-alert-error" id="clientAlertBox" role="alert" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="clientAlertMsg"></span>
+                    </div>
+
+                    <!-- Khung thông báo thành công khi gửi bằng AJAX (thay thế giao diện form) -->
+                    <div id="ajaxSuccessBox" style="display: none;">
+                        <div class="status-box">
+                            <div class="status-icon-box status-icon-success">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <h2 class="status-title">Gửi thông tin thành công!</h2>
+                            <p class="status-desc" id="ajaxSuccessMsg">
+                                Cảm ơn bạn đã gửi thông tin! Chúng tôi sẽ liên hệ lại sớm nhất.
+                            </p>
+                            <button type="button" class="btn-status-action" id="btnSubmitAnother">
+                                <i class="fa-solid fa-rotate-left"></i> Gửi thêm phản hồi khác
+                            </button>
+                        </div>
                     </div>
 
                     <form action="${pageContext.request.contextPath}/leads/public-form" method="post" id="publicLeadForm">
