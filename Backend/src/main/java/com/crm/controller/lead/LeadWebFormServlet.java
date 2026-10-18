@@ -15,7 +15,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/leads/web-forms", "/lead-forms"})
+@WebServlet(urlPatterns = {"/leads/web-forms", "/leads/web-form", "/lead-forms"})
 public class LeadWebFormServlet extends HttpServlet {
 
     private LeadWebFormService webFormService = new LeadWebFormService();
@@ -56,6 +56,9 @@ public class LeadWebFormServlet extends HttpServlet {
                 if (isJson) {
                     resp.setContentType("application/json; charset=UTF-8");
                     resp.getWriter().write(buildFormJson(form));
+                    return;
+                } else if ("embed".equalsIgnoreCase(req.getParameter("action"))) {
+                    resp.sendRedirect(req.getContextPath() + "/leads/web-forms/embed-code?formId=" + formId);
                     return;
                 } else {
                     req.setAttribute("webForm", form);
@@ -125,6 +128,7 @@ public class LeadWebFormServlet extends HttpServlet {
         }
 
         String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath();
+        String redirectBase = req.getRequestURI().contains("lead-forms") ? "/lead-forms" : "/leads/web-forms";
 
         try {
             if (formIdStr != null && !formIdStr.trim().isEmpty()) {
@@ -135,10 +139,19 @@ public class LeadWebFormServlet extends HttpServlet {
                         resp.setContentType("application/json; charset=UTF-8");
                         resp.getWriter().write("{\"status\":\"success\",\"message\":\"Cập nhật biểu mẫu thành công.\"}");
                     } else {
-                        resp.sendRedirect(req.getContextPath() + "/lead-forms?success=true");
+                        resp.sendRedirect(req.getContextPath() + redirectBase + "?success=true");
                     }
                 } else {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể cập nhật biểu mẫu.");
+                    if (isJson) {
+                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        resp.setContentType("application/json; charset=UTF-8");
+                        resp.getWriter().write("{\"status\":\"error\",\"message\":\"Không thể cập nhật biểu mẫu.\"}");
+                    } else {
+                        req.setAttribute("error", "Không thể cập nhật biểu mẫu.");
+                        req.setAttribute("sources", sourceDAO.getActiveSources());
+                        req.setAttribute("webForms", webFormService.getAllWebForms());
+                        req.getRequestDispatcher("/WEB-INF/views/leads/web-form.jsp").forward(req, resp);
+                    }
                 }
             } else {
                 LeadWebForm created = webFormService.createWebForm(formReq, userId, baseUrl);
@@ -147,10 +160,19 @@ public class LeadWebFormServlet extends HttpServlet {
                         resp.setContentType("application/json; charset=UTF-8");
                         resp.getWriter().write("{\"status\":\"success\",\"message\":\"Tạo biểu mẫu mới thành công.\",\"formId\":" + created.getFormId() + "}");
                     } else {
-                        resp.sendRedirect(req.getContextPath() + "/lead-forms?success=true");
+                        resp.sendRedirect(req.getContextPath() + redirectBase + "?created=true");
                     }
                 } else {
-                    resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Không thể tạo biểu mẫu.");
+                    if (isJson) {
+                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        resp.setContentType("application/json; charset=UTF-8");
+                        resp.getWriter().write("{\"status\":\"error\",\"message\":\"Không thể tạo biểu mẫu.\"}");
+                    } else {
+                        req.setAttribute("error", "Không thể tạo biểu mẫu. Vui lòng kiểm tra lại thông tin.");
+                        req.setAttribute("sources", sourceDAO.getActiveSources());
+                        req.setAttribute("webForms", webFormService.getAllWebForms());
+                        req.getRequestDispatcher("/WEB-INF/views/leads/web-form.jsp").forward(req, resp);
+                    }
                 }
             }
         } catch (Exception e) {

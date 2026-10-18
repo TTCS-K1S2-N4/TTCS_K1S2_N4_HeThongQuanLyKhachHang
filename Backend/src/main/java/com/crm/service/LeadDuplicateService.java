@@ -50,6 +50,7 @@ public class LeadDuplicateService {
         private String campaignName;
         private Integer customerId;
         private String source;
+        private String notes;
         private Timestamp createdAt;
         private Timestamp updatedAt;
 
@@ -97,6 +98,8 @@ public class LeadDuplicateService {
         public void setCustomerId(Integer customerId) { this.customerId = customerId; }
         public String getSource() { return source; }
         public void setSource(String source) { this.source = source; }
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
         public Timestamp getCreatedAt() { return createdAt; }
         public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
         public Timestamp getUpdatedAt() { return updatedAt; }
@@ -365,6 +368,12 @@ public class LeadDuplicateService {
                 throw new IllegalStateException("Một trong hai Lead đã được gộp trước đó.");
             }
 
+            if ("CONVERTED".equalsIgnoreCase(duplicateLead.getStatus())) {
+                LOGGER.warning("Lead phụ đã ở trạng thái CONVERTED, không thể gộp.");
+                conn.rollback();
+                throw new IllegalStateException("Lead #" + duplicateId + " đã được chuyển đổi thành Khách hàng, không thể gộp vào Lead khác.");
+            }
+
             // 1. Chuyển giao các hoạt động (activities) từ Lead trùng sang Lead chính để bảo toàn lịch sử
             reassignActivities(primaryId, duplicateId, conn);
 
@@ -380,31 +389,62 @@ public class LeadDuplicateService {
             Integer finalCampaign = primaryLead.getCampaignId() != null ? primaryLead.getCampaignId() : duplicateLead.getCampaignId();
             Integer finalCustomer = primaryLead.getCustomerId() != null ? primaryLead.getCustomerId() : duplicateLead.getCustomerId();
 
-            // Đối chiếu schema thực tế: bảng leads dùng tên cột là 'company' (có fallback nếu môi trường dùng company_name)
-            String companyCol = "company";
+            // Kết hợp ghi chú (notes) của Lead phụ vào Lead chính để bảo toàn toàn bộ nội dung
+            String primaryNotes = primaryLead.getNotes();
+            String dupNotes = duplicateLead.getNotes();
+            String combinedNotes = primaryNotes != null ? primaryNotes.trim() : "";
+            if (dupNotes != null && !dupNotes.trim().isEmpty()) {
+                if (combinedNotes.isEmpty()) {
+                    combinedNotes = "[Nội dung từ Lead #" + duplicateId + "]: " + dupNotes.trim();
+                } else {
+                    combinedNotes += "\n\n[Nội dung từ Lead #" + duplicateId + "]: " + dupNotes.trim();
+                }
+            }
+            if (req.getNote() != null && !req.getNote().trim().isEmpty()) {
+                if (combinedNotes.isEmpty()) {
+                    combinedNotes = "[Ghi chú gộp]: " + req.getNote().trim();
+                } else {
+                    combinedNotes += "\n[Ghi chú gộp]: " + req.getNote().trim();
+                }
+            }
+
+            // Đối chiếu schema thực tế: bảng leads hỗ trợ cả 'company' và 'company_name'
+            boolean hasCompany = false;
+            boolean hasCompanyName = false;
             try {
                 DatabaseMetaData meta = conn.getMetaData();
                 try (ResultSet rs = meta.getColumns(null, null, "leads", "company")) {
-                    if (!rs.next()) {
-                        try (ResultSet rs2 = meta.getColumns(null, null, "leads", "company_name")) {
-                            if (rs2.next()) {
-                                companyCol = "company_name";
-                            }
-                        }
-                    }
+                    if (rs.next()) hasCompany = true;
+                }
+                try (ResultSet rs = meta.getColumns(null, null, "leads", "company_name")) {
+                    if (rs.next()) hasCompanyName = true;
                 }
             } catch (SQLException ignored) {}
 
-            String updatePrimarySql = "UPDATE leads SET full_name = ?, " + companyCol + " = ?, email = ?, phone = ?, " +
-                    "campaign_id = ?, customer_id = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            String updatePrimarySql;
+            if (hasCompany && hasCompanyName) {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, company_name = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            } else if (hasCompanyName) {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company_name = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            } else {
+                updatePrimarySql = "UPDATE leads SET full_name = ?, company = ?, email = ?, phone = ?, " +
+                        "campaign_id = ?, customer_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE lead_id = ?";
+            }
             try (PreparedStatement ps = conn.prepareStatement(updatePrimarySql)) {
-                ps.setString(1, finalName);
-                ps.setString(2, finalCompany);
-                ps.setString(3, finalEmail);
-                ps.setString(4, finalPhone);
-                if (finalCampaign != null) ps.setInt(5, finalCampaign); else ps.setNull(5, Types.INTEGER);
-                if (finalCustomer != null) ps.setInt(6, finalCustomer); else ps.setNull(6, Types.INTEGER);
-                ps.setInt(7, primaryId);
+                int p = 1;
+                ps.setString(p++, finalName);
+                ps.setString(p++, finalCompany);
+                if (hasCompany && hasCompanyName) {
+                    ps.setString(p++, finalCompany);
+                }
+                ps.setString(p++, finalEmail);
+                ps.setString(p++, finalPhone);
+                if (finalCampaign != null) ps.setInt(p++, finalCampaign); else ps.setNull(p++, Types.INTEGER);
+                if (finalCustomer != null) ps.setInt(p++, finalCustomer); else ps.setNull(p++, Types.INTEGER);
+                ps.setString(p++, combinedNotes.isEmpty() ? null : combinedNotes);
+                ps.setInt(p++, primaryId);
                 ps.executeUpdate();
             }
 
@@ -460,22 +500,14 @@ public class LeadDuplicateService {
         }
     }
 
-    private void reassignActivities(int primaryId, int duplicateId, Connection conn) {
-        String updateActivitiesSql = "UPDATE activities SET owner_id = owner_id WHERE 1=0"; // fallback
-        try {
-            // Kiểm tra xem bảng activities có cột lead_id không
-            DatabaseMetaData meta = conn.getMetaData();
-            try (ResultSet rs = meta.getColumns(null, null, "activities", "lead_id")) {
-                if (rs.next()) {
-                    updateActivitiesSql = "UPDATE activities SET lead_id = ? WHERE lead_id = ?";
-                    try (PreparedStatement ps = conn.prepareStatement(updateActivitiesSql)) {
-                        ps.setInt(1, primaryId);
-                        ps.setInt(2, duplicateId);
-                        ps.executeUpdate();
-                    }
-                }
-            }
-        } catch (SQLException ignored) {}
+    private void reassignActivities(int primaryId, int duplicateId, Connection conn) throws SQLException {
+        String updateActivitiesSql = "UPDATE activities SET lead_id = ? WHERE lead_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(updateActivitiesSql)) {
+            ps.setInt(1, primaryId);
+            ps.setInt(2, duplicateId);
+            int affected = ps.executeUpdate();
+            LOGGER.info("Đã chuyển " + affected + " activities từ Lead #" + duplicateId + " sang Lead #" + primaryId);
+        }
     }
 
     // =========================================================================
@@ -556,7 +588,6 @@ public class LeadDuplicateService {
     private LeadRecord mapLeadRow(ResultSet rs) throws SQLException {
         LeadRecord l = new LeadRecord();
         l.setLeadId(rs.getInt("lead_id"));
-
         String fullName = null;
         try { fullName = rs.getString("full_name"); } catch (SQLException ignored) {}
         if (fullName == null) {
@@ -566,7 +597,7 @@ public class LeadDuplicateService {
 
         String comp = null;
         try { comp = rs.getString("company"); } catch (SQLException ignored) {}
-        if (comp == null) {
+        if (comp == null || comp.trim().isEmpty()) {
             try { comp = rs.getString("company_name"); } catch (SQLException ignored) {}
         }
         l.setCompanyName(comp);
@@ -580,6 +611,7 @@ public class LeadDuplicateService {
         try { l.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignored) {}
         try { l.setCustomerId(rs.getObject("customer_id") != null ? rs.getInt("customer_id") : null); } catch (SQLException ignored) {}
         try { l.setSource(rs.getString("source")); } catch (SQLException ignored) {}
+        try { l.setNotes(rs.getString("notes")); } catch (SQLException ignored) {}
         try { l.setCreatedAt(rs.getTimestamp("created_at")); } catch (SQLException ignored) {}
         try { l.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
         return l;

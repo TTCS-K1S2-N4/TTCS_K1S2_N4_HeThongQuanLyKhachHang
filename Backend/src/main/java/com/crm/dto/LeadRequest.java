@@ -21,6 +21,7 @@ public class LeadRequest {
     private String zipCode;
     private Integer ownerId;
     private String notes;
+    private Integer campaignId;
 
     public LeadRequest() {}
 
@@ -182,5 +183,13 @@ public class LeadRequest {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Integer getCampaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(Integer campaignId) {
+        this.campaignId = campaignId;
     }
 }

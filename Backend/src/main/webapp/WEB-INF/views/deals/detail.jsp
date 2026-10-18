@@ -84,6 +84,24 @@
                                     </c:choose>
                                 </p>
                             </div>
+                            <div class="form-group">
+                                <label style="font-size: 13px; color: var(--color-text-secondary); font-weight: 600;">CHIẾN DỊCH MARKETING</label>
+                                <p style="font-size: 15px; margin-top: 4px;">
+                                    <c:choose>
+                                        <c:when test="${not empty opportunity.campaignName}">
+                                            <a href="${pageContext.request.contextPath}/campaigns/detail?id=${opportunity.campaignId}" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">
+                                                <i class="fas fa-bullhorn"></i> <c:out value="${opportunity.campaignName}"/>
+                                            </a>
+                                        </c:when>
+                                        <c:when test="${not empty opportunity.campaignId and opportunity.campaignId > 0}">
+                                            <a href="${pageContext.request.contextPath}/campaigns/detail?id=${opportunity.campaignId}" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">
+                                                <i class="fas fa-bullhorn"></i> Chiến dịch #${opportunity.campaignId}
+                                            </a>
+                                        </c:when>
+                                        <c:otherwise><span style="color: #94a3b8;">Không gắn chiến dịch</span></c:otherwise>
+                                    </c:choose>
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Won / Loss Reason & Competitor Info (S2-10) -->

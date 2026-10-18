@@ -18,6 +18,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -60,11 +61,13 @@ public class LeadImportServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+        String servletPath = req.getServletPath();
         String uri = req.getRequestURI();
         String action = req.getParameter("action");
 
         // 1. Endpoint tải file Excel mẫu (.xlsx) gồm đúng 10 cột
-        if (uri.endsWith("/template") || uri.endsWith("/sample") || "template".equalsIgnoreCase(action) || "sample".equalsIgnoreCase(action)) {
+        if (uri.endsWith("/template") || uri.endsWith("/sample") || "/leads/import/template".equals(servletPath)
+                || "template".equalsIgnoreCase(action) || "sample".equalsIgnoreCase(action)) {
             downloadExcelTemplate(resp);
             return;
         }
@@ -85,12 +88,19 @@ public class LeadImportServlet extends HttpServlet {
 
         List<LeadSource> sources = sourceDAO.getActiveSources();
         req.setAttribute("sources", sources);
+        try {
+            req.setAttribute("campaigns", new com.crm.dao.CampaignDAO().findAll(null, "ACTIVE", null, null, null, null, 1, 100));
+        } catch (Exception ignore) {}
 
         if (req.getParameter("imported") != null) {
             req.setAttribute("successMessage", "Nhập thành công " + req.getParameter("imported") + " Lead vào hệ thống!");
         }
 
         req.getRequestDispatcher("/WEB-INF/views/leads/import.jsp").forward(req, resp);
+    }
+
+    private void handleDownloadTemplate(HttpServletResponse resp) throws IOException {
+        downloadExcelTemplate(resp);
     }
 
     @Override
@@ -144,16 +154,35 @@ public class LeadImportServlet extends HttpServlet {
             return;
         }
 
-        String globalSourceStr = req.getParameter("source");
-        Integer globalSourceId = null;
-        if (globalSourceStr != null && !globalSourceStr.trim().isEmpty()) {
+        String defaultSourceIdStr = req.getParameter("defaultSourceId");
+        if (defaultSourceIdStr == null || defaultSourceIdStr.trim().isEmpty()) {
+            defaultSourceIdStr = req.getParameter("source");
+        }
+        Integer defaultSourceId = null;
+        if (defaultSourceIdStr != null && !defaultSourceIdStr.trim().isEmpty()) {
             try {
-                globalSourceId = Integer.parseInt(globalSourceStr.trim());
+                defaultSourceId = Integer.parseInt(defaultSourceIdStr.trim());
+            } catch (NumberFormatException ignore) {}
+        }
+
+        String campaignIdStr = req.getParameter("campaignId");
+        Integer campaignId = null;
+        if (campaignIdStr != null && !campaignIdStr.trim().isEmpty()) {
+            try {
+                int cid = Integer.parseInt(campaignIdStr.trim());
+                if (cid > 0 && new com.crm.dao.CampaignDAO().findById(cid) != null) {
+                    campaignId = cid;
+                }
             } catch (NumberFormatException ignore) {}
         }
 
         try (InputStream is = filePart.getInputStream()) {
-            ImportResult result = importService.parseAndValidateExcel(is, userId, globalSourceId);
+            ImportResult result = importService.parseAndValidateExcel(is, userId, defaultSourceId);
+            if (campaignId != null) {
+                for (LeadImportRequest item : result.getDetails()) {
+                    item.setCampaignId(campaignId);
+                }
+            }
 
             String importToken = UUID.randomUUID().toString();
             session.setAttribute("pendingLeadImportRequests", result.getDetails());
@@ -179,12 +208,25 @@ public class LeadImportServlet extends HttpServlet {
                 req.setAttribute("invalidCount", result.getFailedRows() + result.getDuplicateRows());
                 req.setAttribute("previewRows", previewRows);
                 req.setAttribute("importToken", importToken);
+
+                req.setAttribute("importResult", result);
                 req.setAttribute("sources", sourceDAO.getActiveSources());
+                try {
+                    req.setAttribute("campaigns", new com.crm.dao.CampaignDAO().findAll(null, "ACTIVE", null, null, null, null, 1, 100));
+                } catch (Exception ignore) {}
+                req.setAttribute("selectedSourceId", defaultSourceId);
+                req.setAttribute("selectedCampaignId", campaignId);
                 req.getRequestDispatcher("/WEB-INF/views/leads/import.jsp").forward(req, resp);
             }
         } catch (Exception e) {
-            sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Lỗi đọc file Excel: " + e.getMessage());
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            if (msg.contains("unsupported file type") || msg.contains("Can't open workbook") || msg.contains("Invalid header signature") || msg.contains("OLE2")) {
+                sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_BAD_REQUEST,
+                        "Tệp tải lên không phải là định dạng Excel chuẩn (.xlsx, .xls) hoặc tệp đã bị lỗi/hư hỏng. Vui lòng bấm nút 'Tải file mẫu' ở góc trên để tải tệp mẫu chuẩn và nhập lại dữ liệu.");
+            } else {
+                sendErrorResponse(resp, req, isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        "Lỗi đọc file Excel: " + msg);
+            }
         }
     }
 
@@ -364,4 +406,3 @@ public class LeadImportServlet extends HttpServlet {
         return input.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 }
-

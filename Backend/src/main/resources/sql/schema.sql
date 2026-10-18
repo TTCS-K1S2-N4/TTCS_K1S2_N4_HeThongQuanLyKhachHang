@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS opportunities (
     pipeline_stage_id INT NULL,
     probability DECIMAL(5, 2) DEFAULT 0.00,
     stage VARCHAR(50) NULL,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
     win_loss_reason_id INT NULL,
     competitor_id INT NULL,
     close_date TIMESTAMP NULL,
@@ -453,42 +454,65 @@ CREATE TABLE IF NOT EXISTS attachments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 28. BẢNG NGUỒN LEAD (lead_sources) - S401 / S402
+-- 28. BẢNG CHIẾN DỊCH TIẾP THỊ / MARKETING (campaigns) - S4-03
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS campaigns (
+    campaign_id INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_name VARCHAR(200) NOT NULL,
+    budget DECIMAL(15, 2) DEFAULT 0.00,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    channel VARCHAR(100) NULL,
+    description TEXT NULL,
+    status VARCHAR(50) DEFAULT 'PLANNING',
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_campaigns_status (status),
+    INDEX idx_campaigns_created_by (created_by),
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 29. BẢNG NGUỒN GỐC LEAD (lead_sources) - S4-01, S4-02
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lead_sources (
     source_id INT AUTO_INCREMENT PRIMARY KEY,
     source_code VARCHAR(50) NOT NULL UNIQUE,
     source_name VARCHAR(100) NOT NULL,
-    description TEXT,
+    description TEXT NULL,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_lead_sources_code (source_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 29. BẢNG BIỂU MẪU THU THẬP LEAD TRÊN WEB (lead_web_forms) - S401
+-- 30. BẢNG BIỂU MẪU WEB FORM THU THẬP LEAD (lead_web_forms) - S4-01
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lead_web_forms (
     form_id INT AUTO_INCREMENT PRIMARY KEY,
     form_name VARCHAR(150) NOT NULL,
-    description TEXT,
-    embed_code TEXT,
-    allowed_domains VARCHAR(255),
-    success_redirect_url VARCHAR(255),
+    description TEXT NULL,
+    embed_code TEXT NULL,
+    allowed_domains VARCHAR(255) NULL,
+    success_redirect_url VARCHAR(255) NULL,
     is_active TINYINT(1) DEFAULT 1,
     spam_protection_enabled TINYINT(1) DEFAULT 1,
-    fields_json TEXT,
+    fields_json TEXT NULL,
     lead_source_id INT NULL,
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_lead_web_forms_active (is_active),
     INDEX idx_lead_web_forms_source (lead_source_id),
+    INDEX idx_lead_web_forms_created_by (created_by),
     CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
     CONSTRAINT fk_lead_web_forms_creator FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 30. BẢNG ĐẦU MỐI KINH DOANH / TIỀM NĂNG (leads) - S401 / S402
+-- 31. BẢNG KHÁCH HÀNG TIỀM NĂNG (leads) - TRỌNG TÂM S4-01..S4-09
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS leads (
     lead_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -497,34 +521,123 @@ CREATE TABLE IF NOT EXISTS leads (
     last_name VARCHAR(100) NULL,
     title VARCHAR(100) NULL,
     company VARCHAR(200) NULL,
+    company_name VARCHAR(200) NULL,
+    contact_name VARCHAR(150) NULL,
     email VARCHAR(150) NULL,
-    phone VARCHAR(20) NULL,
+    phone VARCHAR(50) NULL,
     lead_source_id INT NULL,
     web_form_id INT NULL,
-    status VARCHAR(30) NOT NULL DEFAULT 'NEW',
-    rating VARCHAR(30) DEFAULT 'WARM',
+    campaign_id INT NULL,
+    customer_id INT NULL,
+    converted_customer_id INT NULL,
+    converted_contact_id INT NULL,
+    converted_opportunity_id INT NULL,
+    source VARCHAR(100) NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'NEW',
+    rating VARCHAR(20) DEFAULT 'WARM',
     score INT DEFAULT 0,
     industry VARCHAR(100) NULL,
-    address TEXT NULL,
+    region VARCHAR(100) NULL,
+    address VARCHAR(255) NULL,
     city VARCHAR(100) NULL,
     state VARCHAR(100) NULL,
     country VARCHAR(100) NULL,
     zip_code VARCHAR(20) NULL,
     owner_id INT NULL,
     notes TEXT NULL,
+    assigned_at TIMESTAMP NULL,
+    rejection_reason VARCHAR(255) NULL,
+    sla_due_at TIMESTAMP NULL,
+    sla_due_date TIMESTAMP NULL,
+    sla_status VARCHAR(50) NULL,
+    is_overdue TINYINT(1) DEFAULT 0,
+    sla_breached TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_leads_status (status),
     INDEX idx_leads_owner (owner_id),
+    INDEX idx_leads_source_id (lead_source_id),
+    INDEX idx_leads_web_form (web_form_id),
+    INDEX idx_leads_campaign (campaign_id),
+    INDEX idx_leads_customer (customer_id),
+    INDEX idx_leads_conv_customer (converted_customer_id),
     INDEX idx_leads_email (email),
     INDEX idx_leads_phone (phone),
     CONSTRAINT fk_leads_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_web_form FOREIGN KEY (web_form_id) REFERENCES lead_web_forms(form_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
+    CONSTRAINT fk_leads_conv_customer FOREIGN KEY (converted_customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
     CONSTRAINT fk_leads_owner FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 31. BẢNG LỊCH SỬ GỘP LEAD (lead_merge_history)
+-- 32. BẢNG QUY TẮC PHÂN BỔ LEAD (lead_assignment_rules) - S4-06
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_assignment_rules (
+    rule_id INT AUTO_INCREMENT PRIMARY KEY,
+    rule_name VARCHAR(150) NULL,
+    priority INT NOT NULL DEFAULT 1,
+    criterion VARCHAR(50) NOT NULL,
+    criterion_value VARCHAR(100) NULL,
+    assignee_id INT NULL,
+    team_id INT NULL,
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_assign_rules_priority (priority),
+    INDEX idx_assign_rules_active (is_active),
+    CONSTRAINT fk_assign_rules_user FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_rules_team FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 33. BẢNG LỊCH SỬ PHÂN BỔ LEAD (lead_assignment_history) - S4-06, S4-07
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_assignment_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    lead_id INT NOT NULL,
+    rule_id INT NULL,
+    assigned_to INT NULL,
+    performed_by INT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ASSIGNED',
+    reject_reason VARCHAR(255) NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_assign_hist_lead (lead_id),
+    INDEX idx_assign_hist_user (assigned_to),
+    INDEX idx_assign_hist_performer (performed_by),
+    CONSTRAINT fk_assign_hist_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
+    CONSTRAINT fk_assign_hist_rule FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_hist_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_assign_hist_performer FOREIGN KEY (performed_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 34. BẢNG QUY TẮC CHẤM ĐIỂM LEAD (lead_scoring_rules) - S4-05
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_scoring_rules (
+    rule_id INT AUTO_INCREMENT PRIMARY KEY,
+    criterion VARCHAR(50) NOT NULL,
+    operator VARCHAR(20) NOT NULL DEFAULT 'EQUALS',
+    condition_value VARCHAR(255) NOT NULL,
+    score INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_scoring_rules_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 35. BẢNG CẤU HÌNH NGƯỠNG ĐIỂM LEAD (lead_scoring_config) - S4-05
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lead_scoring_config (
+    config_key VARCHAR(50) PRIMARY KEY,
+    config_value VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 36. BẢNG LỊCH SỬ GỘP LEAD TRÙNG LẶP (lead_merge_history) - S4-04
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lead_merge_history (
     merge_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -534,40 +647,44 @@ CREATE TABLE IF NOT EXISTS lead_merge_history (
     merged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     retained_fields TEXT NULL,
     note TEXT NULL,
+    INDEX idx_merge_primary (primary_lead_id),
+    INDEX idx_merge_duplicate (duplicate_lead_id),
     CONSTRAINT fk_lead_merge_primary FOREIGN KEY (primary_lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
     CONSTRAINT fk_lead_merge_user FOREIGN KEY (merged_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 32. BẢNG QUY TẮC PHÂN BỔ LEAD (lead_assignment_rules)
+-- 37. BẢNG CẤU HÌNH THỜI HẠN PHẢN HỒI LEAD SLA (lead_sla_configs) - S4-07
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS lead_assignment_rules (
-    rule_id INT AUTO_INCREMENT PRIMARY KEY,
-    rule_name VARCHAR(100) NOT NULL,
-    priority INT NOT NULL DEFAULT 1,
-    criterion VARCHAR(50) NOT NULL,
-    criterion_value VARCHAR(100) NULL,
-    assignee_id INT NULL,
-    team_id INT NULL,
+CREATE TABLE IF NOT EXISTS lead_sla_configs (
+    sla_id INT AUTO_INCREMENT PRIMARY KEY,
+    priority_level VARCHAR(50) NOT NULL,
+    response_time_minutes INT NOT NULL,
     is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_lead_rule_user FOREIGN KEY (assignee_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    CONSTRAINT fk_lead_rule_team FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE SET NULL
+    INDEX idx_sla_priority (priority_level),
+    INDEX idx_sla_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 33. BẢNG LỊCH SỬ PHÂN BỔ LEAD (lead_assignment_history)
+-- 38. BỔ SUNG CỘT VÀ KHÓA LIÊN BẢNG CHO MODULE LEAD & CHIẾN DỊCH (S4-03, S4-08)
 -- -----------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS lead_assignment_history (
-    history_id INT AUTO_INCREMENT PRIMARY KEY,
-    lead_id INT NOT NULL,
-    rule_id INT NULL,
-    assigned_to INT NULL,
-    status VARCHAR(50) DEFAULT 'ASSIGNED',
-    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_lead_assign_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE CASCADE,
-    CONSTRAINT fk_lead_assign_rule FOREIGN KEY (rule_id) REFERENCES lead_assignment_rules(rule_id) ON DELETE SET NULL,
-    CONSTRAINT fk_lead_assign_user FOREIGN KEY (assigned_to) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+SET @exist_act_lead := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'activities' AND COLUMN_NAME = 'lead_id'
+);
+SET @sql_act_lead := IF(@exist_act_lead = 0, 'ALTER TABLE activities ADD COLUMN lead_id INT NULL AFTER customer_id, ADD CONSTRAINT fk_activities_lead FOREIGN KEY (lead_id) REFERENCES leads(lead_id) ON DELETE SET NULL;', 'SELECT 1;');
+PREPARE stmt_act_lead FROM @sql_act_lead;
+EXECUTE stmt_act_lead;
+DEALLOCATE PREPARE stmt_act_lead;
+
+SET @exist_opp_camp := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS 
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'opportunities' AND COLUMN_NAME = 'campaign_id'
+);
+SET @sql_opp_camp := IF(@exist_opp_camp = 0, 'ALTER TABLE opportunities ADD COLUMN campaign_id INT NULL AFTER customer_id, ADD CONSTRAINT fk_opportunities_campaign FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE SET NULL;', 'SELECT 1;');
+PREPARE stmt_opp_camp FROM @sql_opp_camp;
+EXECUTE stmt_opp_camp;
+DEALLOCATE PREPARE stmt_opp_camp;
 

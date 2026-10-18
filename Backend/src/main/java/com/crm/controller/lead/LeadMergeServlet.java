@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * Controller tiếp nhận yêu cầu gộp Lead trùng lặp.
@@ -31,6 +32,11 @@ public class LeadMergeServlet extends HttpServlet {
             return;
         }
 
+        if (!isAuthorizedRole(session)) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng gộp Lead.");
+            return;
+        }
+
         String primaryStr = req.getParameter("primaryId") != null ? req.getParameter("primaryId") : req.getParameter("leftId");
         String duplicateStr = req.getParameter("duplicateId") != null ? req.getParameter("duplicateId") : (req.getParameter("secondaryId") != null ? req.getParameter("secondaryId") : req.getParameter("rightId"));
 
@@ -41,6 +47,13 @@ public class LeadMergeServlet extends HttpServlet {
 
                 LeadRecord primaryLead = duplicateService.findLeadById(primaryId);
                 LeadRecord duplicateLead = duplicateService.findLeadById(duplicateId);
+
+                if (primaryLead != null && duplicateLead != null) {
+                    if (!canUserAccessLeadScope(session, primaryLead, duplicateLead, userId)) {
+                        resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền thao tác trên các Lead ngoài phạm vi phân công của mình.");
+                        return;
+                    }
+                }
 
                 req.setAttribute("primaryLead", primaryLead);
                 req.setAttribute("duplicateLead", duplicateLead);
@@ -71,6 +84,11 @@ public class LeadMergeServlet extends HttpServlet {
             return;
         }
 
+        if (!isAuthorizedRole(session)) {
+            sendError(resp, "Bạn không có quyền thực hiện thao tác gộp Lead.", isJson, HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         String primaryStr = req.getParameter("primaryLeadId") != null ? req.getParameter("primaryLeadId") : req.getParameter("primaryId");
         if (primaryStr == null) primaryStr = req.getParameter("leftId");
 
@@ -95,6 +113,18 @@ public class LeadMergeServlet extends HttpServlet {
 
         if (primaryId == duplicateId) {
             sendError(resp, "Không thể gộp một Lead vào chính nó.", isJson, HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        LeadRecord primaryLead = duplicateService.findLeadById(primaryId);
+        LeadRecord duplicateLead = duplicateService.findLeadById(duplicateId);
+        if (primaryLead == null || duplicateLead == null) {
+            sendError(resp, "Không tìm thấy một trong hai bản ghi Lead.", isJson, HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        if (!canUserAccessLeadScope(session, primaryLead, duplicateLead, userId)) {
+            sendError(resp, "Bạn không có quyền gộp các Lead ngoài phạm vi phân công của mình.", isJson, HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -127,6 +157,42 @@ public class LeadMergeServlet extends HttpServlet {
         } catch (Exception e) {
             sendError(resp, "Lỗi hệ thống khi gộp Lead: " + e.getMessage(), isJson, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isAuthorizedRole(HttpSession session) {
+        if (session == null) return false;
+        List<Integer> roleIds = (List<Integer>) session.getAttribute("roleIds");
+        Integer roleId = (Integer) session.getAttribute("roleId");
+
+        // Quản trị (1), Giám đốc (4), Trưởng nhóm (3), Marketing (5), Nhân viên kinh doanh (2)
+        return hasRole(roleIds, roleId, 1) || hasRole(roleIds, roleId, 4) || hasRole(roleIds, roleId, 3) || hasRole(roleIds, roleId, 5) || hasRole(roleIds, roleId, 2);
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean canUserAccessLeadScope(HttpSession session, LeadRecord pLead, LeadRecord dLead, Integer userId) {
+        if (session == null || userId == null) return false;
+        List<Integer> roleIds = (List<Integer>) session.getAttribute("roleIds");
+        Integer roleId = (Integer) session.getAttribute("roleId");
+
+        // 1. Quản trị (1), Giám đốc (4), Trưởng nhóm (3), Marketing (5) có quyền gộp trên toàn bộ Leads (lọc trùng lead đầu vào)
+        if (hasRole(roleIds, roleId, 1) || hasRole(roleIds, roleId, 4) || hasRole(roleIds, roleId, 3) || hasRole(roleIds, roleId, 5)) {
+            return true;
+        }
+
+        // 2. Nhân viên kinh doanh (2) chỉ được gộp nếu sở hữu ít nhất một trong hai Lead hoặc Lead chưa phân công
+        if (hasRole(roleIds, roleId, 2)) {
+            Integer pOwner = pLead.getOwnerId();
+            Integer dOwner = dLead.getOwnerId();
+            return (pOwner == null || pOwner.equals(userId) || dOwner == null || dOwner.equals(userId));
+        }
+
+        return false;
+    }
+
+    private boolean hasRole(List<Integer> roleIds, Integer roleId, int targetRoleId) {
+        if (roleId != null && roleId == targetRoleId) return true;
+        return roleIds != null && roleIds.contains(targetRoleId);
     }
 
     private boolean isJsonRequest(HttpServletRequest req) {

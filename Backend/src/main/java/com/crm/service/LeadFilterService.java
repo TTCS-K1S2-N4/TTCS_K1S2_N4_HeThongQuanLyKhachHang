@@ -218,16 +218,37 @@ public class LeadFilterService {
 
         // 5. Ràng buộc Người phụ trách theo Data Scope
         if (effectiveOwnerIds != null) {
-            if (effectiveOwnerIds.size() == 1) {
-                sql.append("AND l.owner_id = ? ");
-                params.add(effectiveOwnerIds.get(0));
-            } else if (!effectiveOwnerIds.isEmpty()) {
-                sql.append("AND l.owner_id IN (");
-                for (int i = 0; i < effectiveOwnerIds.size(); i++) {
-                    sql.append(i > 0 ? ",?" : "?");
-                    params.add(effectiveOwnerIds.get(i));
+            boolean isExplicit = (request.getOwnerId() != null && request.getOwnerId() > 0)
+                    || "MY".equalsIgnoreCase(request.getOwnerScope())
+                    || (request.getOwnerId() != null && request.getOwnerId() == -1);
+
+            if (isExplicit) {
+                if (effectiveOwnerIds.size() == 1) {
+                    sql.append("AND l.owner_id = ? ");
+                    params.add(effectiveOwnerIds.get(0));
+                } else if (!effectiveOwnerIds.isEmpty()) {
+                    sql.append("AND l.owner_id IN (");
+                    for (int i = 0; i < effectiveOwnerIds.size(); i++) {
+                        sql.append(i > 0 ? ",?" : "?");
+                        params.add(effectiveOwnerIds.get(i));
+                    }
+                    sql.append(") ");
                 }
-                sql.append(") ");
+            } else {
+                // Khi không lọc đích danh 1 người phụ trách cụ thể:
+                // - Vai trò có phạm vi TEAM (Trưởng nhóm, effectiveOwnerIds.size() > 1): Có quyền xem Lead của nhóm và Lead chưa phân công để phân công công việc
+                // - Vai trò có phạm vi MY (Nhân viên, effectiveOwnerIds.size() == 1): Chỉ có quyền xem Lead do chính mình phụ trách. Không nới lỏng xem Lead chưa phân công
+                if (effectiveOwnerIds.size() > 1) {
+                    sql.append("AND (l.owner_id IN (");
+                    for (int i = 0; i < effectiveOwnerIds.size(); i++) {
+                        sql.append(i > 0 ? ",?" : "?");
+                        params.add(effectiveOwnerIds.get(i));
+                    }
+                    sql.append(") OR l.owner_id IS NULL) ");
+                } else if (effectiveOwnerIds.size() == 1) {
+                    sql.append("AND l.owner_id = ? ");
+                    params.add(effectiveOwnerIds.get(0));
+                }
             }
         }
 

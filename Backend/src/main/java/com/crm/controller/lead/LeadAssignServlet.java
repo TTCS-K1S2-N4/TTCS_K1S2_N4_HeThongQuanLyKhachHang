@@ -49,7 +49,7 @@ public class LeadAssignServlet extends HttpServlet {
         resp.setContentType("application/json;charset=UTF-8");
 
         try {
-            // 1. Xác thực người dùng (Authentication from trusted Session exclusively)
+            // 1. Xác thực người dùng (Authentication from trusted server-side Session exclusively)
             HttpSession session = req.getSession(false);
             Integer currentUserId = (session != null && session.getAttribute("userId") instanceof Integer)
                     ? (Integer) session.getAttribute("userId")
@@ -61,10 +61,10 @@ public class LeadAssignServlet extends HttpServlet {
             }
 
             // 2. Phân quyền & Xác định Data Scope (ADMIN / DIRECTOR -> ALL, TEAM_LEAD -> TEAM, SALES_REP -> CẤM)
-            Account currentUser = (session != null && session.getAttribute("currentUser") instanceof Account)
+            Account currentUser = (session.getAttribute("currentUser") instanceof Account)
                     ? (Account) session.getAttribute("currentUser")
                     : null;
-            Integer roleId = (session != null && session.getAttribute("roleId") instanceof Integer)
+            Integer roleId = (session.getAttribute("roleId") instanceof Integer)
                     ? (Integer) session.getAttribute("roleId")
                     : (currentUser != null ? currentUser.getRoleId() : null);
 

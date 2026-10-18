@@ -40,7 +40,7 @@ public class LeadAcceptServlet extends HttpServlet {
         resp.setContentType("application/json;charset=UTF-8");
 
         try {
-            // 1. Xác thực người dùng (Authentication from trusted Session exclusively)
+            // 1. Xác thực người dùng (Authentication from trusted server-side Session exclusively)
             HttpSession session = req.getSession(false);
             Integer currentUserId = (session != null && session.getAttribute("userId") instanceof Integer)
                     ? (Integer) session.getAttribute("userId")

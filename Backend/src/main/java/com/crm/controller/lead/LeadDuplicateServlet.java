@@ -43,6 +43,17 @@ public class LeadDuplicateServlet extends HttpServlet {
             return;
         }
 
+        if (!isAuthorizedRole(session)) {
+            if (isJson) {
+                resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                resp.setContentType("application/json; charset=UTF-8");
+                resp.getWriter().write("{\"status\":\"error\",\"message\":\"Bạn không có quyền truy cập chức năng phát hiện trùng lặp Lead.\"}");
+            } else {
+                resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng phát hiện trùng lặp Lead.");
+            }
+            return;
+        }
+
         String path = req.getServletPath();
         if (path != null && path.endsWith("/compare")) {
             handleCompare(req, resp, isJson);
@@ -90,14 +101,8 @@ public class LeadDuplicateServlet extends HttpServlet {
                 out.print(buildAllPairsJson(allPairs));
                 out.flush();
             } else {
-                if (!allPairs.isEmpty()) {
-                    // Tự động chuyển hướng về Lead đầu tiên có cặp trùng để hiển thị chi tiết
-                    int firstLeadId = allPairs.get(0).getLeft().getLeadId();
-                    resp.sendRedirect(req.getContextPath() + "/leads/duplicates?leadId=" + firstLeadId);
-                    return;
-                }
-                // Nếu chưa có cặp nào trùng lặp, chuyển về /leads
-                resp.sendRedirect(req.getContextPath() + "/leads");
+                req.setAttribute("duplicatePairs", allPairs);
+                req.getRequestDispatcher("/WEB-INF/views/leads/duplicates.jsp").forward(req, resp);
             }
         }
     }
@@ -213,5 +218,20 @@ public class LeadDuplicateServlet extends HttpServlet {
     private String escapeJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isAuthorizedRole(HttpSession session) {
+        if (session == null) return false;
+        List<Integer> roleIds = (List<Integer>) session.getAttribute("roleIds");
+        Integer roleId = (Integer) session.getAttribute("roleId");
+
+        // Quản trị (1), Giám đốc (4), Trưởng nhóm (3), Marketing (5), Nhân viên kinh doanh (2)
+        return hasRole(roleIds, roleId, 1) || hasRole(roleIds, roleId, 4) || hasRole(roleIds, roleId, 3) || hasRole(roleIds, roleId, 5) || hasRole(roleIds, roleId, 2);
+    }
+
+    private boolean hasRole(List<Integer> roleIds, Integer roleId, int targetRoleId) {
+        if (roleId != null && roleId == targetRoleId) return true;
+        return roleIds != null && roleIds.contains(targetRoleId);
     }
 }

@@ -25,6 +25,7 @@ public class LeadImportRequest implements Serializable {
     private String zipCode;
     private Integer ownerId;
     private String notes;
+    private Integer campaignId;
 
     private boolean valid = true;
     private boolean duplicate = false;
@@ -225,6 +226,14 @@ public class LeadImportRequest implements Serializable {
 
     public void setFieldErrors(List<String> fieldErrors) {
         this.fieldErrors = fieldErrors;
+    }
+
+    public Integer getCampaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(Integer campaignId) {
+        this.campaignId = campaignId;
     }
 
     public void addFieldError(String fieldError) {

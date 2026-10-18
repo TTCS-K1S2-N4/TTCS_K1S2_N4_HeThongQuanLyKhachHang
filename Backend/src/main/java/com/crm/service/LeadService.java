@@ -54,6 +54,12 @@ public class LeadService {
             throw new IllegalArgumentException("Nguồn Lead là bắt buộc và không được để trống.");
         }
 
+        if (request.getCampaignId() != null && request.getCampaignId() > 0) {
+            com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+            if (campaignDAO.findById(request.getCampaignId()) == null) {
+                throw new IllegalArgumentException("Chiến dịch với ID " + request.getCampaignId() + " không tồn tại trong hệ thống.");
+            }
+        }
 
         Lead lead = new Lead();
         lead.setFullName(request.getFullName().trim());
@@ -76,6 +82,7 @@ public class LeadService {
         lead.setZipCode(request.getZipCode());
         lead.setOwnerId(request.getOwnerId() != null ? request.getOwnerId() : ownerId);
         lead.setNotes(request.getNotes());
+        lead.setCampaignId(request.getCampaignId() != null && request.getCampaignId() > 0 ? request.getCampaignId() : null);
 
         boolean created = leadDAO.createLead(lead);
         if (created) {
@@ -112,6 +119,18 @@ public class LeadService {
         existing.setZipCode(request.getZipCode());
         if (request.getOwnerId() != null) existing.setOwnerId(request.getOwnerId());
         existing.setNotes(request.getNotes());
+
+        if (request.getCampaignId() != null) {
+            if (request.getCampaignId() > 0) {
+                com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+                if (campaignDAO.findById(request.getCampaignId()) == null) {
+                    throw new IllegalArgumentException("Chiến dịch với ID " + request.getCampaignId() + " không tồn tại trong hệ thống.");
+                }
+                existing.setCampaignId(request.getCampaignId());
+            } else {
+                existing.setCampaignId(null);
+            }
+        }
 
         return leadDAO.updateLead(existing);
     }

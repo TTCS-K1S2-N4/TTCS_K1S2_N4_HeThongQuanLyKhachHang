@@ -1,8 +1,10 @@
 package com.crm.controller.lead;
 
 import com.crm.dto.LeadConversionRequest;
+import com.crm.dto.LeadResponse;
 import com.crm.model.Account;
 import com.crm.service.LeadConversionService;
+import com.crm.service.LeadService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -19,13 +21,15 @@ import java.util.logging.Logger;
 
 /**
  * LeadConvertServlet - API xử lý chuyển đổi Lead thành Customer, Contact và Opportunity (S4-08).
- * Endpoint: POST /leads/convert
+ * Endpoint: GET /leads/convert, POST /leads/convert
  */
 @WebServlet("/leads/convert")
 public class LeadConvertServlet extends HttpServlet {
+
     private static final Logger LOGGER = Logger.getLogger(LeadConvertServlet.class.getName());
 
     private LeadConversionService conversionService;
+    private final LeadService leadService = new LeadService();
 
     @Override
     public void init() throws ServletException {
@@ -38,11 +42,53 @@ public class LeadConvertServlet extends HttpServlet {
     }
 
     @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setCharacterEncoding("UTF-8");
+        HttpSession session = req.getSession(false);
+        Integer userId = session != null ? (Integer) session.getAttribute("userId") : null;
+        if (userId == null) {
+            resp.sendRedirect(req.getContextPath() + "/auth/login");
+            return;
+        }
+
+        String leadIdStr = req.getParameter("leadId");
+        if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+            leadIdStr = req.getParameter("id");
+        }
+
+        if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+            resp.sendRedirect(req.getContextPath() + "/leads");
+            return;
+        }
+
+        try {
+            int leadId = Integer.parseInt(leadIdStr.trim());
+            LeadResponse lead = leadService.getLeadById(leadId);
+            if (lead == null) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Không tìm thấy Lead (ID: #" + leadId + ").");
+                return;
+            }
+
+            String defaultOppName = "Cơ hội từ " + (lead.getCompany() != null && !lead.getCompany().trim().isEmpty() 
+                    ? lead.getCompany().trim() 
+                    : lead.getFullName());
+
+            req.setAttribute("lead", lead);
+            req.setAttribute("leadId", leadId);
+            req.setAttribute("defaultOppName", defaultOppName);
+            req.getRequestDispatcher("/WEB-INF/views/leads/convert.jsp").forward(req, resp);
+        } catch (NumberFormatException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID Lead không hợp lệ.");
+        }
+    }
+
+    @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
 
         try {
-            // 1. Xác thực người dùng (Authentication from trusted Session exclusively)
+            // 1. Xác thực người dùng (Authentication from trusted server-side Session exclusively)
             HttpSession session = req.getSession(false);
             Integer currentUserId = (session != null && session.getAttribute("userId") instanceof Integer)
                     ? (Integer) session.getAttribute("userId")
@@ -76,6 +122,9 @@ public class LeadConvertServlet extends HttpServlet {
 
             // 3. Đọc dữ liệu đầu vào (Hỗ trợ cả application/x-www-form-urlencoded và application/json)
             String leadIdStr = req.getParameter("leadId");
+            if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+                leadIdStr = req.getParameter("id");
+            }
             String opportunityName = req.getParameter("opportunityName");
             String revenueStr = req.getParameter("expectedRevenue");
             String accountIdStr = req.getParameter("accountId");
@@ -91,6 +140,9 @@ public class LeadConvertServlet extends HttpServlet {
                 }
                 String json = sb.toString();
                 leadIdStr = LeadAssignServlet.extractJsonField(json, "leadId");
+                if (leadIdStr == null || leadIdStr.trim().isEmpty()) {
+                    leadIdStr = LeadAssignServlet.extractJsonField(json, "id");
+                }
                 if (opportunityName == null) opportunityName = LeadAssignServlet.extractJsonField(json, "opportunityName");
                 if (revenueStr == null) revenueStr = LeadAssignServlet.extractJsonField(json, "expectedRevenue");
                 if (accountIdStr == null) accountIdStr = LeadAssignServlet.extractJsonField(json, "accountId");

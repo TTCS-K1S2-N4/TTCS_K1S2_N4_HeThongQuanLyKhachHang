@@ -88,6 +88,17 @@ public class LeadWebFormService {
 
     public boolean submitPublicForm(int formId, String fullName, String email, String phone, String company,
                                    String notes, String refererHeader, String clientIp, String honeypot) {
+        return submitPublicForm(formId, fullName, email, phone, company, notes, refererHeader, clientIp, honeypot, null);
+    }
+
+    public boolean submitPublicForm(int formId, String fullName, String email, String phone, String company,
+                                   String notes, String refererHeader, String clientIp, String honeypot, Integer campaignId) {
+        Lead lead = submitAndCreateLead(formId, fullName, email, phone, company, notes, refererHeader, clientIp, honeypot, campaignId);
+        return lead != null && lead.getLeadId() > 0;
+    }
+
+    public Lead submitAndCreateLead(int formId, String fullName, String email, String phone, String company,
+                                    String notes, String refererHeader, String clientIp, String honeypot, Integer campaignId) {
         LeadWebForm form = webFormDAO.getById(formId);
         if (form == null || !form.isActive()) {
             throw new IllegalStateException("Biểu mẫu thu thập không tồn tại hoặc đã bị ngừng kích hoạt.");
@@ -103,6 +114,32 @@ public class LeadWebFormService {
             if (!LeadSpamProtectionUtil.isDomainAllowed(refererHeader, form.getAllowedDomains())) {
                 throw new SecurityException("Domain gửi biểu mẫu không được phép.");
             }
+        }
+
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ và tên không được để trống.");
+        }
+
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email liên hệ không được để trống.");
+        }
+
+        // Validate format email (backend — không phụ thuộc HTML5, chống bypass)
+        if (!email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new IllegalArgumentException("Địa chỉ email không đúng định dạng.");
+        }
+
+        if (phone == null || phone.trim().isEmpty()) {
+            throw new IllegalArgumentException("Số điện thoại không được để trống.");
+        }
+
+        // Validate format số điện thoại Việt Nam
+        String cleanedPhone = phone.trim().replaceAll("[\\s\\-\\.]", "");
+        if (!cleanedPhone.matches("^(0|\\+?84)[35789][0-9]{8}$")) {
+            throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam.");
+        }
+
+        if (form.isSpamProtectionEnabled()) {
             if (LeadSpamProtectionUtil.containsSpamKeywords(notes) || 
                 LeadSpamProtectionUtil.containsSpamKeywords(fullName) ||
                 LeadSpamProtectionUtil.containsSpamKeywords(company)) {
@@ -113,35 +150,33 @@ public class LeadWebFormService {
             }
         }
 
-        if (fullName == null || fullName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Họ và tên không được để trống.");
-        }
-
-        // Validate format email (backend — không phụ thuộc HTML5, chống bypass)
-        if (email != null && !email.trim().isEmpty()) {
-            if (!email.trim().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-                throw new IllegalArgumentException("Địa chỉ email không đúng định dạng.");
-            }
-        }
-
-        // Validate format số điện thoại Việt Nam
-        if (phone != null && !phone.trim().isEmpty()) {
-            String cleanedPhone = phone.trim().replaceAll("[\\s\\-\\.]", "");
-            if (!cleanedPhone.matches("^(0|\\+?84)[35789][0-9]{8}$")) {
-                throw new IllegalArgumentException("Số điện thoại không đúng định dạng Việt Nam.");
-            }
-        }
-
-
         Lead lead = new Lead();
         lead.setFullName(fullName.trim());
-        lead.setEmail(email != null ? email.trim() : null);
-        lead.setPhone(phone != null ? phone.trim() : null);
-        lead.setCompany(company != null ? company.trim() : null);
-        lead.setNotes(notes != null ? notes.trim() : null);
+        String trimmedName = fullName.trim();
+        int lastSpace = trimmedName.lastIndexOf(' ');
+        if (lastSpace > 0 && lastSpace < trimmedName.length() - 1) {
+            lead.setLastName(trimmedName.substring(0, lastSpace).trim());
+            lead.setFirstName(trimmedName.substring(lastSpace + 1).trim());
+        } else {
+            lead.setFirstName(trimmedName);
+            lead.setLastName("");
+        }
+
+        lead.setEmail(email.trim());
+        lead.setPhone(cleanedPhone);
+        lead.setCompany(company != null && !company.trim().isEmpty() ? company.trim() : null);
+        lead.setNotes(notes != null && !notes.trim().isEmpty() ? notes.trim() : null);
         lead.setWebFormId(formId);
         lead.setStatus("NEW");
         lead.setRating("WARM");
+
+        // Gắn campaign_id nếu được cấu hình / truyền vào và hợp lệ
+        if (campaignId != null && campaignId > 0) {
+            com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+            if (campaignDAO.findById(campaignId) != null) {
+                lead.setCampaignId(campaignId);
+            }
+        }
 
         // Gán Lead Source từ cấu hình của biểu mẫu (nếu có); nếu không, gán nguồn mặc định WEB_FORM
         if (form.getLeadSourceId() != null && form.getLeadSourceId() > 0) {
@@ -157,7 +192,8 @@ public class LeadWebFormService {
             }
         }
 
-        return leadDAO.createLead(lead);
+        boolean created = leadDAO.createLead(lead);
+        return created ? lead : null;
     }
 }
 

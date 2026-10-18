@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * Controller xử lý liên kết Lead trùng vào Khách hàng đã có sẵn trong hệ thống.
@@ -36,6 +37,11 @@ public class LeadLinkCustomerServlet extends HttpServlet {
             } else {
                 resp.sendRedirect(req.getContextPath() + "/auth/login");
             }
+            return;
+        }
+
+        if (!isAuthorizedRole(session)) {
+            sendError(resp, "Bạn không có quyền thực hiện thao tác gắn Lead vào Khách hàng.", isJson, HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -98,5 +104,20 @@ public class LeadLinkCustomerServlet extends HttpServlet {
     private String escapeJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean isAuthorizedRole(HttpSession session) {
+        if (session == null) return false;
+        List<Integer> roleIds = (List<Integer>) session.getAttribute("roleIds");
+        Integer roleId = (Integer) session.getAttribute("roleId");
+
+        // Quản trị (1), Giám đốc (4), Trưởng nhóm (3), Marketing (5), Nhân viên kinh doanh (2)
+        return hasRole(roleIds, roleId, 1) || hasRole(roleIds, roleId, 4) || hasRole(roleIds, roleId, 3) || hasRole(roleIds, roleId, 5) || hasRole(roleIds, roleId, 2);
+    }
+
+    private boolean hasRole(List<Integer> roleIds, Integer roleId, int targetRoleId) {
+        if (roleId != null && roleId == targetRoleId) return true;
+        return roleIds != null && roleIds.contains(targetRoleId);
     }
 }

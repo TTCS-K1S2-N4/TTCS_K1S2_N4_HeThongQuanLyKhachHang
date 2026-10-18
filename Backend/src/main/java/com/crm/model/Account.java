@@ -50,6 +50,14 @@ public class Account {
         this.accountId = accountId;
     }
 
+    public int getUserId() {
+        return accountId;
+    }
+
+    public void setUserId(int userId) {
+        this.accountId = userId;
+    }
+
     public String getEmail() {
         return email;
     }

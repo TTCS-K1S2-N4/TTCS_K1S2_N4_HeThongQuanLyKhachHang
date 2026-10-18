@@ -80,9 +80,29 @@ public class CampaignListServlet extends HttpServlet {
             out.print(toJson(campaigns, total, page, totalPages));
             out.flush();
         } else {
+            int activeCount = 0;
+            int totalLeads = 0;
+            int totalOpportunities = 0;
+            java.math.BigDecimal totalWonRevenue = java.math.BigDecimal.ZERO;
+            for (Campaign c : campaigns) {
+                if ("ACTIVE".equalsIgnoreCase(c.getStatus())) {
+                    activeCount++;
+                }
+                totalLeads += c.getLeadCount();
+                totalOpportunities += c.getOpportunityCount();
+                if (c.getClosedValue() != null) {
+                    totalWonRevenue = totalWonRevenue.add(c.getClosedValue());
+                }
+            }
+
             req.setAttribute("campaigns", campaigns);
             req.setAttribute("list", campaigns); // Tương thích FE02 list.jsp
             req.setAttribute("total", total);
+            req.setAttribute("totalCampaigns", total);
+            req.setAttribute("activeCampaigns", activeCount);
+            req.setAttribute("totalLeads", totalLeads);
+            req.setAttribute("totalOpportunities", totalOpportunities);
+            req.setAttribute("totalWonRevenue", totalWonRevenue);
             req.setAttribute("currentPage", page);
             req.setAttribute("totalPages", totalPages);
             req.setAttribute("keyword", keyword);

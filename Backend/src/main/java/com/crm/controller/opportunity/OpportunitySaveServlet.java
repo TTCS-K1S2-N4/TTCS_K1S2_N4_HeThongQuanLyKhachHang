@@ -55,11 +55,38 @@ public class OpportunitySaveServlet extends HttpServlet {
         String probabilityStr = req.getParameter("probability");
         String reasonIdStr = req.getParameter("winLossReasonId");
         String competitorIdStr = req.getParameter("competitorId");
+        String campaignIdStr = req.getParameter("campaignId");
+        String customerIdStr = req.getParameter("customerId");
 
         if (title == null || title.trim().isEmpty()) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"error\":\"Tiêu đề cơ hội không được để trống\"}");
             return;
+        }
+
+        Integer campaignId = null;
+        if (campaignIdStr != null && !campaignIdStr.trim().isEmpty()) {
+            try {
+                int cid = Integer.parseInt(campaignIdStr.trim());
+                if (cid > 0) {
+                    com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+                    if (campaignDAO.findById(cid) == null) {
+                        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                        out.print("{\"error\":\"Chiến dịch được chọn không tồn tại trong hệ thống.\"}");
+                        return;
+                    }
+                    campaignId = cid;
+                }
+            } catch (NumberFormatException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.print("{\"error\":\"ID chiến dịch không hợp lệ.\"}");
+                return;
+            }
+        }
+
+        int customerId = 0;
+        if (customerIdStr != null && !customerIdStr.trim().isEmpty()) {
+            try { customerId = Integer.parseInt(customerIdStr.trim()); } catch (Exception ignored) {}
         }
 
         Double amount = 0.0;
@@ -174,6 +201,11 @@ public class OpportunitySaveServlet extends HttpServlet {
         opp.setWinLossReasonId(winLossReasonId);
         opp.setCompetitorId(competitorId);
         opp.setCloseDate(closeDate);
+        opp.setCustomerId(customerId);
+        opp.setCampaignId(campaignId);
+        if (selectedStage != null) {
+            opp.setStage(selectedStage.getStageName());
+        }
 
         boolean isEdit = (idStr != null && !idStr.trim().isEmpty());
         boolean success;
@@ -182,6 +214,17 @@ public class OpportunitySaveServlet extends HttpServlet {
             int oppId = Integer.parseInt(idStr.trim());
             opp.setOpportunityId(oppId);
             Opportunity oldOpp = opportunityDAO.findById(oppId);
+            if (oldOpp != null) {
+                if (campaignIdStr == null) {
+                    opp.setCampaignId(oldOpp.getCampaignId());
+                }
+                if (customerId <= 0) {
+                    opp.setCustomerId(oldOpp.getCustomerId());
+                }
+                if (opp.getStage() == null) {
+                    opp.setStage(oldOpp.getStage());
+                }
+            }
             success = opportunityDAO.update(opp);
             if (success && oldOpp != null && amount != null && (oldOpp.getAmount() == null || Math.abs(oldOpp.getAmount() - amount) > 0.001)) {
                 try {

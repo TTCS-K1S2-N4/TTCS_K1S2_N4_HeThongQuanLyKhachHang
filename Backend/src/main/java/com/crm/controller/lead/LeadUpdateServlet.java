@@ -20,6 +20,8 @@ public class LeadUpdateServlet extends HttpServlet {
 
     private LeadService leadService = new LeadService();
     private LeadSourceDAO sourceDAO = new LeadSourceDAO();
+    private com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+    private com.crm.dao.AccountDAO accountDAO = new com.crm.dao.AccountDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -54,6 +56,8 @@ public class LeadUpdateServlet extends HttpServlet {
             }
 
             List<LeadSource> sources = sourceDAO.getActiveSources();
+            List<com.crm.model.Campaign> campaigns = campaignDAO.getAllCampaigns();
+            List<com.crm.model.Account> accounts = accountDAO.getAllActiveAccounts();
 
             if (isJson) {
                 resp.setContentType("application/json; charset=UTF-8");
@@ -61,6 +65,8 @@ public class LeadUpdateServlet extends HttpServlet {
             } else {
                 req.setAttribute("lead", lead);
                 req.setAttribute("sources", sources);
+                req.setAttribute("campaigns", campaigns);
+                req.setAttribute("accounts", accounts);
                 req.getRequestDispatcher("/WEB-INF/views/leads/edit.jsp").forward(req, resp);
             }
         } catch (NumberFormatException e) {
@@ -110,6 +116,7 @@ public class LeadUpdateServlet extends HttpServlet {
             String zipCode = req.getParameter("zipCode");
             String ownerIdStr = req.getParameter("ownerId");
             String notes = req.getParameter("interest") != null ? req.getParameter("interest") : req.getParameter("notes");
+            String campaignIdStr = req.getParameter("campaignId");
 
             LeadRequest request = new LeadRequest();
             request.setFullName(fullName);
@@ -130,6 +137,11 @@ public class LeadUpdateServlet extends HttpServlet {
             request.setZipCode(zipCode);
             if (ownerIdStr != null && !ownerIdStr.trim().isEmpty()) {
                 try { request.setOwnerId(Integer.parseInt(ownerIdStr.trim())); } catch (NumberFormatException ignore) {}
+            }
+            if (campaignIdStr != null && !campaignIdStr.trim().isEmpty()) {
+                try { request.setCampaignId(Integer.parseInt(campaignIdStr.trim())); } catch (NumberFormatException ignore) {}
+            } else if (campaignIdStr != null) {
+                request.setCampaignId(0); // Clear campaign if explicitly submitted empty
             }
             request.setNotes(notes);
 

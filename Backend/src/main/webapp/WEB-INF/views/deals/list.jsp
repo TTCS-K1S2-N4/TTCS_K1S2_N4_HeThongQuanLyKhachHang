@@ -146,6 +146,11 @@
                                             <td style="color: var(--color-text-secondary);">${item.opportunityId}</td>
                                             <td>
                                                 <div style="font-weight: 500; color: var(--color-gray-900);"><c:out value="${item.title}"/></div>
+                                                <c:if test="${not empty item.campaignName}">
+                                                    <span style="font-size: 12px; color: #2563eb; display: block; margin-top: 2px;">
+                                                        <i class="fas fa-bullhorn"></i> <c:out value="${item.campaignName}"/>
+                                                    </span>
+                                                </c:if>
                                                 <c:if test="${not empty item.reasonName}">
                                                     <span style="font-size: 12px; color: var(--color-text-secondary);"><i class="fas fa-tag"></i> <c:out value="${item.reasonName}"/></span>
                                                 </c:if>
@@ -272,6 +277,17 @@
             <div class="form-group" style="margin-bottom: 16px;">
                 <label style="display: block; margin-bottom: 6px; font-weight: 500;">Giá trị dự kiến (VNĐ)</label>
                 <input type="number" step="any" id="oppAmount" name="amount" class="form-control" value="0" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+            </div>
+
+            <!-- Marketing Campaign (S4-03) -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Chiến dịch Marketing</label>
+                <select id="oppCampaignSelect" name="campaignId" class="form-control" style="width: 100%; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px;">
+                    <option value="">-- Không thuộc chiến dịch --</option>
+                    <c:forEach var="c" items="${campaigns}">
+                        <option value="${c.campaignId}"><c:out value="${c.campaignName}"/></option>
+                    </c:forEach>
+                </select>
             </div>
 
             <!-- Pipeline Stage (S2-09) -->

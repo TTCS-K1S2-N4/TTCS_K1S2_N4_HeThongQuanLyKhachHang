@@ -9,6 +9,27 @@ import java.util.List;
 
 public class LeadWebFormDAO {
 
+    static {
+        ensureSchema();
+    }
+
+    private static void ensureSchema() {
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) return;
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getColumns(conn.getCatalog(), null, "lead_web_forms", "lead_source_id")) {
+                if (!rs.next()) {
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate("ALTER TABLE lead_web_forms ADD COLUMN lead_source_id INT NULL");
+                    } catch (Exception ignore) {}
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate("ALTER TABLE lead_web_forms ADD CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL");
+                    } catch (Exception ignore) {}
+                }
+            }
+        } catch (Exception ignore) {}
+    }
+
     public List<LeadWebForm> getAllWebForms() {
         List<LeadWebForm> list = new ArrayList<>();
         String sql = "SELECT wf.*, u.full_name AS creator_name, ls.source_name " +

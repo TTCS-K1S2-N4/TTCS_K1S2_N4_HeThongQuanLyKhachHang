@@ -193,8 +193,8 @@
             <!-- Main Content Card -->
             <section class="accounts-list-card">
                 <!-- Filter Toolbar -->
-                <div class="accounts-toolbar-container">
-                    <form class="accounts-filter-form" action="${pageContext.request.contextPath}/accounts/list" method="get">
+                <div class="accounts-toolbar-container accounts-filters">
+                    <form class="accounts-filter-form accounts-filters" action="${pageContext.request.contextPath}/accounts/list" method="get">
                         <!-- Search Keyword (Name or Email) -->
                         <div class="filter-search-box">
                             <i class="fas fa-search filter-search-icon"></i>

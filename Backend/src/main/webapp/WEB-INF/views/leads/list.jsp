@@ -14,51 +14,128 @@
     <jsp:include page="/WEB-INF/views/fragments/header.jsp"/>
     <jsp:include page="/WEB-INF/views/fragments/sidebar.jsp"/>
     <main class="main-content">
-        <div class="content-container">
-            <nav class="breadcrumb" aria-label="Breadcrumb">
-                <a href="${pageContext.request.contextPath}/dashboard"><i class="fas fa-home"></i> Trang chủ</a>
+        <div class="content-container lead-page-container">
+            
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb" aria-label="Breadcrumb" style="margin-bottom: 16px;">
+                <a href="${pageContext.request.contextPath}/"><i class="fa-solid fa-house"></i> Trang chủ</a>
                 <span>/</span>
-                <span class="breadcrumb-current">Lead</span>
+                <span class="breadcrumb-current">Quản lý Lead</span>
             </nav>
 
-            <div class="page-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <h1 class="page-title">Danh sách Lead</h1>
-                    <p class="page-subtitle" style="color: var(--color-text-secondary); margin-top: 4px;">
-                        Quản lý đầu mối kinh doanh, tự động chấm điểm ưu tiên và lọc danh sách gọi hàng ngày.
-                    </p>
+            <!-- Page Header Banner & Action Toolbar -->
+            <div class="lead-header-banner">
+                <div class="lead-header-left">
+                    <div class="lead-header-icon-box">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div class="lead-header-titles">
+                        <h1 class="lead-page-title">
+                            Danh sách Lead
+                        </h1>
+                        <p class="lead-page-subtitle">
+                            Quản lý đầu mối kinh doanh, tự động chấm điểm ưu tiên và lọc danh sách gọi hàng ngày.
+                        </p>
+                    </div>
                 </div>
-                <div class="page-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                    <a href="${pageContext.request.contextPath}/leads/create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Thêm Lead
+
+                <div class="lead-header-actions">
+                    <a href="${pageContext.request.contextPath}/leads/create" class="btn-lead-primary" id="btn-add-lead">
+                        <i class="fa-solid fa-plus"></i> Thêm Lead
                     </a>
-                    <a href="${pageContext.request.contextPath}/leads/import" class="btn btn-secondary">
-                        <i class="fas fa-file-excel"></i> Nhập Excel
+                    <a href="${pageContext.request.contextPath}/leads/import" class="btn-lead-action" title="Nhập danh sách Lead từ file Excel">
+                        <i class="fa-solid fa-file-excel"></i> Nhập Excel
                     </a>
-                    <a href="${pageContext.request.contextPath}/leads/web-forms" class="btn btn-secondary">
-                        <i class="fas fa-code"></i> Web Forms
+                    <a href="${pageContext.request.contextPath}/leads/web-forms" class="btn-lead-action" title="Quản lý biểu mẫu thu thập Lead nhúng trên website">
+                        <i class="fa-solid fa-code"></i> Web Forms
                     </a>
-                    <a href="${pageContext.request.contextPath}/lead-scoring/rules" class="btn btn-secondary" title="Cấu hình chấm điểm Lead (Giám đốc kinh doanh)">
-                        <i class="fas fa-sliders-h"></i> Cấu hình Chấm điểm
+                    <a href="${pageContext.request.contextPath}/lead-scoring/rules" class="btn-lead-action" title="Cấu hình chấm điểm Lead (Giám đốc kinh doanh)">
+                        <i class="fa-solid fa-sliders"></i> Cấu hình Chấm điểm
                     </a>
-                    <a href="${pageContext.request.contextPath}/leads/filters" class="btn btn-secondary" title="Xem bộ lọc đã lưu">
-                        <i class="fas fa-bookmark"></i> Bộ lọc đã lưu
+                    <a href="${pageContext.request.contextPath}/leads/saved-filters" class="btn-lead-action" title="Xem danh sách các bộ lọc đã lưu">
+                        <i class="fa-solid fa-bookmark"></i> Bộ lọc đã lưu
                     </a>
-                    <a href="${pageContext.request.contextPath}/leads/duplicates" class="btn btn-secondary" title="Kiểm tra Lead trùng lặp">
-                        <i class="fas fa-copy"></i> Kiểm tra trùng
+                    <a href="${pageContext.request.contextPath}/leads/duplicates" class="btn-lead-action" title="Kiểm tra và gộp Lead trùng lặp">
+                        <i class="fa-solid fa-clone"></i> Kiểm tra trùng
                     </a>
                 </div>
             </div>
 
-            <!-- Lead Filter Toolbar (S4-09-AC-01) -->
+            <c:set var="leadItems" value="${not empty leads ? leads : (not empty leadList ? leadList : list)}"/>
+            <c:set var="leadCountDisplay" value="${not empty totalLeads ? totalLeads : (not empty leadItems ? leadItems.size() : 0)}"/>
+
+            <!-- Quick Metrics Overview Cards -->
+            <div class="lead-kpi-row">
+                <div class="lead-kpi-box lead-kpi-blue">
+                    <div class="lead-kpi-info">
+                        <span class="lead-kpi-label">Tổng số Lead</span>
+                        <span class="lead-kpi-val">${leadCountDisplay}</span>
+                    </div>
+                    <div class="lead-kpi-icon">
+                        <i class="fa-solid fa-users-viewfinder"></i>
+                    </div>
+                </div>
+
+                <div class="lead-kpi-box lead-kpi-amber">
+                    <div class="lead-kpi-info">
+                        <span class="lead-kpi-label">Trạng thái lọc</span>
+                        <span class="lead-kpi-val" style="font-size: 1.05rem; font-weight: 700;">
+                            <c:choose>
+                                <c:when test="${param.status == 'NEW' || status == 'NEW'}">Mới tạo</c:when>
+                                <c:when test="${param.status == 'CONTACTED' || status == 'CONTACTED'}">Đang liên hệ</c:when>
+                                <c:when test="${param.status == 'QUALIFIED' || status == 'QUALIFIED'}">Đã xác định NC</c:when>
+                                <c:when test="${param.status == 'CONVERTED' || status == 'CONVERTED'}">Đã chuyển đổi</c:when>
+                                <c:otherwise>Tất cả trạng thái</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
+                    <div class="lead-kpi-icon">
+                        <i class="fa-solid fa-filter"></i>
+                    </div>
+                </div>
+
+                <div class="lead-kpi-box lead-kpi-emerald">
+                    <div class="lead-kpi-info">
+                        <span class="lead-kpi-label">Phân loại điểm</span>
+                        <span class="lead-kpi-val" style="font-size: 1.05rem; font-weight: 700;">
+                            <c:choose>
+                                <c:when test="${param.classification == 'HOT' || classification == 'HOT'}">🔥 Lead Nóng</c:when>
+                                <c:when test="${param.classification == 'WARM' || classification == 'WARM'}">☀️ Lead Ấm</c:when>
+                                <c:when test="${param.classification == 'COLD' || classification == 'COLD'}">❄️ Lead Lạnh</c:when>
+                                <c:otherwise>Toàn bộ mức độ</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
+                    <div class="lead-kpi-icon">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                    </div>
+                </div>
+
+                <div class="lead-kpi-box lead-kpi-rose">
+                    <div class="lead-kpi-info">
+                        <span class="lead-kpi-label">Cảnh báo SLA</span>
+                        <span class="lead-kpi-val" style="font-size: 1.05rem; font-weight: 700;">
+                            <c:choose>
+                                <c:when test="${param.overdue == 'true'}">⚠️ Chỉ Lead Quá SLA</c:when>
+                                <c:otherwise>Giám sát chủ động</c:otherwise>
+                            </c:choose>
+                        </span>
+                    </div>
+                    <div class="lead-kpi-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lead Filter Toolbar Form (S4-09-AC-01) -->
             <form id="leadFilterForm" action="${pageContext.request.contextPath}/leads" method="get" class="lead-filter-card">
                 <div class="filter-header-bar">
-                    <span class="filter-header-title">
-                        <i class="fas fa-filter"></i> Bộ lọc & Tìm kiếm Lead
-                    </span>
-                    <span style="font-size: 12px; color: var(--color-text-secondary);">
+                    <div class="filter-header-title">
+                        <i class="fa-solid fa-filter"></i> Bộ lọc & Tìm kiếm Lead
+                    </div>
+                    <div class="filter-header-hint">
                         Tùy chọn đa tiêu chí giúp ưu tiên danh sách gọi điện hiệu quả
-                    </span>
+                    </div>
                 </div>
 
                 <!-- Hàng 1: Từ khóa tìm kiếm, Trạng thái, Nguồn, Phân loại điểm, Người phụ trách -->
@@ -66,15 +143,15 @@
                     <!-- Tìm kiếm từ khóa -->
                     <div class="filter-control-item">
                         <label class="filter-label">
-                            <i class="fas fa-search" style="color: var(--color-primary); font-size: 11px;"></i> Từ khóa tìm kiếm
+                            <i class="fa-solid fa-magnifying-glass" style="color: #2563eb;"></i> Từ khóa tìm kiếm
                         </label>
-                        <input type="search" name="keyword" class="form-control" placeholder="Họ tên, công ty, email, số điện thoại..." value="<c:out value='${param.keyword != null ? param.keyword : (param.search != null ? param.search : search)}'/>">
+                        <input type="search" name="keyword" class="form-control" placeholder="Họ tên, công ty, email, SĐT..." value="<c:out value='${param.keyword != null ? param.keyword : (param.search != null ? param.search : search)}'/>">
                     </div>
 
                     <!-- Lọc Trạng thái (Status) -->
                     <div class="filter-control-item">
                         <label class="filter-label">
-                            <i class="fas fa-tasks" style="color: var(--color-text-secondary); font-size: 11px;"></i> Trạng thái
+                            <i class="fa-solid fa-list-check" style="color: #64748b;"></i> Trạng thái
                         </label>
                         <select name="status" class="form-control">
                             <option value="">Tất cả trạng thái</option>
@@ -89,7 +166,7 @@
                     <!-- Lọc Nguồn Lead (Source) -->
                     <div class="filter-control-item">
                         <label class="filter-label">
-                            <i class="fas fa-share-alt" style="color: var(--color-text-secondary); font-size: 11px;"></i> Nguồn Lead
+                            <i class="fa-solid fa-share-nodes" style="color: #64748b;"></i> Nguồn Lead
                         </label>
                         <select name="source" class="form-control">
                             <option value="">Tất cả nguồn</option>
@@ -105,11 +182,11 @@
                     <!-- Lọc Phân loại Nóng / Ấm / Lạnh (Classification S4-05 & S4-09) -->
                     <div class="filter-control-item">
                         <label class="filter-label">
-                            <i class="fas fa-fire" style="color: #ef4444; font-size: 11px;"></i> Phân loại điểm
+                            <i class="fa-solid fa-fire" style="color: #ef4444;"></i> Phân loại điểm
                         </label>
                         <select name="classification" class="form-control">
                             <option value="">Tất cả mức độ</option>
-                            <option value="HOT" ${param.classification == 'HOT' || param.rating == 'HOT' || rating == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Gọi trước)</option>
+                            <option value="HOT" ${param.classification == 'HOT' || param.rating == 'HOT' || rating == 'HOT' ? 'selected' : ''}>🔥 NÓNG (Ưu tiên gọi)</option>
                             <option value="WARM" ${param.classification == 'WARM' || param.rating == 'WARM' || rating == 'WARM' ? 'selected' : ''}>☀️ ẤM</option>
                             <option value="COLD" ${param.classification == 'COLD' || param.rating == 'COLD' || rating == 'COLD' ? 'selected' : ''}>❄️ LẠNH</option>
                         </select>
@@ -118,13 +195,13 @@
                     <!-- Lọc Người phụ trách (Owner) -->
                     <div class="filter-control-item">
                         <label class="filter-label">
-                            <i class="fas fa-user-check" style="color: var(--color-text-secondary); font-size: 11px;"></i> Người phụ trách
+                            <i class="fa-solid fa-user-check" style="color: #64748b;"></i> Người phụ trách
                         </label>
                         <select name="ownerId" class="form-control">
                             <option value="">Tất cả phụ trách</option>
                             <option value="MY" ${param.ownerId == 'MY' ? 'selected' : ''}>Lead của tôi</option>
                             <c:forEach var="owner" items="${owners}">
-                                <option value="${owner.userId}" ${param.ownerId == owner.userId ? 'selected' : ''}>
+                                <option value="${owner.accountId}" ${param.ownerId == owner.accountId ? 'selected' : ''}>
                                     <c:out value="${owner.fullName}"/>
                                 </option>
                             </c:forEach>
@@ -135,30 +212,30 @@
                 <!-- Hàng 2: Khoảng thời gian, Lọc Quá SLA, Thao tác Lọc và Lưu bộ lọc -->
                 <div class="filter-grid-row-2">
                     <div class="filter-date-group">
-                        <span class="filter-label"><i class="far fa-calendar-alt"></i> Thời gian:</span>
+                        <span class="filter-label"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
                         <input type="date" name="fromDate" value="<c:out value='${param.fromDate}'/>" class="form-control filter-date-input" title="Từ ngày">
-                        <span style="font-size: 12px; color: var(--color-text-secondary);">-</span>
+                        <span style="font-size: 13px; color: #94a3b8;">→</span>
                         <input type="date" name="toDate" value="<c:out value='${param.toDate}'/>" class="form-control filter-date-input" title="Đến ngày">
                     </div>
 
                     <!-- Toggle Lọc Lead Quá SLA (S4-09-AC-02) -->
-                    <div class="filter-sla-toggle" title="Lọc các Lead chưa được xử lý quá thời hạn phản hồi">
+                    <div class="filter-sla-toggle" title="Lọc các Lead chưa được xử lý quá thời hạn phản hồi quy định">
                         <input type="checkbox" id="overdueCheckbox" name="overdue" value="true" ${param.overdue == 'true' ? 'checked' : ''}>
                         <label for="overdueCheckbox">
-                            <i class="fas fa-exclamation-triangle"></i> Chỉ hiển thị Lead quá SLA
+                            <i class="fa-solid fa-triangle-exclamation"></i> Chỉ hiển thị Lead quá SLA
                         </label>
                     </div>
 
                     <!-- Cụm nút thao tác -->
                     <div class="filter-action-buttons">
-                        <button type="submit" class="btn btn-primary btn-sm">
-                            <i class="fas fa-filter"></i> Lọc dữ liệu
+                        <button type="submit" class="btn-filter-submit" id="btn-submit-filter">
+                            <i class="fa-solid fa-filter"></i> Lọc dữ liệu
                         </button>
-                        <a href="${pageContext.request.contextPath}/leads" class="btn btn-secondary btn-sm" title="Đặt lại bộ lọc về mặc định">
-                            <i class="fas fa-undo"></i> Đặt lại
+                        <a href="${pageContext.request.contextPath}/leads" class="btn-filter-reset" title="Đặt lại bộ lọc về mặc định">
+                            <i class="fa-solid fa-rotate-left"></i> Đặt lại
                         </a>
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="openSaveLeadFilterModal()" style="border-color: #bae6fd; color: #0369a1; background: #f0f9ff;" title="Lưu các điều kiện lọc hiện tại để tái sử dụng">
-                            <i class="fas fa-bookmark" style="color: #0284c7;"></i> Lưu bộ lọc này
+                        <button type="button" class="btn-filter-save" onclick="openSaveLeadFilterModal()" title="Lưu các điều kiện lọc hiện tại để tái sử dụng mỗi ngày">
+                            <i class="fa-solid fa-bookmark"></i> Lưu bộ lọc này
                         </button>
                     </div>
                 </div>
@@ -167,11 +244,11 @@
                 <c:if test="${not empty savedFilters}">
                     <div class="saved-filters-bar">
                         <span class="saved-filters-label">
-                            <i class="fas fa-star" style="color: #f59e0b;"></i> Bộ lọc nhanh:
+                            <i class="fa-solid fa-star" style="color: #f59e0b;"></i> Bộ lọc nhanh:
                         </span>
                         <c:forEach var="sf" items="${savedFilters}">
                             <div class="saved-filter-chip" onclick="window.location.href='${pageContext.request.contextPath}/leads?${sf.filterQuery != null ? sf.filterQuery : sf.criteria}'" title="Nhấp để áp dụng bộ lọc '${sf.filterName != null ? sf.filterName : sf.name}'">
-                                <i class="fas fa-filter"></i>
+                                <i class="fa-solid fa-filter"></i>
                                 <span><c:out value="${sf.filterName != null ? sf.filterName : sf.name}"/></span>
                             </div>
                         </c:forEach>
@@ -179,21 +256,22 @@
                 </c:if>
             </form>
 
-            <!-- Lead List Table -->
-            <div class="card" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <c:set var="leadItems" value="${not empty leads ? leads : (not empty leadList ? leadList : list)}"/>
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 class="card-title" style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-user-friends" style="color: var(--color-primary);"></i>
-                        Danh sách Lead (${not empty leadItems ? leadItems.size() : (not empty totalLeads ? totalLeads : 0)})
+            <!-- Lead List Table Card -->
+            <div class="lead-table-card">
+                <div class="lead-table-header">
+                    <h2 class="lead-table-title">
+                        <i class="fa-solid fa-users-viewfinder" style="color: #2563eb;"></i>
+                        Danh sách Lead
+                        <span class="lead-badge-count">${leadCountDisplay}</span>
                     </h2>
-                    <div style="font-size: 13px; color: var(--color-text-secondary);">
-                        Sắp xếp theo: <strong>Điểm số ưu tiên (Giảm dần)</strong>
+                    <div class="lead-sort-pill">
+                        <i class="fa-solid fa-arrow-down-wide-short"></i>
+                        <span>Sắp xếp theo: <strong>Điểm số ưu tiên (Giảm dần)</strong></span>
                     </div>
                 </div>
 
-                <div class="table-container">
-                    <table class="table">
+                <div class="table-container" style="overflow-x: auto;">
+                    <table class="lead-modern-table">
                         <thead>
                             <tr>
                                 <th style="width: 50px;">ID</th>
@@ -202,11 +280,11 @@
                                 <th>Liên hệ</th>
                                 <th>Nguồn</th>
                                 <th>Trạng thái</th>
-                                <th>Điểm Lead (Scoring)</th>
+                                <th>Điểm Lead</th>
                                 <th>Phân loại</th>
                                 <th>Người phụ trách</th>
                                 <th>Cảnh báo SLA</th>
-                                <th style="width: 140px; text-align: center;">Thao tác</th>
+                                <th style="width: 130px; text-align: center;">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,82 +296,120 @@
                                         <c:set var="currentSource" value="${not empty item.sourceName ? item.sourceName : 'Chưa rõ'}"/>
                                         <c:set var="leadScore" value="${item.score != null ? item.score : 0}"/>
                                         <tr class="${item.slaOverdue ? 'row-sla-overdue' : ''}">
-                                            <td>${currentLeadId}</td>
+                                            <td style="font-weight: 600; color: #64748b;">#${currentLeadId}</td>
                                             <td>
-                                                <div style="font-weight: 600; color: var(--color-gray-900);">
-                                                    <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="text-primary">
-                                                        <c:out value="${item.fullName}"/>
-                                                    </a>
+                                                <div class="lead-avatar-cell">
+                                                    <div class="lead-avatar-circle">
+                                                        <c:choose>
+                                                            <c:when test="${not empty item.fullName}">
+                                                                ${item.fullName.substring(0, 1).toUpperCase()}
+                                                            </c:when>
+                                                            <c:otherwise>L</c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                    <div class="lead-name-box">
+                                                        <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="lead-name-link" title="Xem hồ sơ chi tiết Lead #${currentLeadId}">
+                                                            <c:out value="${item.fullName}"/>
+                                                        </a>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td><c:out value="${currentCompany}"/></td>
                                             <td>
-                                                <div style="font-size: 13px;">
-                                                    <c:if test="${not empty item.email}">
-                                                        <div><i class="fas fa-envelope" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.email}"/></div>
-                                                    </c:if>
-                                                    <c:if test="${not empty item.phone}">
-                                                        <div><i class="fas fa-phone" style="color: #94a3b8; font-size: 11px;"></i> <c:out value="${item.phone}"/></div>
-                                                    </c:if>
-                                                    <c:if test="${empty item.email && empty item.phone}">
-                                                        <span style="color: var(--color-text-secondary);">-</span>
-                                                    </c:if>
+                                                <div style="display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-regular fa-building" style="color: #94a3b8; font-size: 0.8rem;"></i>
+                                                    <span><c:out value="${currentCompany}"/></span>
                                                 </div>
                                             </td>
-                                            <td><span class="badge badge-neutral"><c:out value="${currentSource}"/></span></td>
                                             <td>
-                                                <c:choose>
-                                                    <c:when test="${item.status == 'NEW' || item.status == 'Mới' || item.status == 'Mới tạo'}"><span class="badge badge-info">Mới tạo</span></c:when>
-                                                    <c:when test="${item.status == 'CONTACTED' || item.status == 'Đang liên hệ'}"><span class="badge badge-warning">Đang liên hệ</span></c:when>
-                                                    <c:when test="${item.status == 'QUALIFIED' || item.status == 'Tiềm năng'}"><span class="badge badge-success">Đã xác định NC</span></c:when>
-                                                    <c:when test="${item.status == 'CONVERTED' || item.status == 'Đã chuyển đổi'}"><span class="badge" style="background:#dcfce7; color:#15803d;">Đã chuyển đổi</span></c:when>
-                                                    <c:otherwise><span class="badge badge-neutral"><c:out value="${item.status}"/></span></c:otherwise>
-                                                </c:choose>
+                                                <c:if test="${not empty item.email}">
+                                                    <div class="lead-contact-item">
+                                                        <i class="fa-regular fa-envelope"></i>
+                                                        <a href="mailto:${item.email}" class="lead-contact-link"><c:out value="${item.email}"/></a>
+                                                    </div>
+                                                </c:if>
+                                                <c:if test="${not empty item.phone}">
+                                                    <div class="lead-contact-item">
+                                                        <i class="fa-solid fa-phone"></i>
+                                                        <a href="tel:${item.phone}" class="lead-contact-link"><c:out value="${item.phone}"/></a>
+                                                    </div>
+                                                </c:if>
+                                                <c:if test="${empty item.email && empty item.phone}">
+                                                    <span style="color: #94a3b8;">-</span>
+                                                </c:if>
                                             </td>
-                                            <!-- Điểm số Lead (S4-05-AC-02 & S4-05-AC-04) -->
                                             <td>
-                                                <span class="lead-score-pill ${leadScore >= 70 ? 'score-positive' : (leadScore >= 40 ? 'score-neutral' : 'score-negative')}">
-                                                    <i class="fas fa-bolt"></i> ${leadScore} điểm
+                                                <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; padding: 3px 8px; font-weight: 600; font-size: 0.76rem;">
+                                                    <c:out value="${currentSource}"/>
                                                 </span>
                                             </td>
-                                            <!-- Nhãn phân loại Nóng / Ấm / Lạnh (S4-05-AC-03) -->
                                             <td>
                                                 <c:choose>
-                                                    <c:when test="${item.classification == 'HOT' || item.rating == 'HOT' || leadScore >= 70}">
-                                                        <span class="badge badge-hot"><i class="fas fa-fire"></i> NÓNG</span>
+                                                    <c:when test="${item.status == 'NEW' || item.status == 'Mới' || item.status == 'Mới tạo'}">
+                                                        <span class="lead-status-pill status-new"><span class="lead-status-dot"></span> Mới tạo</span>
                                                     </c:when>
-                                                    <c:when test="${item.classification == 'WARM' || item.rating == 'WARM' || (leadScore >= 40 && leadScore < 70)}">
-                                                        <span class="badge badge-warm"><i class="fas fa-sun"></i> ẤM</span>
+                                                    <c:when test="${item.status == 'CONTACTED' || item.status == 'Đang liên hệ'}">
+                                                        <span class="lead-status-pill status-contacted"><span class="lead-status-dot"></span> Đang liên hệ</span>
+                                                    </c:when>
+                                                    <c:when test="${item.status == 'QUALIFIED' || item.status == 'Tiềm năng'}">
+                                                        <span class="lead-status-pill status-qualified"><span class="lead-status-dot"></span> Đã xác định NC</span>
+                                                    </c:when>
+                                                    <c:when test="${item.status == 'CONVERTED' || item.status == 'Đã chuyển đổi'}">
+                                                        <span class="lead-status-pill status-converted"><span class="lead-status-dot"></span> Đã chuyển đổi</span>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <span class="badge badge-cold"><i class="fas fa-snowflake"></i> LẠNH</span>
+                                                        <span class="lead-status-pill status-unqualified"><span class="lead-status-dot"></span> <c:out value="${item.status}"/></span>
                                                     </c:otherwise>
                                                 </c:choose>
                                             </td>
-                                            <td><c:out value="${item.ownerName != null ? item.ownerName : (item.ownerId != null ? item.ownerId : 'Chưa phân bổ')}"/></td>
+                                            <!-- Điểm số Lead (Scoring) -->
+                                            <td>
+                                                <span class="lead-score-badge ${leadScore >= 70 ? 'score-high' : (leadScore >= 40 ? 'score-med' : 'score-low')}">
+                                                    <i class="fa-solid fa-bolt"></i> ${leadScore} đ
+                                                </span>
+                                            </td>
+                                            <!-- Nhãn phân loại Nóng / Ấm / Lạnh -->
+                                            <td>
+                                                <c:choose>
+                                                    <c:when test="${item.classification == 'HOT' || item.rating == 'HOT' || leadScore >= 70}">
+                                                        <span class="lead-rating-badge rating-hot"><i class="fa-solid fa-fire"></i> NÓNG</span>
+                                                    </c:when>
+                                                    <c:when test="${item.classification == 'WARM' || item.rating == 'WARM' || (leadScore >= 40 && leadScore < 70)}">
+                                                        <span class="lead-rating-badge rating-warm"><i class="fa-solid fa-sun"></i> ẤM</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="lead-rating-badge rating-cold"><i class="fa-solid fa-snowflake"></i> LẠNH</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+                                                    <i class="fa-solid fa-circle-user" style="color: #64748b; font-size: 0.85rem;"></i>
+                                                    <span><c:out value="${item.ownerName != null ? item.ownerName : (item.ownerId != null ? item.ownerId : 'Chưa phân bổ')}"/></span>
+                                                </div>
+                                            </td>
                                             <!-- Nổi bật Lead quá SLA (S4-09-AC-02) -->
                                             <td>
                                                 <c:choose>
                                                     <c:when test="${item.slaOverdue}">
-                                                        <span class="badge badge-sla-overdue" title="Lead quá thời hạn phản hồi quy định!">
-                                                            <i class="fas fa-exclamation-triangle"></i> Quá SLA
+                                                        <span class="lead-sla-badge lead-sla-overdue" title="Lead quá thời hạn phản hồi quy định!">
+                                                            <i class="fa-solid fa-triangle-exclamation"></i> Quá SLA
                                                         </span>
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <span style="font-size: 12px; color: #16a34a;"><i class="fas fa-check-circle"></i> Trong hạn</span>
+                                                        <span class="lead-sla-ok"><i class="fa-solid fa-circle-check"></i> Trong hạn</span>
                                                     </c:otherwise>
                                                 </c:choose>
                                             </td>
                                             <td style="text-align: center;">
-                                                <div style="display: flex; gap: 4px; justify-content: center;">
-                                                    <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Xem chi tiết">
-                                                        <i class="fas fa-eye"></i>
+                                                <div class="lead-action-group">
+                                                    <a href="${pageContext.request.contextPath}/leads/detail?id=${currentLeadId}" class="btn-lead-icon btn-lead-icon-view" title="Xem chi tiết hồ sơ Lead">
+                                                        <i class="fa-solid fa-eye"></i>
                                                     </a>
-                                                    <a href="${pageContext.request.contextPath}/leads/update?id=${currentLeadId}" class="btn btn-secondary btn-sm" title="Chỉnh sửa">
-                                                        <i class="fas fa-pencil-alt"></i>
+                                                    <a href="${pageContext.request.contextPath}/leads/update?id=${currentLeadId}" class="btn-lead-icon btn-lead-icon-edit" title="Chỉnh sửa thông tin">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                     </a>
-                                                    <a href="${pageContext.request.contextPath}/leads/convert?leadId=${currentLeadId}" class="btn btn-secondary btn-sm" style="color: #16a34a;" title="Chuyển đổi Lead">
-                                                        <i class="fas fa-exchange-alt"></i>
+                                                    <a href="${pageContext.request.contextPath}/leads/convert?leadId=${currentLeadId}" class="btn-lead-icon btn-lead-icon-convert" title="Chuyển đổi sang Khách hàng / Cơ hội">
+                                                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
                                                     </a>
                                                 </div>
                                             </td>
@@ -302,23 +418,23 @@
                                 </c:when>
                                 <c:otherwise>
                                     <tr>
-                                        <td colspan="11" style="text-align: center; padding: 48px 16px;">
-                                            <div class="empty-state-box">
-                                                <div class="empty-state-icon">
-                                                    <i class="fas fa-filter-circle-xmark"></i>
+                                        <td colspan="11">
+                                            <div class="lead-empty-container">
+                                                <div class="lead-empty-icon-glow">
+                                                    <i class="fa-solid fa-filter-circle-xmark"></i>
                                                 </div>
-                                                <div class="empty-state-title">
+                                                <div class="lead-empty-title">
                                                     Không tìm thấy Lead nào phù hợp với bộ lọc
                                                 </div>
-                                                <div class="empty-state-desc">
-                                                    Hãy thử nới lỏng các điều kiện lọc, tìm kiếm theo từ khóa khác hoặc đặt lại bộ lọc về mặc định.
+                                                <div class="lead-empty-desc">
+                                                    Hãy thử nới lỏng các điều kiện lọc, tìm kiếm theo từ khóa khác hoặc đặt lại bộ lọc để xem toàn bộ danh sách.
                                                 </div>
-                                                <div style="display: flex; gap: 8px; justify-content: center;">
-                                                    <a href="${pageContext.request.contextPath}/leads" class="btn btn-secondary btn-sm">
-                                                        <i class="fas fa-undo"></i> Đặt lại bộ lọc
+                                                <div class="lead-empty-actions">
+                                                    <a href="${pageContext.request.contextPath}/leads" class="btn-filter-reset">
+                                                        <i class="fa-solid fa-rotate-left"></i> Đặt lại bộ lọc
                                                     </a>
-                                                    <a href="${pageContext.request.contextPath}/leads/create" class="btn btn-primary btn-sm">
-                                                        <i class="fas fa-plus"></i> Tạo Lead mới
+                                                    <a href="${pageContext.request.contextPath}/leads/create" class="btn-lead-primary">
+                                                        <i class="fa-solid fa-plus"></i> Tạo Lead mới
                                                     </a>
                                                 </div>
                                             </div>
@@ -332,16 +448,20 @@
 
                 <!-- Phân trang (Pagination) -->
                 <c:if test="${not empty totalPages && totalPages > 1}">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--color-border);">
-                        <div style="font-size: 13px; color: var(--color-text-secondary);">
-                            Trang <strong>${currentPage}</strong> / <strong>${totalPages}</strong> (Tổng số: ${totalLeads} Lead)
+                    <div class="lead-pagination-bar">
+                        <div class="lead-page-info">
+                            Trang <strong>${currentPage}</strong> / <strong>${totalPages}</strong> (Tổng cộng: <strong>${totalLeads}</strong> Lead)
                         </div>
-                        <div style="display: flex; gap: 6px;">
+                        <div class="lead-page-nav">
                             <c:if test="${currentPage > 1}">
-                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage - 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}" class="btn btn-secondary btn-sm">Trước</a>
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage - 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}&classification=${param.classification}&ownerId=${param.ownerId}&source=${param.source}&fromDate=${param.fromDate}&toDate=${param.toDate}&overdue=${param.overdue}" class="btn-page-step">
+                                    <i class="fa-solid fa-chevron-left"></i> Trang trước
+                                </a>
                             </c:if>
                             <c:if test="${currentPage < totalPages}">
-                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage + 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}" class="btn btn-secondary btn-sm">Sau</a>
+                                <a href="${pageContext.request.contextPath}/leads?page=${currentPage + 1}&keyword=${param.keyword}&status=${param.status}&rating=${param.rating}&classification=${param.classification}&ownerId=${param.ownerId}&source=${param.source}&fromDate=${param.fromDate}&toDate=${param.toDate}&overdue=${param.overdue}" class="btn-page-step">
+                                    Trang sau <i class="fa-solid fa-chevron-right"></i>
+                                </a>
                             </c:if>
                         </div>
                     </div>
@@ -352,28 +472,28 @@
 </div>
 
 <!-- Modal Lưu Bộ Lọc Lead (S4-09-AC-03) -->
-<div id="saveLeadFilterModal" class="modal-backdrop" onclick="if(event.target === this) closeSaveLeadFilterModal();">
-    <div class="modal-dialog-box">
-        <div class="modal-dialog-header">
-            <h3 class="modal-dialog-title">
-                <i class="fas fa-bookmark" style="color: var(--color-primary);"></i>
+<div id="saveLeadFilterModal" class="lead-modal-backdrop" onclick="if(event.target === this) closeSaveLeadFilterModal();">
+    <div class="lead-modal-box">
+        <div class="lead-modal-header">
+            <h3 class="lead-modal-title">
+                <i class="fa-solid fa-bookmark" style="color: #2563eb;"></i>
                 Lưu bộ lọc Lead thường dùng
             </h3>
-            <button type="button" class="modal-close-btn" onclick="closeSaveLeadFilterModal()" title="Đóng modal">&times;</button>
+            <button type="button" class="lead-modal-close" onclick="closeSaveLeadFilterModal()" title="Đóng modal">&times;</button>
         </div>
         <form id="saveLeadFilterForm" onsubmit="submitSaveLeadFilter(event)">
-            <div class="modal-dialog-body">
-                <div style="margin-bottom: 14px;">
-                    <label class="form-label" for="leadFilterNameInput" style="font-weight: 600; font-size: 13px; color: var(--color-gray-800); margin-bottom: 6px;">
-                        Đặt tên cho bộ lọc <span style="color:red">*</span>
+            <div class="lead-modal-body">
+                <div style="margin-bottom: 16px;">
+                    <label class="filter-label" for="leadFilterNameInput">
+                        Đặt tên cho bộ lọc <span style="color:#ef4444">*</span>
                     </label>
-                    <input type="text" id="leadFilterNameInput" class="form-control" placeholder="VD: Lead Nóng cần gọi sáng nay, Quá SLA..." required style="background: white; border: 1px solid var(--color-border); border-radius: 6px; padding: 10px 12px; width: 100%; font-size: 13px;">
+                    <input type="text" id="leadFilterNameInput" class="form-control" placeholder="VD: Lead Nóng cần gọi sáng nay, Quá SLA..." required style="height: 42px; border-radius: 9px; padding: 10px 14px; font-size: 0.88rem;">
                 </div>
 
                 <!-- Tóm tắt các điều kiện đang được lưu (S4-09 requirement) -->
                 <div class="filter-summary-card">
                     <div class="filter-summary-card-title">
-                        <i class="fas fa-list-check" style="color: var(--color-primary);"></i>
+                        <i class="fa-solid fa-list-check" style="color: #2563eb;"></i>
                         Tóm tắt các điều kiện lọc sẽ lưu:
                     </div>
                     <div id="filterSummaryChipsList" class="filter-summary-chips-list">
@@ -381,15 +501,15 @@
                     </div>
                 </div>
 
-                <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0; line-height: 1.5;">
-                    <i class="fas fa-info-circle" style="color: var(--color-info);"></i>
+                <p style="font-size: 0.78rem; color: #64748b; margin: 0; line-height: 1.5;">
+                    <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i>
                     Bộ lọc này sẽ được lưu vào danh sách của bạn để áp dụng nhanh chỉ với một cú nhấp chuột mỗi ngày.
                 </p>
             </div>
-            <div class="modal-dialog-footer">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="closeSaveLeadFilterModal()">Hủy</button>
-                <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitSaveFilter">
-                    <i class="fas fa-save"></i> Lưu bộ lọc
+            <div class="lead-modal-footer">
+                <button type="button" class="btn-filter-reset" onclick="closeSaveLeadFilterModal()">Hủy</button>
+                <button type="submit" class="btn-filter-submit" id="btnSubmitSaveFilter">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu bộ lọc
                 </button>
             </div>
         </form>
@@ -410,41 +530,41 @@
             const chips = [];
 
             const kw = formData.get('keyword');
-            if (kw && kw.trim()) chips.push('<span class="summary-chip-item"><i class="fas fa-search"></i> Từ khóa: <strong>' + escapeHtml(kw.trim()) + '</strong></span>');
+            if (kw && kw.trim()) chips.push('<span class="summary-chip-item"><i class="fa-solid fa-magnifying-glass"></i> Từ khóa: <strong>' + escapeHtml(kw.trim()) + '</strong></span>');
 
             const status = formData.get('status');
             if (status) {
                 const statusSelect = filterForm.querySelector('select[name="status"]');
                 const text = statusSelect ? statusSelect.options[statusSelect.selectedIndex].text : status;
-                chips.push('<span class="summary-chip-item"><i class="fas fa-tasks"></i> Trạng thái: <strong>' + escapeHtml(text) + '</strong></span>');
+                chips.push('<span class="summary-chip-item"><i class="fa-solid fa-list-check"></i> Trạng thái: <strong>' + escapeHtml(text) + '</strong></span>');
             }
 
             const source = formData.get('source');
-            if (source) chips.push('<span class="summary-chip-item"><i class="fas fa-share-alt"></i> Nguồn: <strong>' + escapeHtml(source) + '</strong></span>');
+            if (source) chips.push('<span class="summary-chip-item"><i class="fa-solid fa-share-nodes"></i> Nguồn: <strong>' + escapeHtml(source) + '</strong></span>');
 
             const classification = formData.get('classification');
             if (classification) {
                 const clsSelect = filterForm.querySelector('select[name="classification"]');
                 const text = clsSelect ? clsSelect.options[clsSelect.selectedIndex].text : classification;
-                chips.push('<span class="summary-chip-item"><i class="fas fa-fire"></i> Phân loại: <strong>' + escapeHtml(text) + '</strong></span>');
+                chips.push('<span class="summary-chip-item"><i class="fa-solid fa-fire"></i> Phân loại: <strong>' + escapeHtml(text) + '</strong></span>');
             }
 
             const ownerId = formData.get('ownerId');
             if (ownerId) {
                 const ownerSelect = filterForm.querySelector('select[name="ownerId"]');
                 const text = ownerSelect ? ownerSelect.options[ownerSelect.selectedIndex].text : ownerId;
-                chips.push('<span class="summary-chip-item"><i class="fas fa-user"></i> Phụ trách: <strong>' + escapeHtml(text) + '</strong></span>');
+                chips.push('<span class="summary-chip-item"><i class="fa-solid fa-user"></i> Phụ trách: <strong>' + escapeHtml(text) + '</strong></span>');
             }
 
             const fromDate = formData.get('fromDate');
             const toDate = formData.get('toDate');
             if (fromDate || toDate) {
-                chips.push('<span class="summary-chip-item"><i class="far fa-calendar-alt"></i> Ngày: <strong>' + (fromDate || '...') + ' → ' + (toDate || '...') + '</strong></span>');
+                chips.push('<span class="summary-chip-item"><i class="fa-regular fa-calendar-days"></i> Ngày: <strong>' + (fromDate || '...') + ' → ' + (toDate || '...') + '</strong></span>');
             }
 
             const overdue = formData.get('overdue');
             if (overdue === 'true') {
-                chips.push('<span class="summary-chip-item" style="color: #dc2626; border-color: #fecaca; background: #fff5f5;"><i class="fas fa-exclamation-triangle"></i> <strong>Chỉ Lead quá SLA</strong></span>');
+                chips.push('<span class="summary-chip-item" style="color: #dc2626; border-color: #fecaca; background: #fff5f5;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Chỉ Lead quá SLA</strong></span>');
             }
 
             if (chips.length === 0) {
@@ -498,7 +618,7 @@
         const originalHtml = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
         }
 
         fetch('${pageContext.request.contextPath}/leads/filters', {
@@ -522,7 +642,6 @@
         })
         .catch(err => {
             console.warn('Backend endpoint /leads/filters response:', err);
-            // Fallback submit
             if (typeof window.showToast === 'function') {
                 window.showToast('info', 'Đã gửi yêu cầu lưu bộ lọc tới hệ thống.');
             }

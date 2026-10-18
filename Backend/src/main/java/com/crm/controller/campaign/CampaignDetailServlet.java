@@ -2,6 +2,8 @@ package com.crm.controller.campaign;
 
 import com.crm.exception.AuthorizationException;
 import com.crm.model.Campaign;
+import com.crm.model.Lead;
+import com.crm.model.Opportunity;
 import com.crm.service.CampaignService;
 import com.crm.util.ValidationUtil;
 import jakarta.servlet.ServletException;
@@ -83,6 +85,10 @@ public class CampaignDetailServlet extends HttpServlet {
                 return;
             }
 
+            List<Lead> campaignLeads = campaignService.getCampaignLeads(campaignId, userId, roleId != null ? roleId : 0, roleIds);
+            List<Opportunity> campaignOpportunities = campaignService.getCampaignOpportunities(campaignId, userId, roleId != null ? roleId : 0, roleIds);
+            List<Opportunity> campaignClosedWonOpps = campaignService.getCampaignClosedWonOpportunities(campaignId, userId, roleId != null ? roleId : 0, roleIds);
+
             if (isJson) {
                 resp.setContentType("application/json; charset=UTF-8");
                 PrintWriter out = resp.getWriter();
@@ -93,6 +99,9 @@ public class CampaignDetailServlet extends HttpServlet {
                 req.setAttribute("leadCount", campaign.getLeadCount());
                 req.setAttribute("opportunityCount", campaign.getOpportunityCount());
                 req.setAttribute("closedValue", campaign.getClosedValue());
+                req.setAttribute("campaignLeads", campaignLeads);
+                req.setAttribute("campaignOpportunities", campaignOpportunities);
+                req.setAttribute("campaignClosedWonOpps", campaignClosedWonOpps);
                 req.getRequestDispatcher("/WEB-INF/views/campaigns/detail.jsp").forward(req, resp);
             }
         } catch (AuthorizationException e) {

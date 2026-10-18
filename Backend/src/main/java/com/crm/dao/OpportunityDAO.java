@@ -16,6 +16,7 @@ public class OpportunityDAO {
     private void ensureSchema() {
         String alterSql = "ALTER TABLE opportunities " +
                 "ADD COLUMN IF NOT EXISTS customer_id INT NULL, " +
+                "ADD COLUMN IF NOT EXISTS campaign_id INT NULL, " +
                 "ADD COLUMN IF NOT EXISTS stage VARCHAR(100) NULL, " +
                 "ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE', " +
                 "ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;";
@@ -81,6 +82,12 @@ public class OpportunityDAO {
         try { obj.setStatus(rs.getString("status")); } catch (SQLException ignored) {}
         try { obj.setUpdatedAt(rs.getTimestamp("updated_at")); } catch (SQLException ignored) {}
 
+        try {
+            int campId = rs.getInt("campaign_id");
+            if (!rs.wasNull()) obj.setCampaignId(campId);
+        } catch (SQLException ignored) {}
+        try { obj.setCampaignName(rs.getString("campaign_name")); } catch (SQLException ignored) {}
+
         return obj;
     }
 
@@ -93,11 +100,12 @@ public class OpportunityDAO {
         
         List<Opportunity> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT DISTINCT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+            "SELECT DISTINCT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
             "FROM opportunities o " +
             "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
             "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
-            "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id "
+            "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+            "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id "
         );
         if (filterFieldId != null && filterFieldValue != null && !filterFieldValue.trim().isEmpty()) {
             sql.append("JOIN custom_field_values cfv ON o.opportunity_id = cfv.entity_id AND cfv.entity_type = 'OPPORTUNITY' ");
@@ -152,11 +160,12 @@ public class OpportunityDAO {
         
         List<Opportunity> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+            "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
             "FROM opportunities o " +
             "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
             "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
             "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+            "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id " +
             "WHERE 1=1"
         );
         if (keyword != null && !keyword.trim().isEmpty()) {
@@ -242,11 +251,12 @@ public class OpportunityDAO {
     }
 
     public Opportunity findById(int id) {
-        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
                      "FROM opportunities o " +
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id " +
                      "WHERE o.opportunity_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -263,11 +273,12 @@ public class OpportunityDAO {
 
     public List<Opportunity> getOpportunitiesByCustomerId(int customerId) {
         List<Opportunity> list = new ArrayList<>();
-        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
                      "FROM opportunities o " +
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id " +
                      "WHERE o.customer_id = ? ORDER BY o.opportunity_id DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -284,11 +295,12 @@ public class OpportunityDAO {
 
     public List<Opportunity> getOpenOpportunitiesByCustomerId(int customerId) {
         List<Opportunity> list = new ArrayList<>();
-        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
                      "FROM opportunities o " +
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id " +
                      "WHERE o.customer_id = ? AND " +
                      "  (o.stage IS NULL OR (o.stage NOT LIKE '%WON%' AND o.stage NOT LIKE '%LOST%' AND o.stage NOT LIKE '%CLOSED%')) AND " +
                      "  (ps.stage_name IS NULL OR (ps.stage_name NOT LIKE '%Won%' AND ps.stage_name NOT LIKE '%thành công%' AND ps.stage_name NOT LIKE '%Lost%' AND ps.stage_name NOT LIKE '%Thất bại%')) AND " +
@@ -309,11 +321,12 @@ public class OpportunityDAO {
 
     public List<Opportunity> getClosedOpportunitiesByCustomerId(int customerId) {
         List<Opportunity> list = new ArrayList<>();
-        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name " +
+        String sql = "SELECT o.*, ps.stage_name, wlr.reason_name, c.competitor_name, camp.campaign_name " +
                      "FROM opportunities o " +
                      "LEFT JOIN pipeline_stages ps ON o.pipeline_stage_id = ps.pipeline_stage_id " +
                      "LEFT JOIN win_loss_reasons wlr ON o.win_loss_reason_id = wlr.reason_id " +
                      "LEFT JOIN competitors c ON o.competitor_id = c.competitor_id " +
+                     "LEFT JOIN campaigns camp ON o.campaign_id = camp.campaign_id " +
                      "WHERE o.customer_id = ? AND (" +
                      "  o.stage LIKE '%WON%' OR o.stage LIKE '%LOST%' OR o.stage LIKE '%CLOSED%' OR " +
                      "  ps.stage_name LIKE '%Won%' OR ps.stage_name LIKE '%thành công%' OR ps.stage_name LIKE '%Lost%' OR ps.stage_name LIKE '%Thất bại%' OR " +
@@ -376,7 +389,7 @@ public class OpportunityDAO {
     }
 
     public boolean insert(Opportunity opp) {
-        String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date, customer_id, stage, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO opportunities (title, amount, owner_id, pipeline_stage_id, probability, win_loss_reason_id, competitor_id, close_date, customer_id, stage, status, campaign_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, opp.getTitle());
@@ -390,6 +403,7 @@ public class OpportunityDAO {
             ps.setObject(9, opp.getCustomerId() > 0 ? opp.getCustomerId() : null);
             ps.setString(10, opp.getStage());
             ps.setString(11, opp.getStatus() != null ? opp.getStatus() : "ACTIVE");
+            ps.setObject(12, opp.getCampaignId() != null && opp.getCampaignId() > 0 ? opp.getCampaignId() : null);
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -406,7 +420,7 @@ public class OpportunityDAO {
     }
 
     public boolean update(Opportunity opp) {
-        String sql = "UPDATE opportunities SET title = ?, amount = ?, owner_id = ?, pipeline_stage_id = ?, probability = ?, win_loss_reason_id = ?, competitor_id = ?, close_date = ?, customer_id = ?, stage = ?, status = ? WHERE opportunity_id = ?";
+        String sql = "UPDATE opportunities SET title = ?, amount = ?, owner_id = ?, pipeline_stage_id = ?, probability = ?, win_loss_reason_id = ?, competitor_id = ?, close_date = ?, customer_id = ?, stage = ?, status = ?, campaign_id = ? WHERE opportunity_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, opp.getTitle());
@@ -420,7 +434,8 @@ public class OpportunityDAO {
             ps.setObject(9, opp.getCustomerId() > 0 ? opp.getCustomerId() : null);
             ps.setString(10, opp.getStage());
             ps.setString(11, opp.getStatus());
-            ps.setInt(12, opp.getOpportunityId());
+            ps.setObject(12, opp.getCampaignId() != null && opp.getCampaignId() > 0 ? opp.getCampaignId() : null);
+            ps.setInt(13, opp.getOpportunityId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

@@ -66,10 +66,14 @@ public class OpportunityListServlet extends HttpServlet {
         req.setAttribute("filterFieldId", filterFieldId);
         req.setAttribute("filterFieldValue", filterFieldValue);
 
+        com.crm.dao.CampaignDAO campaignDAO = new com.crm.dao.CampaignDAO();
+        List<com.crm.model.Campaign> campaigns = campaignDAO.findAll(null, null, null, null, null, null, 1, 100);
+
         req.setAttribute("pipelineStages", pipelineStages);
         req.setAttribute("winReasons", winReasons);
         req.setAttribute("lossReasons", lossReasons);
         req.setAttribute("competitors", competitors);
+        req.setAttribute("campaigns", campaigns);
 
         req.getRequestDispatcher("/WEB-INF/views/deals/list.jsp").forward(req, resp);
     }

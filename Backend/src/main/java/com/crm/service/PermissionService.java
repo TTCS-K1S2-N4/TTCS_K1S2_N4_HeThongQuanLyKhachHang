@@ -38,14 +38,22 @@ public class PermissionService {
         if (roleId <= 0 || module == null || module.trim().isEmpty()) {
             return DataScope.MY;
         }
-        return permissionDAO.findDataScopeByRoleAndModule(roleId, module);
+        DataScope scope = permissionDAO.findDataScopeByRoleAndModule(roleId, module);
+        if (scope == null && "LEAD".equalsIgnoreCase(module)) {
+            scope = permissionDAO.findDataScopeByRoleAndModule(roleId, "ACCOUNT");
+        }
+        return scope != null ? scope : DataScope.MY;
     }
     
     public DataScope getDataScopeForRoles(List<Integer> roleIds, String module) {
         if (roleIds == null || roleIds.isEmpty() || module == null || module.trim().isEmpty()) {
             return DataScope.MY;
         }
-        return permissionDAO.findDataScopeByRolesAndModule(roleIds, module);
+        DataScope scope = permissionDAO.findDataScopeByRolesAndModule(roleIds, module);
+        if (scope == null && "LEAD".equalsIgnoreCase(module)) {
+            scope = permissionDAO.findDataScopeByRolesAndModule(roleIds, "ACCOUNT");
+        }
+        return scope != null ? scope : DataScope.MY;
     }
 
     public List<Integer> getAccessibleAccountIds(int userId, int roleId, String module) {
@@ -56,7 +64,8 @@ public class PermissionService {
         return accessibleIdsForScope(userId, getDataScopeForRoles(roleIds, module));
     }
 
-    private List<Integer> accessibleIdsForScope(int userId, DataScope scope) {
+    public List<Integer> accessibleIdsForScope(int userId, DataScope scope) {
+        if (scope == null) return null;
         switch (scope) {
             case MY:
                 return Collections.singletonList(userId);

@@ -557,45 +557,168 @@ INSERT INTO audit_logs (log_id, action_type, performed_by, target_user_id, descr
 ON DUPLICATE KEY UPDATE description = VALUES(description);
 
 -- =============================================================================
--- 28. BẢNG NGUỒN LEAD (lead_sources) - S401 / S402
+-- 28. BẢNG CHIẾN DỊCH TIẾP THỊ (campaigns) - S4-03
+-- =============================================================================
+INSERT INTO campaigns (campaign_id, campaign_name, budget, start_date, end_date, channel, description, status, created_by) VALUES
+(1, 'Chiến dịch Tiếp thị Số Q4/2026', 150000000.00, '2026-10-01', '2026-12-31', 'GOOGLE_ADS', 'Quảng cáo tìm kiếm Google cho gói phần mềm CRM doanh nghiệp', 'ACTIVE', 6),
+(2, 'Ra mắt Nền tảng Chuyển đổi số B2B', 200000000.00, '2026-09-15', '2026-11-30', 'FACEBOOK', 'Quảng cáo tiếp cận lãnh đạo doanh nghiệp vừa và nhỏ trên Facebook/LinkedIn', 'ACTIVE', 6),
+(3, 'Hội thảo Chuyển đổi số Ngành Bán lẻ 2026', 80000000.00, '2026-10-10', '2026-10-25', 'EVENT', 'Sự kiện Offline kết nối 100+ CEO/CTO chuỗi bán lẻ tại Hà Nội', 'COMPLETED', 6),
+(4, 'Chương trình Ưu đãi Mùa Thu 2026', 50000000.00, '2026-11-01', '2026-11-30', 'EMAIL', 'Email marketing gửi khách hàng đăng ký dùng thử 30 ngày', 'PLANNING', 6)
+ON DUPLICATE KEY UPDATE 
+    campaign_name = VALUES(campaign_name), 
+    budget = VALUES(budget), 
+    status = VALUES(status);
+
+-- =============================================================================
+-- 29. BẢNG NGUỒN GỐC LEAD (lead_sources) - S4-01, S4-02
 -- =============================================================================
 INSERT INTO lead_sources (source_id, source_code, source_name, description, is_active) VALUES
 (1, 'WEB_FORM',       'Biểu mẫu Website',            'Lead thu thập tự động từ biểu mẫu nhúng trên website', 1),
-(2, 'IMPORT_EXCEL',   'Nhập từ Excel',               'Lead được import định kỳ từ file Excel dữ liệu', 1),
-(3, 'DIRECT',         'Trực tiếp / Khách đến',       'Khách hàng tự tìm đến văn phòng hoặc liên hệ trực tiếp', 1),
-(4, 'REFERRAL',       'Giới thiệu',                  'Khách hàng được đối tác hoặc khách hàng cũ giới thiệu', 1),
-(5, 'COLD_CALL',      'Gọi điện thoại (Telesales)',  'Nguồn tiếp cận qua chiến dịch gọi điện', 1),
-(6, 'EMAIL_CAMPAIGN', 'Chiến dịch Email',            'Lead phản hồi qua các chiến dịch tiếp thị qua email', 1),
-(7, 'SOCIAL_MEDIA',   'Mạng xã hội',                 'Lead từ Facebook, LinkedIn, Zalo...', 1),
-(8, 'EVENT',          'Hội thảo / Sự kiện',          'Thu thập danh thiếp tại các hội thảo triển lãm', 1)
+(2, 'MANUAL',         'Tạo thủ công',                'Lead do nhân viên kinh doanh tự nhập tay vào CRM', 1),
+(3, 'EXCEL',          'Nhập từ file Excel',          'Lead import hàng loạt từ danh sách file bảng tính', 1),
+(4, 'FACEBOOK',       'Facebook Lead Ads',           'Chiến dịch quảng cáo thu thập lead từ mạng xã hội Facebook', 1),
+(5, 'GOOGLE_ADS',     'Google Ads Search',           'Khách hàng tìm kiếm từ khóa và click quảng cáo Google', 1),
+(6, 'HOTLINE',        'Tổng đài Hotline',            'Khách hàng gọi trực tiếp vào số hotline tư vấn', 1),
+(7, 'EVENT',          'Hội thảo / Sự kiện',          'Thu thập danh thiếp tại các sự kiện triển lãm xúc tiến thương mại', 1),
+(8, 'PARTNER',        'Đối tác giới thiệu',          'Nguồn giới thiệu từ mạng lưới đối tác chiến lược', 1),
+(9, 'IMPORT_EXCEL',   'Nhập từ Excel (Hệ thống)',    'Lead được import định kỳ từ file Excel dữ liệu', 1),
+(10, 'DIRECT',        'Trực tiếp / Khách đến',      'Khách hàng tự tìm đến văn phòng hoặc liên hệ trực tiếp', 1),
+(11, 'REFERRAL',      'Giới thiệu',                 'Khách hàng được đối tác hoặc khách hàng cũ giới thiệu', 1),
+(12, 'COLD_CALL',     'Gọi điện thoại (Telesales)', 'Nguồn tiếp cận qua chiến dịch gọi điện', 1),
+(13, 'EMAIL_CAMPAIGN','Chiến dịch Email',           'Lead phản hồi qua các chiến dịch tiếp thị qua email', 1),
+(14, 'SOCIAL_MEDIA',  'Mạng xã hội',                'Lead từ Facebook, LinkedIn, Zalo...', 1)
 ON DUPLICATE KEY UPDATE 
-    source_name = VALUES(source_name),
-    description = VALUES(description),
+    source_name = VALUES(source_name), 
+    description = VALUES(description), 
     is_active = VALUES(is_active);
 
 -- =============================================================================
--- 29. BẢNG BIỂU MẪU THU THẬP LEAD (lead_web_forms) - S401
+-- 30. BẢNG BIỂU MẪU WEB FORM (lead_web_forms) - S4-01
 -- =============================================================================
-INSERT INTO lead_web_forms (form_id, form_name, description, embed_code, allowed_domains, success_redirect_url, is_active, spam_protection_enabled, lead_source_id, created_by) VALUES
-(1, 'Form Đăng Ký Tư Vấn Landing Page', 'Biểu mẫu gắn tại trang chủ và landing page giải pháp', '<iframe src="/crm/leads/public-form?formId=1" width="100%" height="600" frameborder="0"></iframe>', '*', NULL, 1, 1, 1, 6),
-(2, 'Form Liên Hệ Báo Giá Sản Phẩm', 'Thu thập yêu cầu báo giá phần mềm CRM', '<iframe src="/crm/leads/public-form?formId=2" width="100%" height="600" frameborder="0"></iframe>', '*', NULL, 1, 1, 1, 6)
-ON DUPLICATE KEY UPDATE
-    form_name = VALUES(form_name),
-    lead_source_id = VALUES(lead_source_id);
+INSERT INTO lead_web_forms (form_id, form_name, description, embed_code, allowed_domains, success_redirect_url, is_active, spam_protection_enabled, fields_json, lead_source_id, created_by) VALUES
+(1, 'Form Liên hệ tư vấn Website', 'Biểu mẫu tư vấn đặt tại trang chủ frostlinecrm.com', 
+ '<!-- Frostline CRM Web Form ID: 1 -->\n<iframe src=\"http://localhost:8080/crm-backend-1.0.0/leads/public-form?formId=1\" width=\"100%\" height=\"480\" frameborder=\"0\"></iframe>', 
+ '*, frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/thank-you.html', 1, 1, 
+ '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"phone\",\"label\":\"Số điện thoại\",\"required\":true}]', 1, 6),
+(2, 'Form Đăng ký Dùng thử 30 ngày', 'Biểu mẫu đăng ký trial trên landing page giải pháp CRM', 
+ '<!-- Frostline CRM Web Form ID: 2 -->\n<iframe src=\"http://localhost:8080/crm-backend-1.0.0/leads/public-form?formId=2\" width=\"100%\" height=\"520\" frameborder=\"0\"></iframe>', 
+ '*, landing.frostlinecrm.com, localhost', 'http://localhost:8080/crm-backend-1.0.0/welcome.html', 1, 1, 
+ '[{\"name\":\"fullName\",\"label\":\"Họ và tên\",\"required\":true},{\"name\":\"email\",\"label\":\"Email\",\"required\":true},{\"name\":\"company\",\"label\":\"Tên công ty\",\"required\":true}]', 1, 6)
+ON DUPLICATE KEY UPDATE 
+    form_name = VALUES(form_name), 
+    description = VALUES(description), 
+    lead_source_id = VALUES(lead_source_id),
+    is_active = VALUES(is_active);
 
 -- =============================================================================
--- 30. BẢNG ĐẦU MỐI KINH DOANH (leads) - S401 / S402
+-- 31. BẢNG QUY TẮC PHÂN BỔ LEAD (lead_assignment_rules) - S4-06
 -- =============================================================================
-INSERT INTO leads (lead_id, full_name, title, company, email, phone, lead_source_id, web_form_id, status, rating, score, industry, owner_id, notes) VALUES
-(1, 'Trần Minh Quân', 'Giám đốc Công nghệ', 'Công ty CP Công Nghệ TechX', 'quan.tran@techx.vn', '0912345671', 1, 1, 'NEW', 'HOT', 85, 'Công nghệ thông tin', 4, 'Đăng ký qua Landing Page quan tâm giải pháp CRM Cloud'),
-(2, 'Nguyễn Thị Thu Hà', 'Trưởng phòng Mua hàng', 'Tập đoàn Dược Phẩm MediCare', 'ha.nguyen@medicare.vn', '0912345672', 2, NULL, 'CONTACTED', 'WARM', 65, 'Y tế / Dược phẩm', 4, 'Import từ danh sách triển lãm thiết bị y tế 2026'),
-(3, 'Phạm Quốc Bảo', 'Trưởng phòng Kinh doanh', 'Công ty Logistics Á Châu', 'bao.pham@achau.com.vn', '0912345673', 3, NULL, 'QUALIFIED', 'WARM', 70, 'Vận tải / Logistics', 5, 'Liên hệ trực tiếp đến hotline yêu cầu tư vấn gói 50 users'),
-(4, 'Lê Hoàng Nam', 'CEO', 'Chuỗi Cửa Hàng Bán Lẻ SunStore', 'nam.le@sunstore.vn', '0912345674', 7, NULL, 'NEW', 'COLD', 40, 'Bán lẻ', 4, 'Nhắn tin qua Fanpage Facebook tìm hiểu tính năng POS tích hợp'),
-(5, 'Đặng Tuyết Mai', 'Giám đốc Marketing', 'Công ty Bất Động Sản Landmark', 'mai.dang@landmark.vn', '0912345675', 6, NULL, 'NEW', 'HOT', 90, 'Bất động sản', 4, 'Click đăng ký từ Email Campaign giới thiệu CRM Bất động sản')
-ON DUPLICATE KEY UPDATE
-    full_name = VALUES(full_name),
-    status = VALUES(status),
-    notes = VALUES(notes);
+INSERT INTO lead_assignment_rules (rule_id, rule_name, priority, criterion, criterion_value, assignee_id, team_id, is_active) VALUES
+(1, 'Phân bổ khu vực Miền Nam cho Sales miền Nam', 1, 'REGION', 'Miền Nam', 5, 2, 1),
+(2, 'Phân bổ khách hàng ngành CNTT cho Chuyên viên IT', 2, 'INDUSTRY', 'Công nghệ thông tin', 4, 1, 1),
+(3, 'Phân bổ xoay vòng Round-Robin Team Miền Bắc', 99, 'ROUND_ROBIN', NULL, NULL, 1, 1)
+ON DUPLICATE KEY UPDATE 
+    rule_name = VALUES(rule_name), 
+    priority = VALUES(priority), 
+    is_active = VALUES(is_active);
+
+-- =============================================================================
+-- 32. BẢNG QUY TẮC CHẤM ĐIỂM LEAD & CẤU HÌNH (lead_scoring_rules & config) - S4-05
+-- =============================================================================
+INSERT INTO lead_scoring_config (config_key, config_value) VALUES
+('hot_threshold', '70'),
+('warm_threshold', '40')
+ON DUPLICATE KEY UPDATE config_value = VALUES(config_value);
+
+INSERT INTO lead_scoring_rules (rule_id, criterion, operator, condition_value, score, is_active) VALUES
+(1, 'INDUSTRY',     'EQUALS',   'Công nghệ thông tin', 25, 1),
+(2, 'COMPANY_SIZE', 'EQUALS',   '100-500',             20, 1),
+(3, 'HAS_PHONE',    'EQUALS',   'TRUE',                15, 1),
+(4, 'HAS_EMAIL',    'EQUALS',   'TRUE',                10, 1)
+ON DUPLICATE KEY UPDATE score = VALUES(score), is_active = VALUES(is_active);
+
+-- =============================================================================
+-- 33. BẢNG KHÁCH HÀNG TIỀM NĂNG (leads) - DỮ LIỆU KIỂM THỬ ĐA DẠNG S4-01..S4-09
+-- =============================================================================
+INSERT INTO leads (lead_id, full_name, first_name, last_name, title, company, company_name, email, phone, 
+                   lead_source_id, web_form_id, campaign_id, customer_id, source, status, rating, score, 
+                   industry, address, city, state, country, zip_code, owner_id, notes, assigned_at, rejection_reason, 
+                   sla_due_at, is_overdue, sla_breached, created_at, updated_at) VALUES
+-- Lead 1: Web Form lead, NEW, HOT, unassigned (US1, US6 test case)
+(1, 'Nguyễn Anh Tuấn', 'Tuấn', 'Nguyễn Anh', 'Giám đốc Công nghệ', 'Công ty CP Giải Pháp Phần Mềm Nova', 'Công ty CP Giải Pháp Phần Mềm Nova', 'tuan.nguyen@novasoft.vn', '0912345670', 
+ 1, 1, 1, NULL, 'WEB_FORM', 'NEW', 'HOT', 85, 'Công nghệ thông tin', '12 Duy Tân, Cầu Giấy', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', NULL, 'Đăng ký nhận báo giá phần mềm CRM qua web form trang chủ', NULL, NULL, 
+ DATE_ADD(NOW(), INTERVAL 24 HOUR), 0, 0, NOW(), NOW()),
+
+-- Lead 2: Assigned to Salesrep 4, FRESH SLA (US7 accept/reject test case)
+(2, 'Trần Minh Hoàng', 'Hoàng', 'Trần Minh', 'Trưởng phòng Kinh doanh', 'Tập đoàn Đầu tư & Thương Mại Sen Vàng', 'Tập đoàn Đầu tư & Thương Mại Sen Vàng', 'hoang.tran@senvang.com', '0987654321', 
+ 2, NULL, 1, NULL, 'MANUAL', 'ASSIGNED', 'HOT', 75, 'Bán lẻ & Thương mại điện tử', '88 Hai Bà Trưng', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', 4, 'Khách hàng có nhu cầu triển khai hệ thống quản trị khách hàng trong tháng 11', NOW(), NULL, 
+ DATE_ADD(NOW(), INTERVAL 20 HOUR), 0, 0, DATE_SUB(NOW(), INTERVAL 4 HOUR), NOW()),
+
+-- Lead 3: Assigned to Salesrep 4, SLA BREACHED (>24h overdue) (US7, US9 SLA filter test case)
+(3, 'Lê Thị Thu Thảo', 'Thảo', 'Lê Thị Thu', 'Giám đốc Vận hành', 'Công ty TNHH Vận Tải Quốc Tế Á Châu', 'Công ty TNHH Vận Tải Quốc Tế Á Châu', 'thao.le@achau-logistics.vn', '0934567890', 
+ 4, NULL, 2, NULL, 'FACEBOOK', 'ASSIGNED', 'WARM', 60, 'Vận tải & Kho bãi', '45 Lê Duẩn, Quận 1', 'TP. Hồ Chí Minh', 'TP.HCM', 'Việt Nam', '700000', 4, 'Lead đăng ký từ chiến dịch Facebook Lead Ads, chưa kịp xử lý liên hệ', DATE_SUB(NOW(), INTERVAL 28 HOUR), NULL, 
+ DATE_SUB(NOW(), INTERVAL 4 HOUR), 1, 1, DATE_SUB(NOW(), INTERVAL 29 HOUR), NOW()),
+
+-- Lead 4: In progress lead, HOT, active nurturing (US3, US5, US9 test case)
+(4, 'Phạm Quốc Bảo', 'Bảo', 'Phạm Quốc', 'Phó Tổng Giám Đốc', 'Tập đoàn Tài Chính Đông Á', 'Tập đoàn Tài Chính Đông Á', 'bao.pham@donga-finance.vn', '0978901234', 
+ 5, NULL, 1, NULL, 'GOOGLE_ADS', 'IN_PROGRESS', 'HOT', 90, 'Tài chính - Ngân hàng', '25 Lý Thường Kiệt', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', 4, 'Đã gọi tư vấn lần 1, khách hàng yêu cầu gửi demo trực tiếp giải pháp', DATE_SUB(NOW(), INTERVAL 2 DAY), NULL, 
+ DATE_SUB(NOW(), INTERVAL 1 DAY), 0, 0, DATE_SUB(NOW(), INTERVAL 3 DAY), NOW()),
+
+-- Lead 5: Converted lead, linked to Customer 801 (US8 Conversion test case)
+(5, 'Vũ Hải Đăng', 'Đăng', 'Vũ Hải', 'Giám đốc Mua hàng', 'Tập đoàn Công nghệ FPT Global', 'Tập đoàn Công nghệ FPT Global', 'dang.vu@fpt-sample.com', '0967890123', 
+ 1, 1, 1, 801, 'WEB_FORM', 'CONVERTED', 'HOT', 95, 'Công nghệ thông tin', 'Tòa nhà FPT, Cầu Giấy', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', 4, 'Đã chuyển đổi thành công sang khách hàng doanh nghiệp chính thức', DATE_SUB(NOW(), INTERVAL 10 DAY), NULL, 
+ DATE_SUB(NOW(), INTERVAL 9 DAY), 0, 0, DATE_SUB(NOW(), INTERVAL 15 DAY), NOW()),
+
+-- Lead 6: DUPLICATE CANDIDATE of Lead 1 (Matching phone & name) (US4 Duplicate test case)
+(6, 'Nguyễn Anh Tuấn', 'Tuấn', 'Nguyễn Anh', 'CTO', 'Nova Software JSC', 'Nova Software JSC', 'anhtuan.nova@gmail.com', '0912345670', 
+ 3, NULL, NULL, NULL, 'EXCEL', 'NEW', 'WARM', 50, 'Công nghệ thông tin', '12 Duy Tân', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', NULL, 'Bản ghi tải lên từ file Excel triển lãm CNTT 2026, nghi ngờ trùng Lead #1', NULL, NULL, 
+ DATE_ADD(NOW(), INTERVAL 24 HOUR), 0, 0, DATE_SUB(NOW(), INTERVAL 1 DAY), NOW()),
+
+-- Lead 7: MATCHING EXISTING CUSTOMER (Matching Company name with Customer #801) (US4 Customer match test case)
+(7, 'Đỗ Hoàng Nam', 'Nam', 'Đỗ Hoàng', 'Trưởng phòng IT', 'Công ty Cổ phần Thương mại An Phát', 'Công ty Cổ phần Thương mại An Phát', 'nam.do@anphat-sample.vn', '0918765432', 
+ 6, NULL, NULL, NULL, 'HOTLINE', 'NEW', 'WARM', 65, 'Bán lẻ & Thương mại điện tử', '15 Tràng Tiền', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', NULL, 'Gọi qua tổng đài hotline hỏi về nâng cấp gói dịch vụ CRM', NULL, NULL, 
+ DATE_ADD(NOW(), INTERVAL 24 HOUR), 0, 0, DATE_SUB(NOW(), INTERVAL 2 HOUR), NOW()),
+
+-- Lead 8: MERGED LEAD (Already merged into Lead #4) (US4 Merge history test case)
+(8, 'Phạm Quốc Bảo (Bản ghi phụ)', 'Bảo', 'Phạm Quốc', 'Phó TGĐ', 'Đông Á Finance', 'Đông Á Finance', 'bao.finance@gmail.com', '0978901234', 
+ 2, NULL, NULL, NULL, 'MANUAL', 'MERGED', 'WARM', 40, 'Tài chính - Ngân hàng', '25 Lý Thường Kiệt', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', 4, 'Đã gộp vào Lead chính #4 để tập trung một đầu mối chăm sóc', DATE_SUB(NOW(), INTERVAL 5 DAY), NULL, 
+ DATE_SUB(NOW(), INTERVAL 4 DAY), 0, 0, DATE_SUB(NOW(), INTERVAL 6 DAY), NOW()),
+
+-- Lead 9: REJECTED LEAD (US7 Rejection test case)
+(9, 'Hoàng Trọng Nghĩa', 'Nghĩa', 'Hoàng Trọng', 'Cá nhân', 'Khách hàng cá nhân', 'Khách hàng cá nhân', 'nghia.hoang@testmail.com', '0945678901', 
+ 4, NULL, 2, NULL, 'FACEBOOK', 'REJECTED', 'COLD', 20, 'Khác', 'Quận 7', 'TP. Hồ Chí Minh', 'TP.HCM', 'Việt Nam', '700000', NULL, 'Từ chối tiếp nhận Lead do sai số điện thoại và không đúng chân dung khách hàng mục tiêu', DATE_SUB(NOW(), INTERVAL 3 DAY), 'Sai số điện thoại / Không liên lạc được', 
+ DATE_SUB(NOW(), INTERVAL 2 DAY), 0, 0, DATE_SUB(NOW(), INTERVAL 4 DAY), NOW()),
+
+-- Lead 10: EXCEL IMPORTED LEAD, QUALIFIED, WARM (US2, US9 test case)
+(10, 'Bùi Mai Phương', 'Phương', 'Bùi Mai', 'Giám đốc Nhân sự', 'Tập đoàn Giáo Dục & Đào Tạo Alpha', 'Tập đoàn Giáo Dục & Đào Tạo Alpha', 'phuong.bui@alpha-edu.vn', '0923456789', 
+ 3, NULL, NULL, NULL, 'EXCEL', 'QUALIFIED', 'WARM', 65, 'Giáo dục & Đào tạo', '120 Hoàng Quốc Việt', 'Hà Nội', 'Hà Nội', 'Việt Nam', '100000', 5, 'Nhập từ file Excel hội thảo EdTech 2026, đã xác minh thông tin doanh nghiệp đủ điều kiện', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, 
+ DATE_ADD(NOW(), INTERVAL 12 HOUR), 0, 0, DATE_SUB(NOW(), INTERVAL 2 DAY), NOW())
+ON DUPLICATE KEY UPDATE 
+    full_name = VALUES(full_name), 
+    email = VALUES(email), 
+    phone = VALUES(phone), 
+    status = VALUES(status), 
+    score = VALUES(score), 
+    rating = VALUES(rating), 
+    lead_source_id = VALUES(lead_source_id), 
+    campaign_id = VALUES(campaign_id), 
+    owner_id = VALUES(owner_id);
+
+-- =============================================================================
+-- 34. BẢNG LỊCH SỬ PHÂN BỔ & GỘP LEAD (lead_assignment_history & lead_merge_history)
+-- =============================================================================
+INSERT INTO lead_merge_history (merge_id, primary_lead_id, duplicate_lead_id, merged_by, merged_at, retained_fields, note) VALUES
+(1, 4, 8, 4, DATE_SUB(NOW(), INTERVAL 2 DAY), 
+ '{\"mergedLeadId\":8,\"retainedName\":\"Phạm Quốc Bảo\",\"retainedEmail\":\"bao.pham@donga-finance.vn\",\"retainedPhone\":\"0978901234\"}', 
+ 'Gộp tự động phát hiện trùng lặp SĐT giữa hai Lead đăng ký cùng doanh nghiệp')
+ON DUPLICATE KEY UPDATE note = VALUES(note);
+
+INSERT INTO lead_assignment_history (history_id, lead_id, rule_id, assigned_to, status, assigned_at) VALUES
+(1, 2, 2, 4, 'ASSIGNED', DATE_SUB(NOW(), INTERVAL 4 HOUR)),
+(2, 3, 1, 4, 'ASSIGNED', DATE_SUB(NOW(), INTERVAL 28 HOUR)),
+(3, 4, 2, 4, 'ASSIGNED', DATE_SUB(NOW(), INTERVAL 2 DAY)),
+(4, 9, 1, 5, 'REJECTED', DATE_SUB(NOW(), INTERVAL 3 DAY))
+ON DUPLICATE KEY UPDATE status = VALUES(status);
 
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
