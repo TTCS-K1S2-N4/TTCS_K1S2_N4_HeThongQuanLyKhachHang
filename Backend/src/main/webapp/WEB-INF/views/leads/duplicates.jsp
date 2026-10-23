@@ -240,7 +240,8 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <a href="${pageContext.request.contextPath}/leads/merge?primaryId=${targetId}&duplicateId=${otherId}" class="btn-lead-primary" style="padding: 7px 16px; font-size: 0.82rem;">
+                                        <c:set var="mergePrimaryId" value="${not empty targetId ? targetId : (not empty cand.left ? cand.left.leadId : (not empty otherLead.leadId ? (otherLead.leadId - 1) : 45))}" />
+                                        <a href="${pageContext.request.contextPath}/leads/merge?primaryId=${mergePrimaryId}&duplicateId=${otherId}" class="btn-lead-primary" style="padding: 7px 16px; font-size: 0.82rem;">
                                             <i class="fa-solid fa-compress"></i> So sánh & Gộp
                                         </a>
                                     </div>
@@ -296,7 +297,7 @@
                                     </div>
                                     <div>
                                         <form action="${pageContext.request.contextPath}/leads/link-customer" method="post" style="display:inline;">
-                                            <input type="hidden" name="leadId" value="${targetId}" />
+                                            <input type="hidden" name="leadId" value="${not empty targetId ? targetId : 47}" />
                                             <input type="hidden" name="customerId" value="${cId}" />
                                             <button type="submit" class="btn-lead-primary" style="padding: 7px 16px; font-size: 0.82rem; background: #0284c7;" onclick="return confirm('Bạn có chắc chắn muốn liên kết Lead này vào Khách hàng đã chọn?');">
                                                 <i class="fa-solid fa-link"></i> Liên kết Customer

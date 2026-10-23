@@ -71,14 +71,6 @@ public class CustomerDAO {
             stmt.executeUpdate("ALTER TABLE customers CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             stmt.executeUpdate("ALTER TABLE teams CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-            stmt.executeUpdate("UPDATE users SET full_name = 'Nguyễn Văn Sales' WHERE user_id = 4 OR email = 'salesrep.test@example.com' OR full_name LIKE '%Nguy%' OR full_name LIKE '%Sales%'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Hoàng Văn Lead' WHERE user_id = 3 OR email = 'teamlead.test@example.com' OR full_name LIKE '%Ho%' OR full_name LIKE '%Lead%'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Vũ Văn Director' WHERE user_id = 2 OR email = 'director.test@example.com' OR full_name LIKE '%V%' OR full_name LIKE '%Director%'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Lê Văn Sales Nam' WHERE user_id = 5 OR email = 'salesrep2.test@example.com'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Trần Thị Marketing' WHERE user_id = 6 OR email = 'marketing.test@example.com'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Lê Văn CSKH' WHERE user_id = 7 OR email = 'customersuccess.test@example.com'");
-            stmt.executeUpdate("UPDATE users SET full_name = 'Phạm Thị Kế Toán' WHERE user_id = 8 OR email = 'accountant.test@example.com'");
-
             stmt.executeUpdate("UPDATE customers SET status = 'POTENTIAL' WHERE status LIKE 'Ti%' OR status LIKE '%?%' OR status = 'POTENTIAL'");
             stmt.executeUpdate("UPDATE customers SET status = 'DEALING' WHERE status LIKE '%giao d%' OR status = 'DEALING'");
             stmt.executeUpdate("UPDATE customers SET status = 'CUSTOMER' WHERE status LIKE 'Kh%' OR status = 'CUSTOMER'");

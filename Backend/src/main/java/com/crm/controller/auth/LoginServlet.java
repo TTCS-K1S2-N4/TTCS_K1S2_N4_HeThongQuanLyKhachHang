@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-@WebServlet("/auth/login")
+@WebServlet(urlPatterns = {"/auth/login", "/login"})
 public class LoginServlet extends HttpServlet {
 
         private AuthService authService;
