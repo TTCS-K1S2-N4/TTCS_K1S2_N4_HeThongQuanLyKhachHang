@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cơ cấu tổ chức | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/organization.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a class="header-brand" href="../../index.html" aria-label="CRM System">
+                    <span class="brand-mark">CRM</span>
+                    <span>CRM System</span>
+                </a>
+                <div class="header-divider"></div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="../../index.html">Trang chủ</a>
+                    <span aria-hidden="true">/</span>
+                    <span class="breadcrumb-current">Cơ cấu tổ chức</span>
+                </nav>
+            </div>
+            <div class="header-right">
+                <button class="header-action" type="button" aria-label="Thông báo" title="Thông báo">
+                    <span aria-hidden="true">🔔</span>
+                </button>
+                <div class="header-user">
+                    <div class="user-avatar" aria-hidden="true">AD</div>
+                    <div class="header-user-info">
+                        <div class="user-name">Nguyễn Văn A</div>
+                        <div class="user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav aria-label="Điều hướng chính">
+                <div class="sidebar-section">
+                    <a class="nav-item" href="../../index.html">
+                        <span class="nav-icon" aria-hidden="true">◫</span>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <a class="nav-item active" href="teams.html" aria-current="page">
+                        <span class="nav-icon" aria-hidden="true">🏢</span>
+                        <span>Cơ cấu tổ chức</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-container">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Cơ cấu tổ chức kinh doanh</h1>
+                        <p class="page-description">Khai báo và quản lý cây tổ chức các nhóm bán hàng.</p>
+                    </div>
+                </div>
+                
+                <section class="dashboard-content-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    
+                    <!-- Tree -->
+                    <article class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Cây tổ chức</h2>
+                        </div>
+                        <div class="card-body">
+                            <ul class="team-tree">
+                                <li>
+                                    <strong>Công ty CRM (Gốc)</strong>
+                                    <ul>
+                                        <li>
+                                            <strong>Miền Bắc</strong> (Khu vực: HN) - Trưởng nhóm: NV01
+                                            <ul>
+                                                <li>Nhóm Hà Nội 1 (Khu vực: HN1)</li>
+                                                <li>Nhóm Hà Nội 2 (Khu vực: HN2)</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <!-- Update Form -->
+                    <article class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Cập nhật nhóm kinh doanh</h2>
+                        </div>
+                        <div class="card-body">
+                            <form action="/organization/teams/update" method="POST">
+                                <div class="form-group">
+                                    <label for="teamId">Mã nhóm</label>
+                                    <input type="number" id="teamId" name="teamId" class="form-control" placeholder="Để trống nếu tạo mới" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="teamName">Tên nhóm</label>
+                                    <input type="text" id="teamName" name="teamName" class="form-control" required>
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="parentTeamId">Nhóm cha (ID)</label>
+                                    <input type="number" id="parentTeamId" name="parentTeamId" class="form-control" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="leaderId">Trưởng nhóm (ID)</label>
+                                    <input type="number" id="leaderId" name="leaderId" class="form-control" min="0" step="1" onkeydown="if(event.key==='-'||event.key==='e'||event.key==='E')event.preventDefault();" oninput="if(this.value < 0) this.value = Math.abs(this.value);">
+                                </div>
+                                <div class="form-group" style="margin-top: 1rem;">
+                                    <label for="region">Khu vực địa lý</label>
+                                    <input type="text" id="region" name="region" class="form-control" required>
+                                </div>
+                                <div class="form-actions" style="margin-top: 1.5rem;">
+                                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </article>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

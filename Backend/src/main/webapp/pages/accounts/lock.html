@@ -1,0 +1,105 @@
+<main class="main-content" data-permission="account.lock">
+
+    <div class="content-container">
+
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="../../index.html">Trang chủ</a>
+            <span>/</span>
+            <a href="list.html">Tài khoản</a>
+            <span>/</span>
+            <a href="detail.html">Chi tiết</a>
+            <span>/</span>
+            <span class="breadcrumb-current">
+                Khóa tài khoản
+            </span>
+        </nav>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    Khóa tài khoản
+                </h1>
+
+                <p class="page-description">
+                    Xác nhận khóa quyền truy cập của tài khoản.
+                </p>
+            </div>
+        </div>
+
+        <section class="card account-form">
+
+            <div class="card-header">
+                <h2 class="card-title">
+                    Nguyễn Văn An
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Tên đăng nhập
+                        </div>
+
+                        <div class="detail-value">
+                            nguyenvanan
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Vai trò
+                        </div>
+
+                        <div class="detail-value">
+                            Sales Rep
+                        </div>
+                    </div>
+
+                </div>
+
+                <form action="#" method="post">
+
+                    <div class="form-group">
+                        <label
+                            class="form-label"
+                            for="lockReason">
+                            Lý do khóa
+                        </label>
+
+                        <textarea
+                            id="lockReason"
+                            name="lockReason"
+                            class="form-control"
+                            rows="4"
+                            required></textarea>
+                    </div>
+
+                    <div class="account-form-actions">
+
+                        <a
+                            class="btn btn-secondary"
+                            href="detail.html">
+                            Hủy
+                        </a>
+
+                        <button
+                            class="btn btn-danger"
+                            type="submit"
+                            data-permission="account.lock">
+                            Khóa tài khoản
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>

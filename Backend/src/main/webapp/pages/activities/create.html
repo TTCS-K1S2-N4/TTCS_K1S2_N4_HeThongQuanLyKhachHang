@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Ghi nhận hoạt động | CRM System</title>
+
+    <!-- FOUNDATION -->
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+
+    <!-- ACTIVITIES MODULE -->
+    <link rel="stylesheet" href="../../assets/css/modules/activities.css">
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="app-header">
+
+        <div class="header-left">
+
+            <a class="header-brand" href="../../index.html">
+                <span class="brand-mark">CRM</span>
+                <span>CRM System</span>
+            </a>
+
+            <div class="header-divider"></div>
+
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="../../index.html">Trang chủ</a>
+                <span>/</span>
+                <a href="../../activities">Hoạt động</a>
+                <span>/</span>
+                <span class="breadcrumb-current">Ghi nhận</span>
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <nav aria-label="Điều hướng chính">
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="../dashboard/index.html">
+                    <span class="nav-icon" aria-hidden="true">◫</span>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◎</span>
+                    <span>Khách hàng</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◇</span>
+                    <span>Lead</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">△</span>
+                    <span>Cơ hội</span>
+                </a>
+                <a class="nav-item active" href="list.html" aria-current="page">
+                    <span class="nav-icon" aria-hidden="true">○</span>
+                    <span>Hoạt động</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">▣</span>
+                    <span>Báo giá & Hợp đồng</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">◈</span>
+                    <span>Chỉ tiêu & KPI</span>
+                </a>
+                <a class="nav-item" href="../reports/overview.html">
+                    <span class="nav-icon" aria-hidden="true">▤</span>
+                    <span>Báo cáo & Dashboard</span>
+                </a>
+            </div>
+
+            <div class="sidebar-section">
+                <a class="nav-item" href="../accounts/list.html">
+                    <span class="nav-icon" aria-hidden="true">□</span>
+                    <span>Quản lý tài khoản</span>
+                </a>
+                <a class="nav-item" href="#">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>Vai trò & phân quyền</span>
+                </a>
+                <a class="nav-item" href="../audit-log/list.html">
+                    <span class="nav-icon" aria-hidden="true">≡</span>
+                    <span>Nhật ký hệ thống</span>
+                </a>
+            </div>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= CONTENT ================= -->
+
+    <main class="main-content activity-page">
+
+        <div class="content-container">
+
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Ghi nhận hoạt động</h1>
+                    <p class="page-description">
+                        Lưu lại cuộc gọi, cuộc gặp, email hoặc ghi chú với khách hàng – kể cả hoạt động đã diễn ra.
+                    </p>
+                </div>
+            </div>
+
+
+            <!-- LỖI TỪ BACKEND: response errors (mỗi lỗi một <li>, đã escape) -->
+
+            <div
+                id="activity-errors"
+                class="activity-alert activity-alert-danger"
+                role="alert"
+                hidden>
+                <strong>Không thể lưu hoạt động. Vui lòng kiểm tra lại:</strong>
+                <ul class="activity-alert-list"></ul>
+            </div>
+
+
+            <section class="card">
+
+                <div class="card-body">
+
+                    <!--
+                        [API 5] GET /activities/create → customers, contacts, opportunities
+                        [API 6] POST /activities/create → success / errors
+                        Giá trị đã nhập được giữ lại qua value/selected/checked khi render lại.
+                    -->
+
+                    <form
+                        id="activity-form"
+                        class="activity-form"
+                        action="../../activities/create"
+                        method="post">
+
+                        <div class="form-group">
+
+                            <fieldset class="activity-type-fieldset" aria-describedby="activity-type-error">
+
+                                <legend class="form-label">
+                                    Loại hoạt động <span class="form-required">*</span>
+                                </legend>
+
+                                <div class="activity-type-options">
+
+                                <label class="activity-type-option">
+                                    <input type="radio" name="activityType" value="CALL" required>
+                                    <span>Cuộc gọi</span>
+                                </label>
+
+                                <label class="activity-type-option">
+                                    <input type="radio" name="activityType" value="MEETING">
+                                    <span>Cuộc gặp</span>
+                                </label>
+
+                                <label class="activity-type-option">
+                                    <input type="radio" name="activityType" value="EMAIL">
+                                    <span>Email</span>
+                                </label>
+
+                                <label class="activity-type-option">
+                                    <input type="radio" name="activityType" value="NOTE">
+                                    <span>Ghi chú</span>
+                                </label>
+
+                                </div>
+
+                            </fieldset>
+
+                            <div id="activity-type-error" class="form-error" data-error-for="activityType"></div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label class="form-label" for="activity-customer">
+                                Khách hàng <span class="form-required">*</span>
+                            </label>
+
+                            <!-- option: value = customerId, text = customerName -->
+                            <select
+                                id="activity-customer"
+                                class="form-control"
+                                name="customerId"
+                                required>
+                                <option value="">-- Chọn khách hàng --</option>
+                            </select>
+
+                            <div class="form-error" data-error-for="customerId"></div>
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="activity-contact">
+                                    Người liên hệ
+                                </label>
+
+                                <!-- option: value = contactId, data-customer-id = customerId -->
+                                <select
+                                    id="activity-contact"
+                                    class="form-control"
+                                    name="contactId">
+                                    <option value="">-- Không chọn --</option>
+                                </select>
+
+                                <div class="form-error" data-error-for="contactId"></div>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="activity-opportunity">
+                                    Cơ hội liên quan
+                                </label>
+
+                                <!-- option: value = opportunityId, data-customer-id = customerId -->
+                                <select
+                                    id="activity-opportunity"
+                                    class="form-control"
+                                    name="opportunityId">
+                                    <option value="">-- Không chọn --</option>
+                                </select>
+
+                                <div class="form-error" data-error-for="opportunityId"></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="activity-time">
+                                    Thời điểm <span class="form-required">*</span>
+                                </label>
+
+                                <input
+                                    id="activity-time"
+                                    class="form-control"
+                                    type="datetime-local"
+                                    name="activityTime"
+                                    required>
+
+                                <div class="form-help">
+                                    Có thể chọn thời điểm trong quá khứ (giờ Việt Nam).
+                                </div>
+
+                                <div class="form-error" data-error-for="activityTime"></div>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label class="form-label" for="activity-duration">
+                                    Thời lượng (phút)
+                                </label>
+
+                                <input
+                                    id="activity-duration"
+                                    class="form-control"
+                                    type="number"
+                                    name="durationMinutes"
+                                    min="0"
+                                    step="1"
+                                    inputmode="numeric">
+
+                                <div class="form-error" data-error-for="durationMinutes"></div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label class="form-label" for="activity-content">
+                                Nội dung trao đổi <span class="form-required">*</span>
+                            </label>
+
+                            <textarea
+                                id="activity-content"
+                                class="form-control"
+                                name="content"
+                                rows="5"
+                                required></textarea>
+
+                            <div class="form-error" data-error-for="content"></div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label class="form-label" for="activity-result">
+                                Kết quả
+                            </label>
+
+                            <textarea
+                                id="activity-result"
+                                class="form-control"
+                                name="result"
+                                rows="3"></textarea>
+
+                            <div class="form-error" data-error-for="result"></div>
+
+                        </div>
+
+
+                        <div class="activity-form-actions">
+
+                            <a class="btn btn-secondary" href="../../activities">
+                                Hủy
+                            </a>
+
+                            <button id="activity-submit" class="btn btn-primary" type="submit">
+                                Lưu hoạt động
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+    (function () {
+        var form = document.getElementById("activity-form");
+        var customer = form.elements.customerId;
+        var dependents = [form.elements.contactId, form.elements.opportunityId];
+        var errorBox = document.getElementById("activity-errors");
+
+        /* ---------- Hiện khối lỗi Backend nếu có nội dung ---------- */
+
+        if (errorBox.querySelector("li")) {
+            errorBox.hidden = false;
+        }
+
+        /* ---------- Người liên hệ / cơ hội lọc theo khách hàng đã chọn ---------- */
+
+        function syncDependents() {
+            var customerId = customer.value;
+
+            dependents.forEach(function (select) {
+                for (var i = 0; i < select.options.length; i++) {
+                    var option = select.options[i];
+                    var owner = option.getAttribute("data-customer-id");
+                    if (option.value === "" || owner === null) {
+                        continue;
+                    }
+                    var visible = customerId !== "" && owner === customerId;
+                    option.hidden = !visible;
+                    option.disabled = !visible;
+                    if (!visible && option.selected) {
+                        select.value = "";
+                    }
+                }
+            });
+        }
+
+        customer.addEventListener("change", syncDependents);
+        syncDependents();
+
+        /* ---------- Mặc định thời điểm = hiện tại để ghi nhanh (vẫn sửa được về quá khứ) ---------- */
+
+        var timeInput = form.elements.activityTime;
+        if (!timeInput.value) {
+            var now = new Date();
+            var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+            timeInput.value = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate())
+                + "T" + pad(now.getHours()) + ":" + pad(now.getMinutes());
+        }
+
+        /* ---------- Kiểm tra bổ sung (hỗ trợ UX, Backend vẫn validate) ---------- */
+
+        function setFieldError(name, message) {
+            var box = form.querySelector('[data-error-for="' + name + '"]');
+            if (box) {
+                box.textContent = message;
+            }
+            var field = form.elements[name];
+            if (field && field.classList) {
+                field.classList.toggle("is-error", message !== "");
+            }
+        }
+
+        form.addEventListener("submit", function (event) {
+            var valid = true;
+
+            ["content", "durationMinutes", "customerId", "contactId", "opportunityId"].forEach(function (name) {
+                setFieldError(name, "");
+            });
+
+            if (form.elements.content.value.trim() === "") {
+                setFieldError("content", "Vui lòng nhập nội dung trao đổi.");
+                valid = false;
+            }
+
+            var duration = form.elements.durationMinutes.value.trim();
+            if (duration !== "" && !/^\d+$/.test(duration)) {
+                setFieldError("durationMinutes", "Thời lượng phải là số nguyên không âm.");
+                valid = false;
+            }
+
+            ["customerId", "contactId", "opportunityId"].forEach(function (name) {
+                var value = form.elements[name].value;
+                if (value !== "" && !/^[1-9]\d*$/.test(value)) {
+                    setFieldError(name, "Giá trị đã chọn không hợp lệ.");
+                    valid = false;
+                }
+            });
+
+            if (!valid) {
+                event.preventDefault();
+                return;
+            }
+
+            document.getElementById("activity-submit").disabled = true;
+        });
+    })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+/* CSS for organization */
+.team-tree {
+    list-style-type: none;
+    padding-left: 0;
+}
+.team-tree ul {
+    list-style-type: none;
+    padding-left: 20px;
+    margin-top: 5px;
+    border-left: 1px dashed var(--border-color);
+}
+.team-tree li {
+    margin: 5px 0;
+    position: relative;
+}
+.team-tree li::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: -20px;
+    width: 15px;
+    border-top: 1px dashed var(--border-color);
+}
+.team-tree > li::before {
+    display: none;
+}
+.team-tree > li {
+    padding-left: 0;
+}

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Import Excel | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/import.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container import-container">
+            <div class="page-header">
+                <h1 class="page-title">Nhập dữ liệu từ Excel</h1>
+                <a href="/import/excel/template" download class="btn btn-secondary" id="btnDownloadTemplate">Tải file mẫu</a>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form id="importForm" action="/import/excel/preview" method="POST" enctype="multipart/form-data">
+                        <div class="import-area" id="dropArea">
+                            <p>Kéo thả file Excel vào đây hoặc click để chọn file</p>
+                            <p class="text-secondary">Chỉ hỗ trợ file .xlsx</p>
+                            <input type="file" name="file" id="fileInput" accept=".xlsx" style="display: none;" required>
+                        </div>
+                        <div id="fileInfo" style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #1976d2;"></div>
+                        <div class="form-actions" style="justify-content: center;">
+                            <button type="submit" class="btn btn-primary" id="btnPreview" disabled>Xem trước dữ liệu</button>
+                        </div>
+                    </form>
+                    
+                    <div id="previewSection" style="display: none;">
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                        <h2 style="font-size: 18px; margin-bottom: 15px;">Kết quả phân tích</h2>
+                        
+                        <div class="stats-summary">
+                            <div>Tổng số dòng hợp lệ: <span id="validCount" style="color: #2e7d32;">0</span></div>
+                            <div>Tổng số dòng lỗi: <span id="invalidCount" style="color: #c62828;">0</span></div>
+                        </div>
+                        
+                        <div style="overflow-x: auto;">
+                            <table class="preview-table" id="previewTable">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Dữ liệu dòng (Raw)</th>
+                                        <th>Trạng thái</th>
+                                        <th>Ghi chú lỗi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="form-actions mt-3">
+                            <button type="button" class="btn btn-success" id="btnExecute">Thực hiện Import</button>
+                        </div>
+                    </div>
+                    
+                    <div id="importMessage" class="toast-message"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const btnPreview = document.getElementById('btnPreview');
+        const previewSection = document.getElementById('previewSection');
+        const importMessage = document.getElementById('importMessage');
+        let currentFile = null;
+
+        dropArea.addEventListener('click', () => fileInput.click());
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('dragover');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            if(e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            if(fileInput.files.length > 0) {
+                currentFile = fileInput.files[0];
+                fileInfo.textContent = `Đã chọn: ${currentFile.name}`;
+                btnPreview.disabled = false;
+                previewSection.style.display = 'none';
+                importMessage.style.display = 'none';
+            }
+        }
+        
+        document.getElementById('btnDownloadTemplate').addEventListener('click', (e) => {
+            e.preventDefault();
+            // Simulate download via fetch or simply setting window.location
+            window.location.href = '/import/excel/template';
+        });
+
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if(!currentFile) return;
+            
+            importMessage.style.display = 'none';
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(
+                        data.error || 'Lỗi xử lý file Excel.'
+                    );
+                }
+                return data;
+            })
+            .then(data => {
+                previewSection.style.display = 'block';
+                document.getElementById('validCount').textContent = data.validRows || 0;
+                document.getElementById('invalidCount').textContent = data.invalidRows || 0;
+                document.getElementById('btnExecute').disabled = !data.validRows || data.validRows <= 0;
+                const tbody = document.querySelector('#previewTable tbody');
+                tbody.innerHTML = '';
+                
+                if (data.rowErrors && data.rowErrors.length > 0) {
+                    data.rowErrors.forEach((row, idx) => {
+                        const tr = document.createElement('tr');
+
+                        tr.className = 'row-invalid';
+
+                        tr.innerHTML = `
+                            <td>${idx + 1}</td>
+
+                            <td>
+                                <strong>${row.fullName || ''}</strong><br>
+                                ${row.email || ''}<br>
+                                ${row.phone || ''}
+                            </td>
+
+                            <td>Lỗi</td>
+
+                            <td>
+                                <span class="text-danger">
+                                    ${row.error || ''}
+                                </span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            })
+            .catch(err => {
+                importMessage.textContent = err.message;
+                importMessage.className = 'toast-message error';
+                importMessage.style.display = 'block';
+            });
+        });
+        
+        document.getElementById('btnExecute').addEventListener('click', function() {
+            // Usually we might just trigger execution on backend, or send back the valid data.
+            // Assuming the backend has a session or expects a post confirming execution.
+            fetch('/import/excel/execute', {
+                method: 'POST'
+            })
+            .then(async res => {
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(
+                        data.error || 'Không thể thực hiện Import.'
+                    );
+                }
+                return data;
+            })
+            .then(data => {
+                let message =
+                    `Import hoàn tất: ${data.successCount || 0} dòng thành công, ` +
+                    `${data.failedCount || 0} dòng lỗi.`;
+
+                if (data.errors && data.errors.length > 0) {
+                    message += '\n\nChi tiết:\n' + data.errors.join('\n');
+                }
+
+                importMessage.textContent = message;
+                importMessage.className = 'toast-message success';
+                importMessage.style.display = 'block';
+
+                previewSection.style.display = 'none';
+
+                fileInput.value = '';
+                fileInfo.textContent = '';
+                btnPreview.disabled = true;
+                currentFile = null;
+            })
+            .catch(err => {
+                importMessage.textContent = err.message;
+                importMessage.className = 'toast-message error';
+                importMessage.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

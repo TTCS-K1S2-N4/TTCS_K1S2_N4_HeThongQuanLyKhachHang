@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Bàn giao dữ liệu | CRM System</title>
+
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/accounts.css">
+</head>
+
+<body>
+
+<main
+    class="main-content"
+    data-permission="account.transfer">
+
+    <div class="content-container">
+
+        <!-- BREADCRUMB -->
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+
+            <a href="../../index.html">
+                Trang chủ
+            </a>
+
+            <span>/</span>
+
+            <a href="list.html">
+                Tài khoản
+            </a>
+
+            <span>/</span>
+
+            <a href="detail.html">
+                Chi tiết
+            </a>
+
+            <span>/</span>
+
+            <span class="breadcrumb-current">
+                Bàn giao dữ liệu
+            </span>
+
+        </nav>
+
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+
+            <div>
+                <h1 class="page-title">
+                    Bàn giao dữ liệu
+                </h1>
+
+                <p class="page-description">
+                    Chuyển quyền sở hữu dữ liệu CRM sang một tài khoản khác
+                    trước khi khóa tài khoản.
+                </p>
+            </div>
+
+        </div>
+
+
+        <!-- ACCOUNT INFORMATION -->
+        <section class="card">
+
+            <div class="card-header">
+                <h2 class="card-title">
+                    Người bàn giao
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <div class="account-profile">
+
+                    <div class="account-profile-avatar">
+                        NA
+                    </div>
+
+                    <div>
+
+                        <h2 class="account-profile-name">
+                            Nguyễn Văn An
+                        </h2>
+
+                        <div class="account-profile-email">
+                            an.nguyen@example.com
+                        </div>
+
+                        <span class="badge badge-success">
+                            Hoạt động
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- OWNED DATA -->
+        <section class="card">
+
+            <div class="card-header">
+                <h2 class="card-title">
+                    Dữ liệu đang sở hữu
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <div class="detail-grid">
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Khách hàng
+                        </div>
+
+                        <div class="detail-value">
+                            25
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Lead
+                        </div>
+
+                        <div class="detail-value">
+                            8
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Cơ hội
+                        </div>
+
+                        <div class="detail-value">
+                            4
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <div class="detail-label">
+                            Hoạt động
+                        </div>
+
+                        <div class="detail-value">
+                            12
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- TRANSFER FORM -->
+        <section class="card account-form">
+
+            <div class="card-header">
+                <h2 class="card-title">
+                    Chọn người tiếp nhận
+                </h2>
+            </div>
+
+            <div class="card-body">
+
+                <form action="#" method="post">
+
+                    <!--
+                        Sau này Backend sẽ truyền ID thật.
+                        Đây chỉ là dữ liệu mẫu của Frontend.
+                    -->
+                    <input
+                        type="hidden"
+                        name="sourceAccountId"
+                        value="15">
+
+
+                    <div class="form-group">
+
+                        <label
+                            class="form-label"
+                            for="targetAccountId">
+
+                            Người tiếp nhận
+
+                            <span class="form-required">*</span>
+
+                        </label>
+
+                        <select
+                            id="targetAccountId"
+                            name="targetAccountId"
+                            class="form-control"
+                            required>
+
+                            <option value="">
+                                -- Chọn người tiếp nhận --
+                            </option>
+
+                            <option value="21">
+                                Trần Minh Đức - Sales Team A
+                            </option>
+
+                            <option value="24">
+                                Lê Thu Hà - Sales Team A
+                            </option>
+
+                            <option value="31">
+                                Phạm Quốc Huy - Sales Team B
+                            </option>
+
+                        </select>
+
+                        <div class="form-help">
+                            Dữ liệu thuộc tài khoản hiện tại sẽ được
+                            chuyển sang người được chọn.
+                        </div>
+
+                    </div>
+
+
+                    <div class="account-form-actions">
+
+                        <a
+                            class="btn btn-secondary"
+                            href="lock.html">
+
+                            Hủy
+
+                        </a>
+
+                        <button
+                            class="btn btn-primary"
+                            type="submit"
+                            data-permission="account.transfer">
+
+                            Xác nhận bàn giao
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,352 @@
+/* =========================================================
+   CRM SYSTEM - ACTIVITIES MODULE (S6-05)
+   Ghi nhận hoạt động: danh sách, chi tiết, tạo, sửa.
+   Mọi selector có tiền tố activity để không ảnh hưởng
+   module khác; chỉ dùng biến trong variables.css.
+   ========================================================= */
+
+
+/* ==================== PAGE ==================== */
+
+.activity-page [hidden] {
+    display: none !important;
+}
+
+
+/* ==================== ALERT ==================== */
+
+.activity-alert {
+    margin-bottom: var(--space-5);
+
+    padding: var(--space-3) var(--space-4);
+
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+
+    font-size: var(--font-size-sm);
+}
+
+.activity-alert-success {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+    border-color: var(--color-success);
+}
+
+.activity-alert-danger {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger);
+}
+
+.activity-alert-list {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-5);
+
+    list-style: disc;
+}
+
+
+/* ==================== TABLE ==================== */
+
+.activity-table td {
+    vertical-align: top;
+}
+
+.activity-type {
+    white-space: nowrap;
+}
+
+.activity-time {
+    white-space: nowrap;
+
+    font-variant-numeric: tabular-nums;
+}
+
+.activity-customer {
+    color: var(--color-gray-900);
+
+    font-weight: var(--font-weight-semibold);
+}
+
+.activity-sub {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--color-text-secondary);
+
+    font-size: var(--font-size-xs);
+}
+
+.activity-result {
+    max-width: 280px;
+
+    overflow-wrap: anywhere;
+}
+
+.activity-empty-cell {
+    padding: var(--space-10) var(--space-4);
+
+    color: var(--color-text-secondary);
+
+    text-align: center;
+}
+
+
+/* ==================== PAGINATION ==================== */
+
+.activity-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+
+    margin-top: var(--space-5);
+}
+
+.activity-pagination-info {
+    color: var(--color-text-secondary);
+
+    font-size: var(--font-size-sm);
+}
+
+.activity-pagination .pagination {
+    flex-wrap: wrap;
+
+    margin-top: 0;
+}
+
+.activity-pagination .pagination-item.is-disabled {
+    color: var(--color-text-muted);
+
+    pointer-events: none;
+}
+
+.activity-pagination .pagination-gap {
+    padding: 0 var(--space-1);
+
+    color: var(--color-text-muted);
+}
+
+
+/* ==================== FORM ==================== */
+
+.activity-form {
+    max-width: 760px;
+}
+
+.activity-type-fieldset {
+    min-width: 0;
+
+    margin: 0;
+    padding: 0;
+
+    border: none;
+}
+
+.activity-type-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.activity-type-option {
+    position: relative;
+}
+
+.activity-type-option input {
+    position: absolute;
+
+    opacity: 0;
+}
+
+.activity-type-option span {
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: var(--space-2);
+
+    color: var(--color-gray-700);
+    background: var(--color-white);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.activity-type-option input:checked + span {
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.activity-type-option input:focus-visible + span {
+    outline: 3px solid rgba(37, 99, 235, 0.2);
+    outline-offset: 2px;
+}
+
+.activity-form .form-error:empty {
+    display: none;
+}
+
+.activity-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+
+    margin-top: var(--space-6);
+}
+
+
+/* ==================== DETAIL ==================== */
+
+.activity-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-8);
+
+    margin: 0;
+}
+
+.activity-meta-item {
+    min-width: 0;
+
+    padding: var(--space-4) 0;
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+.activity-meta-label {
+    margin-bottom: var(--space-1);
+
+    color: var(--color-text-secondary);
+
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+}
+
+.activity-meta-value {
+    margin: 0;
+
+    color: var(--color-gray-900);
+
+    font-weight: var(--font-weight-medium);
+
+    overflow-wrap: anywhere;
+}
+
+.activity-meta-value:empty::before {
+    content: "—";
+
+    color: var(--color-text-muted);
+}
+
+.activity-content-block {
+    margin-top: var(--space-6);
+}
+
+.activity-content-title {
+    margin-bottom: var(--space-2);
+
+    color: var(--color-gray-900);
+
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+}
+
+.activity-content-text {
+    margin: 0;
+    padding: var(--space-4);
+
+    color: var(--color-gray-800);
+    background: var(--color-gray-50);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    font-family: var(--font-family);
+    line-height: 1.6;
+
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.activity-content-text:empty::before {
+    content: "Không có nội dung";
+
+    color: var(--color-text-muted);
+
+    font-style: italic;
+}
+
+.activity-timezone-note {
+    margin-top: var(--space-4);
+
+    color: var(--color-text-secondary);
+
+    font-size: var(--font-size-xs);
+}
+
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+
+    .activity-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .activity-pagination .pagination {
+        justify-content: center;
+    }
+
+    /* Thao tác nhanh trên điện thoại: vùng chạm tối thiểu 48px */
+    .activity-form .form-control {
+        min-height: 48px;
+
+        font-size: var(--font-size-md);
+    }
+
+    .activity-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .activity-form-actions .btn {
+        width: 100%;
+        min-height: 48px;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .activity-type-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .activity-pagination-info {
+        text-align: center;
+    }
+
+}

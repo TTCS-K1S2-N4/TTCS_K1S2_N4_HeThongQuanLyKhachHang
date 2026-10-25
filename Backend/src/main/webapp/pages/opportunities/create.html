@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thêm mới Cơ hội</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/modules/opportunities.css">
+</head>
+<body>
+    <div class="app">
+        <main class="main-content">
+            <h1>Thêm mới Cơ hội</h1>
+            
+            <form id="createOpportunityForm">
+                <div>
+                    <label>Tên Cơ hội: <input type="text" name="name" required></label>
+                    <label>Khách hàng: <input type="text" name="customer" required></label>
+                    <label>Giá trị: <input type="number" name="amount" required></label>
+                </div>
+                
+                <!-- Custom Fields Integration for Create Form -->
+                <div id="customFieldsContainer">
+                    <!-- Loaded via GET /custom-fields?entityType=OPPORTUNITY -->
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Lưu</button>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,175 @@
+package com.crm.dao;
+
+import com.crm.model.LeadWebForm;
+import com.crm.util.DBConnection;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LeadWebFormDAO {
+
+    static {
+        ensureSchema();
+    }
+
+    private static void ensureSchema() {
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) return;
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getColumns(conn.getCatalog(), null, "lead_web_forms", "lead_source_id")) {
+                if (!rs.next()) {
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate("ALTER TABLE lead_web_forms ADD COLUMN lead_source_id INT NULL");
+                    } catch (Exception ignore) {}
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.executeUpdate("ALTER TABLE lead_web_forms ADD CONSTRAINT fk_lead_web_forms_source FOREIGN KEY (lead_source_id) REFERENCES lead_sources(source_id) ON DELETE SET NULL");
+                    } catch (Exception ignore) {}
+                }
+            }
+        } catch (Exception ignore) {}
+    }
+
+    public List<LeadWebForm> getAllWebForms() {
+        List<LeadWebForm> list = new ArrayList<>();
+        String sql = "SELECT wf.*, u.full_name AS creator_name, ls.source_name " +
+                     "FROM lead_web_forms wf " +
+                     "LEFT JOIN users u ON wf.created_by = u.user_id " +
+                     "LEFT JOIN lead_sources ls ON wf.lead_source_id = ls.source_id " +
+                     "ORDER BY wf.form_id DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public LeadWebForm getById(int formId) {
+        String sql = "SELECT wf.*, u.full_name AS creator_name, ls.source_name " +
+                     "FROM lead_web_forms wf " +
+                     "LEFT JOIN users u ON wf.created_by = u.user_id " +
+                     "LEFT JOIN lead_sources ls ON wf.lead_source_id = ls.source_id " +
+                     "WHERE wf.form_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, formId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean createWebForm(LeadWebForm form) {
+        String sql = "INSERT INTO lead_web_forms (form_name, description, embed_code, allowed_domains, " +
+                     "success_redirect_url, is_active, spam_protection_enabled, fields_json, lead_source_id, created_by) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, form.getFormName());
+            ps.setString(2, form.getDescription());
+            ps.setString(3, form.getEmbedCode());
+            ps.setString(4, form.getAllowedDomains());
+            ps.setString(5, form.getSuccessRedirectUrl());
+            ps.setBoolean(6, form.isActive());
+            ps.setBoolean(7, form.isSpamProtectionEnabled());
+            ps.setString(8, form.getFieldsJson());
+            if (form.getLeadSourceId() != null) {
+                ps.setInt(9, form.getLeadSourceId());
+            } else {
+                ps.setNull(9, java.sql.Types.INTEGER);
+            }
+            if (form.getCreatedBy() != null) {
+                ps.setInt(10, form.getCreatedBy());
+            } else {
+                ps.setNull(10, java.sql.Types.INTEGER);
+            }
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        form.setFormId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updateWebForm(LeadWebForm form) {
+        String sql = "UPDATE lead_web_forms SET form_name = ?, description = ?, embed_code = ?, allowed_domains = ?, " +
+                     "success_redirect_url = ?, is_active = ?, spam_protection_enabled = ?, fields_json = ?, lead_source_id = ? " +
+                     "WHERE form_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, form.getFormName());
+            ps.setString(2, form.getDescription());
+            ps.setString(3, form.getEmbedCode());
+            ps.setString(4, form.getAllowedDomains());
+            ps.setString(5, form.getSuccessRedirectUrl());
+            ps.setBoolean(6, form.isActive());
+            ps.setBoolean(7, form.isSpamProtectionEnabled());
+            ps.setString(8, form.getFieldsJson());
+            if (form.getLeadSourceId() != null) {
+                ps.setInt(9, form.getLeadSourceId());
+            } else {
+                ps.setNull(9, java.sql.Types.INTEGER);
+            }
+            ps.setInt(10, form.getFormId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean deleteWebForm(int formId) {
+        String sql = "DELETE FROM lead_web_forms WHERE form_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, formId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private LeadWebForm mapResultSet(ResultSet rs) throws SQLException {
+        LeadWebForm wf = new LeadWebForm();
+        wf.setFormId(rs.getInt("form_id"));
+        wf.setFormName(rs.getString("form_name"));
+        wf.setDescription(rs.getString("description"));
+        wf.setEmbedCode(rs.getString("embed_code"));
+        wf.setAllowedDomains(rs.getString("allowed_domains"));
+        wf.setSuccessRedirectUrl(rs.getString("success_redirect_url"));
+        wf.setActive(rs.getBoolean("is_active"));
+        wf.setSpamProtectionEnabled(rs.getBoolean("spam_protection_enabled"));
+        wf.setFieldsJson(rs.getString("fields_json"));
+        wf.setLeadSourceId((Integer) rs.getObject("lead_source_id"));
+        wf.setCreatedBy((Integer) rs.getObject("created_by"));
+        wf.setCreatedAt(rs.getTimestamp("created_at"));
+        wf.setUpdatedAt(rs.getTimestamp("updated_at"));
+
+        try {
+            wf.setCreatorName(rs.getString("creator_name"));
+        } catch (SQLException ignore) {}
+        try {
+            wf.setSourceName(rs.getString("source_name"));
+        } catch (SQLException ignore) {}
+
+        return wf;
+    }
+}

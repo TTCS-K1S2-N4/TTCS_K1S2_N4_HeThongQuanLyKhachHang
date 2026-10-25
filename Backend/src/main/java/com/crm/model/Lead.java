@@ -1,0 +1,338 @@
+package com.crm.model;
+
+import java.sql.Timestamp;
+
+public class Lead {
+    private int leadId;
+    private String fullName;
+    private String firstName;
+    private String lastName;
+    private String title;
+    private String company;
+    private String email;
+    private String phone;
+    private Integer leadSourceId;
+    private Integer webFormId;
+    private String status; // NEW, CONTACTED, QUALIFIED, UNQUALIFIED, CONVERTED, REJECTED
+    private String rating; // HOT, WARM, COLD
+    private int score;
+    private String industry;
+    private String address;
+    private String city;
+    private String state;
+    private String country;
+    private String zipCode;
+    private Integer ownerId;
+    private String notes;
+    private Timestamp assignedAt;
+    private Timestamp slaDueDate;
+    private boolean overdue;
+    private String slaStatus;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
+
+    // Joined object references
+    private String sourceName;
+    private String webFormName;
+    private String ownerName;
+    private Integer campaignId;
+    private String campaignName;
+    private Integer convertedCustomerId;
+    private Integer convertedContactId;
+    private Integer convertedOpportunityId;
+
+    public Lead() {}
+
+    public int getLeadId() {
+        return leadId;
+    }
+
+    public int getId() {
+        return leadId;
+    }
+
+    public void setLeadId(int leadId) {
+        this.leadId = leadId;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Integer getLeadSourceId() {
+        return leadSourceId;
+    }
+
+    public void setLeadSourceId(Integer leadSourceId) {
+        this.leadSourceId = leadSourceId;
+    }
+
+    public Integer getWebFormId() {
+        return webFormId;
+    }
+
+    public void setWebFormId(Integer webFormId) {
+        this.webFormId = webFormId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getRating() {
+        return rating;
+    }
+
+    public void setRating(String rating) {
+        this.rating = rating;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public String getIndustry() {
+        return industry;
+    }
+
+    public void setIndustry(String industry) {
+        this.industry = industry;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public Integer getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Integer ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    public String getWebFormName() {
+        return webFormName;
+    }
+
+    public void setWebFormName(String webFormName) {
+        this.webFormName = webFormName;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public Integer getCampaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(Integer campaignId) {
+        this.campaignId = campaignId;
+    }
+
+    public String getCampaignName() {
+        return campaignName;
+    }
+
+    public void setCampaignName(String campaignName) {
+        this.campaignName = campaignName;
+    }
+
+    // JSP / DTO Compatibility Aliases
+    public String getInterest() {
+        return notes;
+    }
+
+    public String getSource() {
+        return sourceName;
+    }
+
+    public Timestamp getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Timestamp assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public Timestamp getSlaDueDate() {
+        return slaDueDate;
+    }
+
+    public void setSlaDueDate(Timestamp slaDueDate) {
+        this.slaDueDate = slaDueDate;
+    }
+
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
+    }
+
+    public String getSlaStatus() {
+        return slaStatus;
+    }
+
+    public void setSlaStatus(String slaStatus) {
+        this.slaStatus = slaStatus;
+    }
+
+    public Integer getConvertedCustomerId() {
+        return convertedCustomerId;
+    }
+
+    public void setConvertedCustomerId(Integer convertedCustomerId) {
+        this.convertedCustomerId = convertedCustomerId;
+    }
+
+    public Integer getConvertedContactId() {
+        return convertedContactId;
+    }
+
+    public void setConvertedContactId(Integer convertedContactId) {
+        this.convertedContactId = convertedContactId;
+    }
+
+    public Integer getConvertedOpportunityId() {
+        return convertedOpportunityId;
+    }
+
+    public void setConvertedOpportunityId(Integer convertedOpportunityId) {
+        this.convertedOpportunityId = convertedOpportunityId;
+    }
+}

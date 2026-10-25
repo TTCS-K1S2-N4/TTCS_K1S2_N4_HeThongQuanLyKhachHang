@@ -1,0 +1,18 @@
+/* Opportunities Module CSS */
+.opportunity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.opportunity-table th, .opportunity-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.custom-field-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}

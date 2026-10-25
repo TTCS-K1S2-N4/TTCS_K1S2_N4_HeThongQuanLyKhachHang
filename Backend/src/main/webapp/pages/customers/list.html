@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Danh sách khách hàng | CRM System</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/responsive.css">
+    <link rel="stylesheet" href="../../assets/css/modules/customers.css">
+</head>
+<body>
+    <main class="main-content">
+        <div class="content-container">
+            <!-- DRAFT S3-01 / S3-07: chưa nối API. Chờ Master API Contract Sprint 3 để chốt endpoint và tên tham số. -->
+            <div class="page-header">
+                <h1 class="page-title">Danh sách khách hàng</h1>
+                <a href="create.html" class="btn btn-primary">Thêm khách hàng</a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <form id="filterForm" method="GET" action="#">
+                        <div class="form-row kh-filter">
+                            <input type="text" name="keyword" class="form-control" placeholder="Tìm theo tên, mã số thuế, SĐT người liên hệ">
+                            <select name="status" class="form-control">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PROSPECT">Tiềm năng</option>
+                                <option value="ACTIVE_DEAL">Đang giao dịch</option>
+                                <option value="CUSTOMER">Khách hàng</option>
+                                <option value="INACTIVE">Ngừng hợp tác</option>
+                            </select>
+                            <input type="text" name="industry" class="form-control" placeholder="Ngành nghề">
+                            <input type="text" name="size" class="form-control" placeholder="Quy mô">
+                            <input type="text" name="region" class="form-control" placeholder="Khu vực">
+                            <button type="submit" class="btn btn-primary">Lọc</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="cf-table-wrap">
+                        <table class="cf-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên công ty</th>
+                                    <th>Mã số thuế</th>
+                                    <th>Ngành nghề</th>
+                                    <th>Trạng thái</th>
+                                    <th>Người sở hữu</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerBody">
+                                <tr><td colspan="6" class="cf-empty">Chưa có dữ liệu.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
