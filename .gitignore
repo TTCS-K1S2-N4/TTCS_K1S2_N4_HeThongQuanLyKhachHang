@@ -1,20 +1,2 @@
-target/
-*.class
-*.jar
-*.war
-.classpath
-.project
-.settings/
-.idea/
-*.iml
-.DS_Store
-
-# Local session and credential files
-Backend/cookies.txt
-*.local.properties
-db.local.properties
+﻿Backend/target/
 Backend/src/main/resources/db.local.properties
-
-# Temporary audit artifacts
-Backend/scratch/
-scratch/
